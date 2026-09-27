@@ -1,4 +1,5 @@
 <p align="center">
+  <img src="artifacts/solana-privacy-swap/public/brand/icon.png" alt="" width="52" />
   <img src="artifacts/solana-privacy-swap/public/brand/wordmark.png" alt="DarkSwap" width="260" />
 </p>
 
