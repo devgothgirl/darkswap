@@ -1,0 +1,404 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Solana discovery, Houdini private swaps, and separate OKX public swaps
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: swap
+  - name: discovery
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /swap/tokens:
+    get:
+      operationId: searchSwapTokens
+      tags: [swap]
+      summary: Find CEX-supported tokens; source results are Solana-only
+      parameters:
+        - in: query
+          name: side
+          required: true
+          schema:
+            type: string
+            enum: [source, destination]
+        - in: query
+          name: term
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: Supported tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenList"
+  /swap/quotes:
+    get:
+      operationId: getPrivateQuotes
+      tags: [swap]
+      summary: Get live private routes for a Solana source token
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, minLength: 1 }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, minLength: 1 }
+        - in: query
+          name: amount
+          required: true
+          schema: { type: number, exclusiveMinimum: 0 }
+        - in: query
+          name: timezone
+          schema: { type: string, maxLength: 80 }
+      responses:
+        "200":
+          description: Live private quotes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteList"
+  /swap/orders:
+    post:
+      operationId: createPrivateOrder
+      tags: [swap]
+      summary: Create a private swap order from a selected quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwapOrderInput"
+      responses:
+        "200":
+          description: Deposit instructions and new order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapOrder"
+  /swap/orders/{id}:
+    get:
+      operationId: getPrivateOrder
+      tags: [swap]
+      summary: Check an existing swap order by Houdini ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: Current order state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapOrder"
+  /explore/tokens:
+    get:
+      operationId: discoverTokens
+      tags: [discovery]
+      summary: Search Solana token market data from Tokens.xyz
+      parameters:
+        - in: query
+          name: term
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        "403":
+          description: Token discovery is closed during the beta launch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BetaAccessError" }
+        "200":
+          description: Matching assets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryList"
+  /explore/tokens/{assetId}:
+    get:
+      operationId: getDiscoveredToken
+      tags: [discovery]
+      summary: Canonical market data and Helius on-chain metadata
+      parameters:
+        - in: path
+          name: assetId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 120 }
+      responses:
+        "403":
+          description: Token discovery is closed during the beta launch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BetaAccessError" }
+        "200":
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryDetail"
+  /swap/okx/tokens:
+    get:
+      operationId: searchOkxTokens
+      tags: [swap]
+      summary: Find OKX-supported Solana tokens
+      parameters:
+        - in: query
+          name: term
+          schema: { type: string, maxLength: 80 }
+      responses:
+        "403":
+          description: Public swaps are closed during the beta launch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BetaAccessError" }
+        "200":
+          description: OKX Solana token list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkxTokenList"
+  /swap/okx/quote:
+    get:
+      operationId: getOkxQuote
+      tags: [swap]
+      summary: Get a public same-chain Solana swap quote
+      parameters:
+        - in: query
+          name: fromMint
+          required: true
+          schema: { type: string, minLength: 32, maxLength: 44 }
+        - in: query
+          name: toMint
+          required: true
+          schema: { type: string, minLength: 32, maxLength: 44 }
+        - in: query
+          name: amount
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 32 }
+      responses:
+        "403":
+          description: Public swaps are closed during the beta launch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BetaAccessError" }
+        "200":
+          description: OKX quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkxQuote"
+  /swap/okx/transaction:
+    post:
+      operationId: buildOkxTransaction
+      tags: [swap]
+      summary: Build a public swap for wallet review and signing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OkxTransactionInput"
+      responses:
+        "403":
+          description: Public swaps are closed during the beta launch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BetaAccessError" }
+        "200":
+          description: Unsigned Solana transaction, base58 encoded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkxTransaction"
+components:
+  schemas:
+    BetaAccessError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    HealthStatus:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+    DiscoveryAsset:
+      type: object
+      required: [assetId, name, symbol]
+      properties:
+        assetId: { type: string }
+        name: { type: string }
+        symbol: { type: string }
+        category: { type: string }
+        mint: { type: string }
+        icon: { type: string }
+        price: { type: number }
+        change24h: { type: number }
+        volume24h: { type: number }
+        marketCap: { type: number }
+        liquidity: { type: number }
+        trustTier: { type: string }
+    DiscoveryList:
+      type: object
+      required: [assets]
+      properties:
+        assets:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryAsset" }
+    DiscoveryDetail:
+      type: object
+      required: [asset]
+      properties:
+        asset: { $ref: "#/components/schemas/DiscoveryAsset" }
+        description: { type: string }
+        supply: { type: number }
+        decimals: { type: integer }
+        mintAuthority: { type: string }
+        freezeAuthority: { type: string }
+        onChainName: { type: string }
+        onChainSymbol: { type: string }
+        metadataStatus: { type: string, enum: [available, unavailable] }
+    OkxToken:
+      type: object
+      required: [mint, name, symbol, decimals]
+      properties:
+        mint: { type: string }
+        name: { type: string }
+        symbol: { type: string }
+        decimals: { type: integer }
+        icon: { type: string }
+    OkxTokenList:
+      type: object
+      required: [tokens]
+      properties:
+        tokens:
+          type: array
+          items: { $ref: "#/components/schemas/OkxToken" }
+    OkxQuote:
+      type: object
+      required: [fromMint, toMint, amountIn, amountOut, fromSymbol, toSymbol, priceImpactPercent]
+      properties:
+        fromMint: { type: string }
+        toMint: { type: string }
+        amountIn: { type: string }
+        amountOut: { type: string }
+        fromSymbol: { type: string }
+        toSymbol: { type: string }
+        priceImpactPercent: { type: string }
+        tradeFeeUsd: { type: string }
+    OkxTransactionInput:
+      type: object
+      additionalProperties: false
+      required: [fromMint, toMint, amount, wallet]
+      properties:
+        fromMint: { type: string, minLength: 32, maxLength: 44 }
+        toMint: { type: string, minLength: 32, maxLength: 44 }
+        amount: { type: string, minLength: 1, maxLength: 32 }
+        wallet: { type: string, minLength: 32, maxLength: 44 }
+    OkxTransaction:
+      type: object
+      required: [transaction, amountIn, amountOut, minAmountOut, fromSymbol, toSymbol]
+      properties:
+        transaction: { type: string }
+        amountIn: { type: string }
+        amountOut: { type: string }
+        minAmountOut: { type: string }
+        fromSymbol: { type: string }
+        toSymbol: { type: string }
+    SwapToken:
+      type: object
+      required: [id, symbol, name, chain, chainName, decimals, requiresMemo]
+      properties:
+        id: { type: string }
+        symbol: { type: string }
+        name: { type: string }
+        chain: { type: string }
+        chainName: { type: string }
+        decimals: { type: number }
+        requiresMemo: { type: boolean }
+        icon: { type: string }
+        price: { type: ["number", "null"] }
+    TokenList:
+      type: object
+      required: [tokens, total]
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwapToken"
+        total: { type: integer }
+    PrivateQuote:
+      type: object
+      required: [quoteId, type, amountIn, amountOut]
+      properties:
+        quoteId: { type: string }
+        type: { type: string, enum: [private] }
+        amountIn: { type: number }
+        amountOut: { type: number }
+        amountOutUsd: { type: number }
+        amountInUsd: { type: number }
+        feeUsd: { type: number }
+        duration: { type: number }
+        min: { type: number }
+        max: { type: number }
+        validUntil: { type: string }
+        swapName: { type: string }
+        fixed: { type: boolean }
+        requiresRefundAddress: { type: boolean }
+        error: { type: string }
+    QuoteList:
+      type: object
+      required: [quotes, total]
+      properties:
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrivateQuote"
+        total: { type: integer }
+    SwapOrderInput:
+      type: object
+      required: [quoteId, addressTo]
+      additionalProperties: false
+      properties:
+        quoteId: { type: string, minLength: 1, maxLength: 128 }
+        addressTo: { type: string, minLength: 1, maxLength: 200 }
+        destinationTag: { type: string, maxLength: 64 }
+    SwapOrder:
+      type: object
+      required:
+        [houdiniId, depositAddress, receiverAddress, inAmount, inSymbol,
+         outAmount, outSymbol, displayStatus, created, expires]
+      properties:
+        houdiniId: { type: string }
+        depositAddress: { type: string }
+        depositTag: { type: string }
+        receiverAddress: { type: string }
+        receiverTag: { type: ["string", "null"] }
+        inAmount: { type: number }
+        inSymbol: { type: string }
+        outAmount: { type: number }
+        outSymbol: { type: string }
+        displayStatus: { type: string }
+        status: { type: number }
+        eta: { type: number }
+        created: { type: string }
+        expires: { type: string }
+        outTransactionOutHash: { type: string }

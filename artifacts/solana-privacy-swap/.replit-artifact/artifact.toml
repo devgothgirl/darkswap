@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "DarkSwap"
+description = "DarkSwap is a Solana-first private cross-chain swap app powered by HoudiniSwap v2. Compare live private quotes, create a manual deposit order, and track progress without connecting a wallet."
+version = "1.0.0"
+id = "artifacts/solana-privacy-swap"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18223
+
+[services.development]
+run = "pnpm --filter @workspace/solana-privacy-swap run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/solana-privacy-swap", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/solana-privacy-swap/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18223"
+BASE_PATH = "/"

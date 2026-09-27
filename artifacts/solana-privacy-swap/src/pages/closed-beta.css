@@ -1,0 +1,54 @@
+.closed-beta-page {
+  max-width: 900px;
+  min-height: min(690px, calc(100dvh - 170px));
+  margin: auto;
+  padding: 100px 5.2% 110px;
+}
+.closed-beta-mark {
+  width: 60px;
+  height: 60px;
+  margin-top: 53px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #586c5e;
+  border-radius: 50%;
+  color: #c8ed78;
+  background: #172a2b;
+}
+.closed-beta-label {
+  margin: 25px 0 12px;
+  color: #c8ed78;
+  font: 700 10px 'Space Mono', monospace;
+  letter-spacing: .14em;
+}
+.closed-beta-page h1 {
+  margin: 0;
+  color: #f0f2e8;
+  font: 700 clamp(43px, 7vw, 78px)/1.02 'Syne', sans-serif;
+  letter-spacing: -.075em;
+}
+.closed-beta-page h1 span { color: #c8ed78; }
+.closed-beta-copy {
+  max-width: 580px;
+  margin: 23px 0 0;
+  color: #adbfba;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.closed-beta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 31px;
+}
+.closed-beta-actions a {
+  min-height: 46px;
+  width: auto;
+  text-decoration: none;
+}
+.closed-beta-actions .primary-button { padding: 0 16px; }
+@media (max-width: 767px) {
+  .closed-beta-page { min-height: 65vh; padding: 72px 20px 85px; }
+  .closed-beta-mark { margin-top: 44px; }
+  .closed-beta-copy { font-size: 13px; }
+}
