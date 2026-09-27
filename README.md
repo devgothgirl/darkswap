@@ -1,52 +1,40 @@
-# DarkSwap
+<p align="center">
+  <img src="artifacts/solana-privacy-swap/public/brand/wordmark.png" alt="DarkSwap" width="260" />
+</p>
 
-**A Solana-first, deposit-based private swap and bridge experience.**
+<p align="center">
+  <strong>Solana-origin swaps. Review first, deposit yourself.</strong><br />
+  A wallet-free interface for comparing live routes, creating deposit instructions, and tracking an order.
+</p>
 
-DarkSwap helps users compare a supported Houdini route, review its quote, and create an order without connecting a wallet to the app. The user then **manually sends the exact deposit amount** from a Solana wallet and tracks the order. Available assets, destinations, fees, and timing depend on the live quote. A private route does **not** guarantee anonymity.
+> [!IMPORTANT]
+> DarkSwap is in beta. A “private” or “confidential” route is **not a guarantee of anonymity or unlinkability**. Solana deposits are public on-chain. Review the live quote, destination, asset, amount, address, memo, and deadline before sending anything.
 
-## Beta status
+## What works today
 
-| Area | Availability | What it does |
+| Area | Status | How it works |
 | --- | --- | --- |
-| Landing page (`/`) | Open | Explains the route and current beta scope |
-| Private swap / bridge (`/swap`) | Open | Solana-origin Houdini quotes and deposit-based orders |
-| Order tracking (`/order/:id`) | Open | Deposit instructions and order status |
-| Explore (`/explore`) | Closed beta | Token research; not available yet |
-| Public swap (`/public-swap`) | Closed beta | Separate OKX same-chain Solana swap; **not private** |
+| [Private route](artifacts/solana-privacy-swap/src/pages/home.tsx) | Live beta | Houdini quotes and manual-deposit orders from Solana; track by order ID. |
+| [Privacy swap](artifacts/solana-privacy-swap/src/pages/near-swap.tsx) | Live beta | NEAR Intents 1Click quotes with confidential `basic` handling; review final terms, then decide whether to fund. Track by deposit address. |
+| Screener Beta | Read-only | Search a dated token catalog; it is not a live trading route. |
+| Split Mixer and Privacy Bundle | Previews | Planning tools only. They do not move, pool, mix, or hide funds. |
+| Explore and public OKX swap | Closed beta | Not available for live research or trading. A public swap would **not** be private. |
 
-The closed-beta pages display an availability notice. Their API endpoints return HTTP 403, so hiding a button is not the only access control. There is no invite-only login or waitlist in this release. Explore and OKX source code is retained for future work, but those flows are not available to visitors. In-app OKX bridging is **not** implemented.
+Live pairs, limits, fees, and destination chains depend on provider availability. An asset appearing in search does not mean a usable quote exists. In-app OKX bridging is not implemented.
 
-## How the available route works
+## How a swap works
 
-1. Choose a Solana asset, amount, and supported destination.
-2. Review the live quote, fees, limits, expected time, and recipient address.
-3. Create an order. **Creating an order does not move funds.**
-4. Manually send the exact amount to the Solana deposit address shown on the order screen, including any required deposit memo.
-5. Track progress using the order ID. Transfers cannot be reversed.
+1. Select a Solana source asset, destination asset, amount, and the addresses required by the route.
+2. Review the quote, minimum output, fees, limits, estimated time, and destination network.
+3. Create an order to receive deposit instructions. **Creating an order does not transfer funds.** On Privacy swap, review the final live terms separately because they can differ from the earlier estimate.
+4. If you choose to proceed, send the exact instructed asset and amount from your own Solana wallet to the shown deposit address, including any memo. Do not send from a different network.
+5. Save your order ID or deposit address and track the provider-reported status. On-chain transfers generally cannot be reversed.
 
-DarkSwap does not ask to connect a wallet for this flow. Route availability varies, execution can take longer than a direct swap, and no service can promise absolute privacy.
+The browser never asks to connect a wallet for these routes. The API keeps provider credentials server-side. Privacy swap stores its signed provider response and order receipt in PostgreSQL so the instructions can be recovered after a reload; the original private route uses the provider's order lookup instead.
 
-## Tech stack
+## Run the project
 
-- React, TypeScript, and Vite for the web app
-- Express and TypeScript for the API
-- OpenAPI contract with generated client and validation types
-- Houdini for the available private route
-- Tokens.xyz, Helius, and OKX integrations retained for currently gated areas
-
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `artifacts/solana-privacy-swap` | Web app and beta launch pages |
-| `artifacts/api-server` | API and provider calls; credentials stay server-side |
-| `lib/api-spec` | OpenAPI contract and code generation |
-| `lib/api-client-react`, `lib/api-zod` | Generated client and validation types |
-| `lib/db`, `scripts` | Supporting workspace packages |
-
-## Run locally
-
-Use **Node.js 24** and **pnpm**. From the repository root:
+This is a **pnpm workspace** with a React/Vite frontend, an Express API, an OpenAPI contract, and PostgreSQL for Privacy swap receipts. Use Node.js 24 and pnpm 10.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -54,30 +42,26 @@ pnpm --filter @workspace/api-spec run codegen
 pnpm run typecheck
 ```
 
-Configure the secrets below in your hosting environment. Never commit actual values to GitHub.
+Configure credentials through your host's secret manager, **never in source control**:
 
-| Variable | Needed for |
+| Variable | Purpose |
 | --- | --- |
-| `HOUDINI_API_KEY`, `HOUDINI_API_SECRET` | Available private route quotes and orders |
-| `HELIUS_API_KEY` | Closed-beta Solana research |
-| `TOKENS_XYZ_API_KEY` | Closed-beta token discovery |
-| `OKX_API_KEY`, `OKX_API_SECRET`, `OKX_API_PASSPHRASE` | Closed-beta public OKX swaps |
+| `HOUDINI_API_KEY`, `HOUDINI_API_SECRET` | Original private-route quotes and orders |
+| `NEAR_INTENTS_API_KEY` | Privacy swap quotes and deposit instructions (1Click Distribution Channel key) |
+| `DATABASE_URL` | PostgreSQL connection for Privacy swap order receipts |
 
-The included Replit artifact manifests configure separate web and API services and route `/api` to the API server. On Replit, start the configured **API Server** and **web** workflows. Outside Replit, each service needs a port, the web app needs `BASE_PATH`, and a reverse proxy must forward `/api` requests to the API server:
+Optional integrations for gated research/public-swap code include `HELIUS_API_KEY`, `TOKENS_XYZ_API_KEY`, and the `OKX_API_KEY` / `OKX_API_SECRET` / `OKX_API_PASSPHRASE` set. They do not turn those closed-beta features on.
 
-```bash
-# Terminal 1
-PORT=8080 pnpm --filter @workspace/api-server run dev
+On Replit, start the managed **API Server** and **web** workflows. The artifact configuration supplies ports, base paths, and `/api` routing. For an external local setup, provide `PORT` to both services and `BASE_PATH=/` to the frontend, run `pnpm --filter @workspace/db run push` against a **dedicated development database**, and put a reverse proxy in front of the services so browser requests to `/api` reach the API server. Starting the two processes alone does not provide that proxy.
 
-# Terminal 2
-PORT=18223 BASE_PATH=/ pnpm --filter @workspace/solana-privacy-swap run dev
-```
+## Repository map
 
-The two commands alone do not configure the external reverse proxy. Without that proxy, the browser will not reach the API from the web dev server.
+| Path | Contents |
+| --- | --- |
+| `artifacts/solana-privacy-swap/` | Web app, landing page, swap and order screens |
+| `artifacts/api-server/` | Provider integrations, validation, and API routes |
+| `lib/api-spec/` | OpenAPI source contract and code generation |
+| `lib/api-client-react/`, `lib/api-zod/` | Generated client and validation schemas |
+| `lib/db/` | PostgreSQL schema and Drizzle configuration |
 
-## Safety and scope
-
-- Check the destination chain, address, amount, and any memo before depositing. Blockchain transfers are generally irreversible.
-- Do not treat “private” as a promise of untraceability or universal chain/token support.
-- The OKX feature, when eventually opened, is a **public** on-chain swap and is not a private bridge.
-- Keep API credentials, wallet keys, seed phrases, `.env` files, dependencies, and build output out of Git.
+For usage details and limitations, see the in-app [Docs](artifacts/solana-privacy-swap/src/pages/docs.tsx). Never commit API credentials, wallet keys, seed phrases, or user deposit details.

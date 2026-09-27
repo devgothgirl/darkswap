@@ -6,17 +6,23 @@ import type { SwapToken } from '@workspace/api-client-react';
 
 export const RECENT_ORDER_KEY = 'solana-privacy-swap:recent-order';
 
+function safeErrorText(message: string): string {
+  return /houdini(?:swap)?/i.test(message)
+    ? 'The private route is temporarily unavailable. Please try again.'
+    : message;
+}
+
 export function errorText(error: unknown): string {
   if (!error) return 'Something went wrong. Please try again.';
-  if (typeof error === 'string') return error;
+  if (typeof error === 'string') return safeErrorText(error);
   if (typeof error === 'object') {
     const e = error as Record<string, unknown>;
-    if (typeof e.message === 'string') return e.message;
-    if (typeof e.error === 'string') return e.error;
+    if (typeof e.message === 'string') return safeErrorText(e.message);
+    if (typeof e.error === 'string') return safeErrorText(e.error);
     if (e.data && typeof e.data === 'object') {
       const data = e.data as Record<string, unknown>;
-      if (typeof data.message === 'string') return data.message;
-      if (typeof data.error === 'string') return data.error;
+      if (typeof data.message === 'string') return safeErrorText(data.message);
+      if (typeof data.error === 'string') return safeErrorText(data.error);
     }
   }
   return 'The request could not be completed. Please try again.';
@@ -44,15 +50,18 @@ export function Header() {
   };
   return <>
     <header className="topbar">
-      <Link href="/" className="brand" data-testid="link-home"><span className="brand-mark" aria-hidden="true"><span>∿</span></span><span>Dark<span style={{color:'#c8ed78'}}>Swap</span></span></Link>
+       <Link href="/" className="brand" data-testid="link-home"><img className="brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
       <nav className="site-nav" aria-label="Main navigation">
         <Link href="/" className={location==='/'?'active':''} data-testid="link-nav-home">Landing</Link>
         <Link href="/swap" className={location==='/swap'?'active':''} data-testid="link-nav-private">Private route · live</Link>
+        <Link href="/near-swap" className={location==='/near-swap'||location==='/near-order'?'active':''} data-testid="link-nav-near"><span className="nav-near-glyph" aria-hidden="true">⋈</span> Privacy swap</Link>
+        <Link href="/docs" className={location==='/docs'?'active':''} data-testid="link-nav-docs">Docs</Link>
+        <Link href="/previews" className={['/previews','/screener-beta','/screener-preview','/split-mixer-preview','/splitwise-preview','/privacy-bundle-preview'].includes(location)?'active':''} data-testid="link-nav-previews">Previews</Link>
         <Link href="/explore" className={location==='/explore'?'active':''} data-testid="link-nav-explore">Explore · closed beta</Link>
         <Link href="/public-swap" className={location==='/public-swap'?'active':''} data-testid="link-nav-public">Public · closed beta</Link>
       </nav>
       <div className="top-right">
-        <span className="network-pill"><i /> {location==='/swap' ? 'Houdini private route · live quote' : location==='/explore' ? 'Explore · closed beta' : location==='/public-swap' ? 'Public swap · closed beta' : 'Private beta · Solana origin'}</span>
+        <span className="network-pill"><i /> {location==='/swap' ? 'Private route · live quote' : location==='/near-swap'||location==='/near-order' ? 'Privacy swap · live quote' : location==='/screener-beta'||location==='/screener-preview' ? 'Screener Beta · dated catalog' : location==='/split-mixer-preview'||location==='/splitwise-preview'||location==='/privacy-bundle-preview'||location==='/previews' ? 'Feature previews · no transfers' : location==='/explore' ? 'Explore · closed beta' : location==='/public-swap' ? 'Public swap · closed beta' : 'Private beta · Solana origin'}</span>
         <button className="nav-link" onClick={() => setLookupOpen(true)} data-testid="button-lookup-order">Track an order <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle',marginLeft:3}} /></button>
       </div>
     </header>
@@ -62,19 +71,20 @@ export function Header() {
           <div><span className="section-label">Order lookup</span><h2 id="lookup-title">Find your transfer.</h2></div>
           <button className="secondary-button" onClick={() => setLookupOpen(false)} aria-label="Close" data-testid="button-close-lookup"><X size={15}/></button>
         </div>
-        <p>Enter the Houdini order ID from your deposit instructions. No wallet connection needed.</p>
+        <p>Enter the order ID from your deposit instructions. No wallet connection needed.</p>
         <form onSubmit={submit}>
           <label className="section-label" htmlFor="lookup-id" style={{marginTop:22}}>Order ID</label>
           <input id="lookup-id" className="input-standard" autoFocus value={id} onChange={e=>setId(e.target.value)} placeholder="Paste your order ID" data-testid="input-order-id"/>
           <button className="primary-button" type="submit" disabled={!id.trim()} style={{marginTop:15}} data-testid="button-find-order">Find order <ArrowRight size={16}/></button>
         </form>
+        <p style={{marginTop:20}}>Using Privacy swap? <Link href="/near-order" onClick={() => setLookupOpen(false)}>Track by deposit address <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle'}} /></Link></p>
       </div>
     </div>}
   </>;
 }
 
 export function Footer() {
-  return <footer className="footer"><span>DARKSWAP / PRIVATE BETA</span><span>Only the Houdini private route is open · Explore and public swap are closed beta</span></footer>;
+  return <footer className="footer"><span>DARKSWAP / PRIVATE BETA</span><span>Routes live: <Link href="/swap" style={{color:'#d2b5ff'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d2b5ff'}}>Privacy swap</Link> · Explore and public swap are closed beta</span></footer>;
 }
 
 export function CopyButton({ value, name }: {value: string; name: string}) {

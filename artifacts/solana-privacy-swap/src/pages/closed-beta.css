@@ -10,29 +10,29 @@
   margin-top: 53px;
   display: grid;
   place-items: center;
-  border: 1px solid #586c5e;
+  border: 1px solid #72588b;
   border-radius: 50%;
-  color: #c8ed78;
-  background: #172a2b;
+  color: #c7a7ff;
+  background: #30213f;
 }
 .closed-beta-label {
   margin: 25px 0 12px;
-  color: #c8ed78;
-  font: 700 10px 'Space Mono', monospace;
+  color: #c7a7ff;
+  font: 700 12px 'Space Mono', monospace;
   letter-spacing: .14em;
 }
 .closed-beta-page h1 {
   margin: 0;
-  color: #f0f2e8;
-  font: 700 clamp(43px, 7vw, 78px)/1.02 'Syne', sans-serif;
-  letter-spacing: -.075em;
+  color: #f7efff;
+  font: 800 clamp(43px, 7vw, 78px)/1.02 'Manrope', 'DM Sans', sans-serif;
+  letter-spacing: -.065em;
 }
-.closed-beta-page h1 span { color: #c8ed78; }
+.closed-beta-page h1 span { color: #c7a7ff; }
 .closed-beta-copy {
   max-width: 580px;
   margin: 23px 0 0;
-  color: #adbfba;
-  font-size: 15px;
+  color: #d7c9e4;
+  font-size: 18px;
   line-height: 1.75;
 }
 .closed-beta-actions {
@@ -50,5 +50,5 @@
 @media (max-width: 767px) {
   .closed-beta-page { min-height: 65vh; padding: 72px 20px 85px; }
   .closed-beta-mark { margin-top: 44px; }
-  .closed-beta-copy { font-size: 13px; }
+  .closed-beta-copy { font-size: 16px; }
 }

@@ -75,7 +75,7 @@ export async function houdiniRequest<T>(
   const key = process.env.HOUDINI_API_KEY;
   const secret = process.env.HOUDINI_API_SECRET;
   if (!key || !secret) {
-    throw new HoudiniError("Houdini partner credentials are not configured.", 503);
+    throw new HoudiniError("The private route is temporarily unavailable.", 503);
   }
 
   const headers: Record<string, string> = {
@@ -96,27 +96,28 @@ export async function houdiniRequest<T>(
       signal: AbortSignal.timeout(15_000),
     });
   } catch {
-    throw new HoudiniError("Houdini is temporarily unreachable. Please try again.", 502);
+    throw new HoudiniError("The private route is temporarily unreachable. Please try again.", 502);
   }
 
   let data: unknown;
   try {
     data = await response.json();
   } catch {
-    throw new HoudiniError("Houdini returned an unexpected response.", 502);
+    throw new HoudiniError("The private route returned an unexpected response.", 502);
   }
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new HoudiniError("Houdini partner credentials were rejected.", 503);
+      throw new HoudiniError("The private route is temporarily unavailable.", 503);
     }
-    const message =
+    const providerMessage =
       typeof data === "object" &&
       data !== null &&
       "message" in data &&
       typeof data.message === "string"
         ? data.message.slice(0, 300)
         : "The swap provider could not complete this request.";
+    const message = providerMessage.replace(/\bhoudini(?:swap)?\b/gi, "the private route provider");
     const status = response.status === 404 ? 404 : response.status === 429 ? 429 : response.status === 422 ? 422 : 502;
     throw new HoudiniError(message, status);
   }

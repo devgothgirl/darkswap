@@ -1,36 +1,24 @@
 # DarkSwap
 
-A Solana-first, no-wallet-connect private swap interface using HoudiniSwap's partner API v2.
+A Solana-origin, manual-deposit swap interface. The original private route uses Houdini; the separate, user-facing “Privacy swap” uses NEAR Intents 1Click with confidential `basic` handling. Neither route guarantees anonymity. Solana deposits remain public. Explore and public OKX swaps remain closed beta.
 
 ## Run & operate
 
-- `artifacts/solana-privacy-swap: web` is the managed frontend workflow.
-- `artifacts/api-server: API Server` is the managed backend workflow.
-- `pnpm run typecheck` checks the workspace.
-- `pnpm --filter @workspace/api-spec run codegen` regenerates API hooks and Zod schemas after contract edits.
-- Required Replit Secrets: `HOUDINI_API_KEY` and `HOUDINI_API_SECRET` from the HoudiniSwap Partner Portal. Never expose either to browser code.
-- Provider docs: https://docs.houdiniswap.com/developer-hub/swap-flows/private-swap
+- `artifacts/solana-privacy-swap: web` and `artifacts/api-server: API Server` are managed workflows.
+- `pnpm run typecheck` checks the workspace. After OpenAPI edits, run `pnpm --filter @workspace/api-spec run codegen`.
+- Keep `HOUDINI_API_KEY`, `HOUDINI_API_SECRET`, `NEAR_INTENTS_API_KEY`, and `DATABASE_URL` in server-side secrets. Never expose them to browser code or commit values.
+- On Replit, managed artifact configuration provides routing and ports. Outside Replit, configure a reverse proxy for `/api`.
 
-## Stack and source of truth
+## Source of truth
 
 - React/Vite frontend: `artifacts/solana-privacy-swap/src/`
-- Express backend: `artifacts/api-server/src/routes/swap.ts` and `src/lib/houdini.ts`
-- API contract: `lib/api-spec/openapi.yaml`; generated hooks and Zod schemas are under `lib/api-client-react` and `lib/api-zod`
-- pnpm workspaces, TypeScript, TanStack Query, Express
+- Express API: `artifacts/api-server/src/routes/`
+- Contract: `lib/api-spec/openapi.yaml`; generated hooks and validation types: `lib/api-client-react`, `lib/api-zod`
+- PostgreSQL schema: `lib/db/src/schema/`
 
-## Product
+## Safety and persistence
 
-Users choose a CEX-supported Solana source token and a destination token, request live `private` quotes, enter a recipient address, explicitly create an order, and manually send the exact amount to the returned Solana deposit address. The order view polls Houdini for status.
-
-## Architecture decisions
-
-- Partner credentials and all Houdini API requests stay server-side. The browser only calls `/api/swap/*`.
-- No wallet connection or automatic funds movement: a created order is not a transfer. The user sends from their own wallet after reviewing deposit details.
-- The app does not persist addresses or order history in its own database. A recent order ID can be held locally in the browser; Houdini remains the source of truth for status. **Why:** private swaps should avoid unnecessary app-side transaction data retention.
-- Only server-issued, non-expired `private` quote IDs can create orders, and the source token must come from a Solana-only provider search.
-
-## Gotchas
-
-- The `/tokens` endpoint can search on demand; source requests filter by `chain=solana` and `hasCex=true`. Destination search supports other chains.
-- `/quotes` uses `types=private`. `POST /exchanges` creates a deposit order; it does not sign or send a Solana transaction.
-- Houdini's order lookup covers recent orders, not permanent archival. The app should not imply that old order IDs are recoverable forever.
+- Neither route connects a wallet or automatically transfers funds. An order creates deposit instructions; users decide whether to send manually.
+- Original private route: only non-expired, server-issued private quotes can create orders. Provider lookup is the source of truth; old order IDs may not be recoverable forever.
+- Privacy swap: dry quotes produce no deposit address. A live instruction-only order requires a separate review of final terms; signed provider responses and order receipts are stored in PostgreSQL for recovery and tracking.
+- Never describe the public OKX route as private, or imply that confidential handling hides a public Solana-origin deposit.

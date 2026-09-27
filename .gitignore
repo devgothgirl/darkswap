@@ -47,3 +47,11 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local secrets, uploads, and workspace-only exports
+.env
+.env.*
+!.env.example
+attached_assets/
+exports/
+.agents/

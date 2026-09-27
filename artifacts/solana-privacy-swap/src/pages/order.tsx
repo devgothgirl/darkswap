@@ -34,7 +34,7 @@ export default function OrderPage() {
     <main className="order-layout page-enter">
       <Link href="/swap" className="nav-link" style={{display:'inline-flex',alignItems:'center',gap:8}} data-testid="link-back-to-swap"><ArrowLeft size={14}/> Back to exchange</Link>
        <div style={{marginTop:45}} className="eyebrow"><span className="eyebrow-line"/> DARKSWAP / ORDER TRACKING</div>
-       <h1 className="order-heading">Your transfer,<br/><span style={{color:'#c8ed78'}}>step by step.</span></h1>
+       <h1 className="order-heading">Your transfer,<br/><span style={{color:'#c7a7ff'}}>step by step.</span></h1>
       {result.isLoading ? <div className="order-grid" data-testid="status-order-loading"><div className="order-panel"><div className="skeleton" style={{width:'52%',height:25,marginBottom:30}}/><div className="skeleton" style={{width:'70%',height:80,marginBottom:20}}/><div className="skeleton" style={{width:'88%',marginBottom:15}}/><div className="skeleton" style={{width:'65%'}}/></div><div className="order-panel"><div className="skeleton" style={{width:'50%',height:25,marginBottom:30}}/><div className="skeleton" style={{width:'80%',marginBottom:15}}/><div className="skeleton" style={{width:'60%'}}/></div></div>
       : result.isError || !order ? <div className="order-panel" style={{maxWidth:600,marginTop:35}}>
            <AlertCircle size={25} color="#ffae91"/><h2 style={{marginTop:20}}>We couldn't find this order.</h2>
@@ -53,11 +53,11 @@ export default function OrderPage() {
             <div className="deposit-feature">
               <span className="section-label">{shouldSend ? 'Send exactly this amount' : 'Quoted deposit amount'}</span>
               <div className="deposit-amount" data-testid="text-deposit-amount">{formatAmount(order.inAmount)} <span>{order.inSymbol}</span></div>
-               <div style={{fontSize:11,color:'#adbfaf',marginTop:10}}>Network: <strong style={{color:'#c8ed78'}}>Solana only</strong> · Do not send via another network.</div>
+               <div style={{fontSize:14,color:'#d9c9e9',marginTop:10}}>Network: <strong style={{color:'#c7a7ff'}}>Solana only</strong> · Do not send via another network.</div>
             </div>
             <div className="detail-row"><span className="section-label">Solana deposit address</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-address">{order.depositAddress}</span><CopyButton value={order.depositAddress} name="deposit address"/></div></div>
             {order.depositTag && <div className="detail-row"><span className="section-label">Required deposit memo / tag</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-tag">{order.depositTag}</span><CopyButton value={order.depositTag} name="deposit memo"/></div><p className="quote-error" style={{marginBottom:0}}>Include this memo with your Solana transfer. Missing it can prevent your deposit from being matched.</p></div>}
-             <div className="detail-row"><span className="section-label">Deposit deadline</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-expiry">{readableTime(order.expires)}</span>{remaining!==null && <span style={{font:'10px Space Mono,monospace',whiteSpace:'nowrap',color:expired?'#ffae91':'#c8ed78'}}>{expired?'Expired':`${Math.floor(remaining/60)}m ${remaining%60}s left`}</span>}</div></div>
+             <div className="detail-row"><span className="section-label">Deposit deadline</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-expiry">{readableTime(order.expires)}</span>{remaining!==null && <span style={{font:'12px Space Mono,monospace',whiteSpace:'nowrap',color:expired?'#ffae91':'#c7a7ff'}}>{expired?'Expired':`${Math.floor(remaining/60)}m ${remaining%60}s left`}</span>}</div></div>
             <div className="warning-box" style={{marginBottom:0}}>Send only the exact amount shown, on Solana, before the deadline. If your wallet deducts a fee from the amount you enter, adjust it so the received deposit is exact. An order is not a completed transfer.</div>
           </section>
           <aside style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -81,9 +81,9 @@ export default function OrderPage() {
               {order.receiverTag && <div className="detail-row"><span className="section-label">Recipient memo / tag</span><span className="detail-value" data-testid="text-recipient-tag">{order.receiverTag}</span></div>}
               {order.outTransactionOutHash && <div className="detail-row"><span className="section-label">Outbound transaction</span><div className="detail-flex"><span className="detail-value" data-testid="text-output-transaction">{order.outTransactionOutHash}</span><CopyButton value={order.outTransactionOutHash} name="outbound transaction"/></div></div>}
             </section>
-             <section className="order-panel" style={{background:'#223733'}}>
-               <ShieldCheck size={22} color="#c8ed78" style={{marginBottom:14}}/><h2>Need to recover?</h2>
-              <p className="muted-note">If you sent the wrong amount, used a different network, omitted a required deposit memo, or the order is stuck, do not send another payment. Keep your order ID and your sending transaction hash for HoudiniSwap support. Recovery is not guaranteed.</p>
+             <section className="order-panel" style={{background:'#30233d'}}>
+               <ShieldCheck size={22} color="#c7a7ff" style={{marginBottom:14}}/><h2>Need to recover?</h2>
+              <p className="muted-note">If you sent the wrong amount, used a different network, omitted a required deposit memo, or the order is stuck, do not send another payment. Keep your order ID and your sending transaction hash for a support or recovery inquiry. Recovery is not guaranteed.</p>
               <p className="muted-note" style={{marginTop:14}}><Check size={12} style={{display:'inline',verticalAlign:'middle',marginRight:5}}/>This interface never asks you to connect a wallet or share a seed phrase.</p>
             </section>
           </aside>

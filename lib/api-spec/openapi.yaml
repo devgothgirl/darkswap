@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Api
   version: 0.1.0
-  description: Solana discovery, Houdini private swaps, and separate OKX public swaps
+  description: Solana discovery, Houdini and NEAR Intents private routes, and separate OKX public swaps
 servers:
   - url: /api
     description: Base API path
@@ -110,6 +110,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SwapOrder"
+  /swap/near/tokens:
+    get:
+      operationId: getNearTokens
+      tags: [swap]
+      summary: Supported NEAR Intents assets; Solana-only on source
+      parameters:
+        - in: query
+          name: side
+          required: true
+          schema: { type: string, enum: [source, destination] }
+        - in: query
+          name: term
+          schema: { type: string, maxLength: 70 }
+      responses:
+        "200":
+          description: Provider-reported supported assets
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearTokenList" }
+  /swap/near/quote:
+    post:
+      operationId: getNearQuote
+      tags: [swap]
+      summary: Preview a live confidential NEAR Intents route, without a deposit address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NearQuoteInput" }
+      responses:
+        "200":
+          description: Dry quote bound to recipient and refund addresses
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearQuote" }
+  /swap/near/orders:
+    post:
+      operationId: createNearOrder
+      tags: [swap]
+      summary: Confirm the preview and generate real NEAR Intents deposit instructions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NearOrderInput" }
+      responses:
+        "200":
+          description: Deposit instructions; no funds moved by this request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearOrder" }
+  /swap/near/orders/{requestId}:
+    get:
+      operationId: getNearOrderReceipt
+      tags: [swap]
+      summary: Recover a created NEAR order after a network or browser interruption
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Stored signed-quote order instructions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearOrder" }
+  /swap/near/status:
+    get:
+      operationId: getNearOrderStatus
+      tags: [swap]
+      summary: Check a NEAR Intents swap by its deposit address
+      parameters:
+        - in: query
+          name: depositAddress
+          required: true
+          schema: { type: string, minLength: 32, maxLength: 120 }
+        - in: query
+          name: depositMemo
+          schema: { type: string, maxLength: 120 }
+      responses:
+        "200":
+          description: Provider-reported order state and instructions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearOrder" }
   /explore/tokens:
     get:
       operationId: discoverTokens
@@ -336,6 +422,77 @@ components:
         requiresMemo: { type: boolean }
         icon: { type: string }
         price: { type: ["number", "null"] }
+    NearToken:
+      type: object
+      required: [id, symbol, chain, chainName, decimals]
+      properties:
+        id: { type: string }
+        symbol: { type: string }
+        chain: { type: string }
+        chainName: { type: string }
+        decimals: { type: integer }
+        price: { type: number }
+        contractAddress: { type: string }
+    NearTokenList:
+      type: object
+      required: [tokens]
+      properties:
+        tokens:
+          type: array
+          items: { $ref: "#/components/schemas/NearToken" }
+    NearQuoteInput:
+      type: object
+      required: [from, to, amount, recipient, refundTo]
+      additionalProperties: false
+      properties:
+        from: { type: string, minLength: 1, maxLength: 160 }
+        to: { type: string, minLength: 1, maxLength: 160 }
+        amount: { type: string, minLength: 1, maxLength: 40 }
+        recipient: { type: string, minLength: 1, maxLength: 120 }
+        refundTo: { type: string, minLength: 1, maxLength: 120 }
+    NearQuote:
+      type: object
+      required: [quoteId, from, to, amountIn, amountOut, minAmountOut, recipient, refundTo, validUntil, estimatedSeconds]
+      properties:
+        quoteId: { type: string }
+        from: { $ref: "#/components/schemas/NearToken" }
+        to: { $ref: "#/components/schemas/NearToken" }
+        amountIn: { type: string }
+        amountOut: { type: string }
+        minAmountOut: { type: string }
+        withdrawFee: { type: string }
+        refundFee: { type: string }
+        recipient: { type: string }
+        refundTo: { type: string }
+        validUntil: { type: string }
+        estimatedSeconds: { type: number }
+    NearOrderInput:
+      type: object
+      required: [quoteId, requestId]
+      additionalProperties: false
+      properties:
+        quoteId: { type: string, minLength: 1, maxLength: 100 }
+        requestId: { type: string, format: uuid }
+    NearOrder:
+      type: object
+      required: [depositAddress, deadline, from, to, amountIn, amountOut, minAmountOut, recipient, refundTo, status, estimatedSeconds]
+      properties:
+        depositAddress: { type: string }
+        requestId: { type: string }
+        depositMemo: { type: string }
+        deadline: { type: string }
+        from: { $ref: "#/components/schemas/NearToken" }
+        to: { $ref: "#/components/schemas/NearToken" }
+        amountIn: { type: string }
+        amountOut: { type: string }
+        minAmountOut: { type: string }
+        withdrawFee: { type: string }
+        refundFee: { type: string }
+        recipient: { type: string }
+        refundTo: { type: string }
+        status: { type: string, enum: [PENDING_DEPOSIT, KNOWN_DEPOSIT_TX, INCOMPLETE_DEPOSIT, PROCESSING, SUCCESS, REFUNDED, FAILED] }
+        updatedAt: { type: string }
+        estimatedSeconds: { type: number }
     TokenList:
       type: object
       required: [tokens, total]
