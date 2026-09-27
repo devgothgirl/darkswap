@@ -8,6 +8,10 @@
   A wallet-free interface for comparing live routes, creating deposit instructions, and tracking an order.
 </p>
 
+<p align="center">
+  <a href="https://x.com/darkswapapp">Follow DarkSwap on X</a>
+</p>
+
 > [!IMPORTANT]
 > DarkSwap is in beta. A "private" or "confidential" route is **not a guarantee of anonymity or unlinkability**. Solana deposits are public on-chain. Review the live quote, destination, and other factors before proceeding.
 
