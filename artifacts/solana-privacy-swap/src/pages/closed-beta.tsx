@@ -11,7 +11,7 @@ export default function ClosedBetaPage({ areaName }: { areaName: string }) {
       <div className="closed-beta-mark"><LockKeyhole size={25} strokeWidth={1.5} /></div>
       <p className="closed-beta-label">NOT OPEN YET</p>
       <h1>{areaName}<br /><span>is in closed beta.</span></h1>
-      <p className="closed-beta-copy">This area is not currently available. The existing private route and Privacy swap support Solana-origin swaps when a live quote is available.</p>
+      <p className="closed-beta-copy">{areaName === 'Privacy Trading Terminal' ? 'Planned privacy-focused cross-chain trading using NEAR Intents pools. Terminal trading is not available yet, and anonymity is not guaranteed. You can use the separate Privacy swap route when a live quote is available.' : 'This area is not currently available. The existing private route and Privacy swap support Solana-origin swaps when a live quote is available.'}</p>
       <div className="closed-beta-actions">
         <Link href="/" className="secondary-button">Back to DarkSwap home <ArrowRight size={14} /></Link>
         <Link href="/swap" className="primary-button">Open the private route <ArrowRight size={15} /></Link>

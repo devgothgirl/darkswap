@@ -1,18 +1,18 @@
 .pv-page { min-height:100dvh; background:radial-gradient(ellipse at 90% 0%,#281936 0%,#17111f 55%); color:#f7efff; }
 .pv-main { width:min(1280px,100%); margin:auto; padding:92px 5% 110px; }
-.pv-eyebrow,.pv-card-top,.pv-footnote { font:700 11px/1.5 'Space Mono',monospace; letter-spacing:.1em; }
+.pv-eyebrow,.pv-card-top,.pv-footnote { font:700 11px/1.5 'Source Sans 3',sans-serif; letter-spacing:.08em; }
 .pv-eyebrow { color:#c7a7ff; }
-.pv-main h1 { font:800 clamp(46px,6vw,76px)/1.08 'Manrope','DM Sans',sans-serif; letter-spacing:-.035em; margin:16px 0 18px; }
+.pv-main h1 { font:700 clamp(44px,5.6vw,72px)/1.12 'Source Sans 3',sans-serif; letter-spacing:-.01em; margin:16px 0 18px; }
 .pv-main h1 span { color:#c7a7ff; }
-.pv-intro { max-width:650px; color:#d0c1dd; font:16px/1.7 'DM Sans',sans-serif; margin:0 0 29px; }
-.pv-status { display:flex; align-items:flex-start; gap:12px; border-left:3px solid #b993f1; padding:16px 19px; background:#312240; color:#eee0fb; font:13px/1.6 'DM Sans',sans-serif; max-width:920px; }
+.pv-intro { max-width:650px; color:#d0c1dd; font:16px/1.7 'Source Sans 3',sans-serif; margin:0 0 29px; }
+.pv-status { display:flex; align-items:flex-start; gap:12px; border-left:3px solid #b993f1; padding:16px 19px; background:#312240; color:#eee0fb; font:13px/1.6 'Source Sans 3',sans-serif; max-width:920px; }
 .pv-status svg { flex:none; color:#d6b4ff; }
 .pv-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; margin-top:43px; }
 .pv-card { display:flex; flex-direction:column; min-height:345px; padding:28px; background:#23192f; border:1px solid #594568; }
 .pv-card:hover { border-color:#a87bd7; }
 .pv-card-top { display:flex; justify-content:space-between; align-items:center; gap:15px; color:#cba9ed; }
-.pv-card h2 { font:800 clamp(23px,2.4vw,30px)/1.18 'Manrope','DM Sans',sans-serif; letter-spacing:-.025em; margin:34px 0 12px; }
-.pv-card p { color:#cbbbd9; font:14px/1.65 'DM Sans',sans-serif; margin:0 0 27px; }
+.pv-card h2 { font:700 clamp(23px,2.4vw,30px)/1.2 'Source Sans 3',sans-serif; letter-spacing:0; margin:34px 0 12px; }
+.pv-card p { color:#cbbbd9; font:14px/1.65 'Source Sans 3',sans-serif; margin:0 0 27px; }
 .pv-card-link { margin-top:auto; display:inline-flex; align-items:center; gap:9px; width:max-content; max-width:100%; color:#d5adff; font-size:14px; font-weight:700; text-decoration:none; }
 .pv-card-link:hover { color:#fff; text-decoration:underline; text-underline-offset:4px; }
 .pv-footnote { color:#a895bc; margin:28px 0 0; letter-spacing:0; font-weight:400; }

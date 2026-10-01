@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { NearOrderStatus } from './nearOrderStatus';
+import type { NearServiceStatus } from './nearServiceStatus';
 import type { NearToken } from './nearToken';
 
+/**
+ * A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.
+ */
 export interface NearOrder {
+  routeStatus?: NearServiceStatus;
   depositAddress: string;
   requestId?: string;
   depositMemo?: string;

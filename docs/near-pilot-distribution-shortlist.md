@@ -1,0 +1,51 @@
+# NEAR pilot — distribution shortlist and content experiments
+
+**October 1, 2026. Internal, unsent proposals.** Companion to the [pilot decision brief](near-volume-capture-pilot.md). Its gates, budget limits and privacy restrictions govern this shortlist. No organization below is an established DarkSwap partner; no willingness, listing, permission, reach, pricing or conversion result is verified.
+
+## Publicly identifiable prospects
+
+Official pages below were checked October 1, 2026. They establish identity and public activities/contact channels, not audience size or actual cross-chain demand. Use the public contact pages rather than storing individuals' contact details in project notes.
+
+| Prospect / priority | Public evidence and source | Distribution hypothesis, not a claim | Proposed owner action, only after approval |
+| --- | --- | --- | --- |
+| **Superteam — first** | Its [collaboration page](https://superteam.fun/collaborate) offers community contributors, meetups and go-to-market programs; [About](https://blog.superteam.fun/about) provides collaboration/community contact paths. | Solana builders/operators may already hold USDC and need a second-chain account funded. A small moderator-approved educational session could reach a wallet-savvy cohort with little implementation overhead. Holdings and need are unverified. | Growth owner asks via the official “Reach out” path whether one relevant community would review a manual-deposit route guide. Confirm posting rules, region eligibility, terms and disclosure. No assumed program admission, grant or free labor. |
+| **Jupiter community / J.U.P. — second, permission-dependent** | [Official community/DAO documentation](https://docs.jup.ag/user-docs/more/dao) describes its Solana ecosystem mission. [Jupiter docs](https://docs.jup.ag/) link public community channels; the [community forum category](https://discuss.jup.ag/c/community/21) is publicly identifiable. | Experienced swap users could compare a Solana-to-Base USDC walkthrough against services they already use. Competing products and promotion rules may make this unsuitable. | Ask moderators about an educational comparison and optional link, not a DAO commercial partnership or endorsement. No unsolicited promotional posts; no dedicated partnership inbox was verified. Reject the channel if permission is absent. |
+| **SolanaFloor — reserve media prospect** | [About](https://solanafloor.com/pages/about) describes Solana coverage, newsletters and video for builders/users/traders. [Contact](https://solanafloor.com/pages/contact) offers marketing/partnerships, advertising and an inquiry form. [Ethics policy](https://solanafloor.com/pages/ethics-policy) explains editorial independence. | A clearly disclosed route explainer may reach users with actual cross-chain needs. Audience fit, price and delivered traffic are unknown. | Growth owner requests terms only with approval. Prefer editorial education without promised coverage; if paid placement is offered, require disclosure and the separate budget gate. Payment cannot buy an assumed favorable conclusion. |
+
+Start with one community, and at most two placements overall; the third prospect is a backup, not a three-partner rollout. Broad network reach or an ecosystem listing is not proof of eligible completed orders. The provider's [Partner Portal](https://partners.near-intents.org/) is separately the proposed channel for commercial/listing questions in the unsent inquiry, not a fourth acquisition partner or a guaranteed listing opportunity.
+
+## Two channel hypotheses and three content tests
+
+All copy below describes **internal concepts**, not approved public claims. Default initial corridor is Solana USDC → Base native USDC only if the scorecard and all funding/fee/support gates pass. If a backup wins, substitute that exact asset/network consistently. Do not show a mock quote as live.
+
+| Test / channel | Content and ordinary link | Hypothesis and proposed success evidence |
+| --- | --- | --- |
+| **A. Community how-to** | Draft topic: “Moving Solana USDC to an existing Base account: what to check before sending.” Explain native versus bridged USDC, destination gas, exact manual deposit, memo/deadline, estimated versus minimum output, and safe receipt tracking. Link to the existing `/near-swap` page with explicit manual selection instructions. | A narrow practical guide is more useful than a generic confidentiality pitch. Owner-approved community placement should produce useful qualitative questions and relevant page traffic; aim for 100 aggregate visits from the first placement where existing measurement permits. No order-level attribution is inferred. |
+| **B. Community quote-review session** | Draft topic: “Compare what arrives, not just the headline fee.” Show a dated, redacted comparison for the same $100/$500/$2,000 inputs across the eligible route and alternatives. Explain included costs, external gas, expiry and refunds; link to route review, never to an order/deposit URL. | Comparable all-in information may support informed choice. Success is continued scorecard competitiveness and clearer user understanding, not participants being induced to fund or guaranteed lower fees. Limit any demonstration to separately authorized dry quotes. |
+| **C. Reserve newsletter/editorial explainer** | Draft topic: “Before a cross-chain deposit: final terms, support and recovery.” A concise checklist points to the existing guide/Docs and page link, with independent service and risk disclosures. No invented price/settlement/privacy claim or provider-brand repetition outside approved Docs conventions. | Educational distribution could add demand beyond the first community. Attempt only if A/B produce useful engagement and operational/economic gates still pass. Paid reach is not a default; obtain pricing and written approval first. |
+
+**Owner actions:** product prepares the factual route/asset checklist; engineering supplies only verified and redacted quote observations; support approves escalation wording; finance approves fee/cost language; the existing documentation owner (Task #76) owns any public provider/confidentiality explanation; growth requests placement permission and records terms.
+
+**Common content safeguards:**
+
+- Show “candidate/not verified” in internal drafts until the selected corridor passes the gates. After approval, say availability depends on a fresh quote; a dated example is not a current offer.
+- Explain that creating instructions does not move funds; source deposits are public; confidential handling is neither Zcash shielding nor an anonymity or settlement guarantee. Do not imply all network chains/pairs are supported by DarkSwap.
+- Existing page links do **not** preselect tokens, amounts or addresses. No new query-parameter tracking or customer-level referral IDs. Use only the existing public page path, not a tracker URL carrying financial references. Resolve the actual publication URL through the normal release process if a campaign is later authorized; this task publishes no link campaign.
+- Each placement has a static internal channel label and date. Existing privacy-safe aggregate analytics or the publisher's aggregate report may be used; source-specific order conversion is **not measured**. Do not add collection when existing analytics cannot answer a question.
+- Pilot-wide demand targets remain 200 relevant visits where measurable, 20 verified completed customer orders and $10,000 eligible volume, as specified in the brief. They are learning thresholds, not promised outcomes or proof of causation. Count tests separately and exclude them from customer volume.
+- Ask for voluntary feedback about clarity/usefulness, not wallet addresses, transaction history, emails or rewards enrollment. Direct any order-specific assistance to the separate support process.
+- No fee discounts, bounties, promised points, rebates, token rewards, grants or future yield are offered to induce volume.
+
+## Alternative service references for the corridor scorecard
+
+These official references identify plausible comparison services only. No live quote, account entitlement, settlement or support journey was checked. Do not assume any service supports the exact pair, amount, jurisdiction or recipient until checked.
+
+| Candidate | Public reference | Comparison boundary |
+| --- | --- | --- |
+| deBridge | [Consumer interface](https://app.debridge.com/); [USDC cross-chain page](https://debridge.com/swap/usdc) | Candidate for Solana → Base/Arbitrum USDC. No inference of NEAR support. |
+| Mayan | [Consumer interface](https://swap.mayan.finance/); [official docs](https://docs.mayan.finance/) list Solana, Base and Arbitrum | Candidate for the two stablecoin corridors; exact route/token quote still needed. |
+| Relay | [Consumer interface](https://relay.link/bridge); [Solana API guide](https://docs.relay.link/references/api/api_guides/solana) describes Solana deposits/withdrawals and USDC | Source support does not prove destination-pair support. Check final spendable output and all fees. |
+| NEAR Intents consumer interface | [near.com](https://near.com/); [provider chain support](https://docs.near-intents.org/resources/chain-support); [asset support](https://docs.near-intents.org/resources/asset-support) | Candidate for native NEAR delivery; internal Intents balances are not equivalent to withdrawal into a NEAR wallet. Require identical delivery endpoint and account/storage costs. |
+| DarkSwap's separate existing private route | Current source/UI and [README](../README.md), rather than a fresh provider test | Compare only if an equivalent live quote exists. Its account economics and settlement remain independently unverified. A route switch is not a solution to an uncertain funded order. |
+
+Normalize exact input asset, destination asset/representation, recipient capability, total customer outlay, net spendable output, minimum output, slippage, gas/top-ups, quote expiry, expected settlement and refund/support terms. Do not rank solely on the service's advertised percentage or count provider gas twice.

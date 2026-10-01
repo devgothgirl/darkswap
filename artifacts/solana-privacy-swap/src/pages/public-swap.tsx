@@ -88,7 +88,7 @@ export default function PublicSwap() {
     <div className="public-disclosure" role="note"><ShieldAlert size={19}/><div><strong>This is not a private exchange.</strong><p>Your wallet address, swap and transaction are public on Solana. This separate OKX route is same-chain only. For a private route, return to <Link href="/" style={{color:'#ffe8bd',textDecoration:'underline'}} data-testid="link-private-from-public">private exchange</Link>.</p></div></div>
     <div className="public-layout">
       <section className="swap-card" aria-label="Public Solana swap">
-        <div className="card-header"><div><div className="card-heading">Public Solana swap</div><div className="card-subtitle" style={{marginTop:5}}>OKX / SOLANA → SOLANA</div></div><Wallet size={21} color="#c8ed78"/></div>
+        <div className="card-header"><div><div className="card-heading">Public Solana swap</div><div className="card-subtitle" style={{marginTop:5}}>OKX / SOLANA → SOLANA</div></div><img className="okx-router-mark" src={`${import.meta.env.BASE_URL}brand/okx-logo-green.png`} alt="OKX logo" width="36" height="36" /></div>
         <div className="card-body">
           <div className="public-pair"><div><span className="section-label">You send · Solana</span><PublicTokenPicker label="from" token={from} onChange={v=>{setFrom(v);change();}}/></div><div><span className="section-label">You receive · Solana</span><PublicTokenPicker label="to" token={to} onChange={v=>{setTo(v);change();}}/></div></div>
           {validInitialMint && !from && prefill.isLoading && <p className="muted-note">Checking whether the selected mint is supported by OKX…</p>}

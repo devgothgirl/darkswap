@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/launch/"
+title = "DarkSwap Launch"
+description = "Token discovery and private creator-signed launch preparation within the DarkSwap ecosystem. Execution remains unavailable pending verified transaction documentation."
+version = "1.0.0"
+id = "artifacts/darkswap-launch"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/launch/" ]
+localPort = 25546
+
+[services.development]
+run = "pnpm --filter @workspace/darkswap-launch run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/darkswap-launch", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/darkswap-launch/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25546"
+BASE_PATH = "/launch/"

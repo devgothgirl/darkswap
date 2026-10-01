@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRight, Check, ChevronDown, Copy, LockKeyhole, Search, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Copy, LockKeyhole, Menu, Search, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import { getSearchSwapTokensQueryKey, useSearchSwapTokens } from '@workspace/api-client-react';
+import { getGetSwapChainsQueryKey, getSearchSwapTokensQueryKey, useGetSwapChains, useSearchSwapTokens } from '@workspace/api-client-react';
+import { compareDestinations } from '../lib/destination-sort';
 import type { SwapToken } from '@workspace/api-client-react';
+import { RiskDisclaimer } from './risk-disclaimer';
 
 export const RECENT_ORDER_KEY = 'solana-privacy-swap:recent-order';
 
@@ -41,7 +43,15 @@ export function useRecentOrder() {
 export function Header() {
   const [location, navigate] = useLocation();
   const [lookupOpen, setLookupOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [id, setId] = useState('');
+  useEffect(() => { setMenuOpen(false); }, [location]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenuOpen(false); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [menuOpen]);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!id.trim()) return;
@@ -49,22 +59,21 @@ export function Header() {
     navigate(`/order/${encodeURIComponent(id.trim())}`);
   };
   return <>
-    <header className="topbar">
+     <header className={`topbar ${menuOpen ? 'menu-open' : ''}`}>
        <Link href="/" className="brand" data-testid="link-home"><img className="brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
-      <nav className="site-nav" aria-label="Main navigation">
-        <Link href="/" className={location==='/'?'active':''} data-testid="link-nav-home">Landing</Link>
-        <Link href="/swap" className={location==='/swap'?'active':''} data-testid="link-nav-private">Private route · live</Link>
-        <Link href="/near-swap" className={location==='/near-swap'||location==='/near-order'?'active':''} data-testid="link-nav-near"><span className="nav-near-glyph" aria-hidden="true">⋈</span> Privacy swap</Link>
-        <Link href="/docs" className={location==='/docs'?'active':''} data-testid="link-nav-docs">Docs</Link>
-        <Link href="/previews" className={['/previews','/screener-beta','/screener-preview','/split-mixer-preview','/splitwise-preview','/privacy-bundle-preview'].includes(location)?'active':''} data-testid="link-nav-previews">Previews</Link>
-        <Link href="/explore" className={location==='/explore'?'active':''} data-testid="link-nav-explore">Explore · closed beta</Link>
-        <Link href="/public-swap" className={location==='/public-swap'?'active':''} data-testid="link-nav-public">Public · closed beta</Link>
+       <nav id="site-navigation" className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
+          <Link href="/swap" className={location==='/swap'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-private">Private route</Link>
+          <Link href="/near-swap" className={location==='/near-swap'||location==='/near-order'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-near"><span className="nav-near-glyph" aria-hidden="true">⋈</span> Privacy swap</Link>
+          <Link href="/tokenomics" className={location==='/tokenomics'||location.startsWith('/tokenomics/')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-tokenomics">Tokenomics</Link>
+          <Link href="/docs" className={location==='/docs'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-docs">Docs</Link>
+          <button type="button" className="site-nav-track" onClick={() => { setMenuOpen(false); setLookupOpen(true); }}>Track order <ArrowRight size={15}/></button>
       </nav>
       <div className="top-right">
-        <span className="network-pill"><i /> {location==='/swap' ? 'Private route · live quote' : location==='/near-swap'||location==='/near-order' ? 'Privacy swap · live quote' : location==='/screener-beta'||location==='/screener-preview' ? 'Screener Beta · dated catalog' : location==='/split-mixer-preview'||location==='/splitwise-preview'||location==='/privacy-bundle-preview'||location==='/previews' ? 'Feature previews · no transfers' : location==='/explore' ? 'Explore · closed beta' : location==='/public-swap' ? 'Public swap · closed beta' : 'Private beta · Solana origin'}</span>
-        <button className="nav-link" onClick={() => setLookupOpen(true)} data-testid="button-lookup-order">Track an order <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle',marginLeft:3}} /></button>
+         <button className="nav-link top-track-order" onClick={() => setLookupOpen(true)} data-testid="button-lookup-order">Track order <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle',marginLeft:3}} /></button>
+         <button className="site-menu-toggle" type="button" aria-controls="site-navigation" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} onClick={() => setMenuOpen(value => !value)}>{menuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
       </div>
     </header>
+     {menuOpen && <button className="site-menu-backdrop" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}/>}
     {lookupOpen && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setLookupOpen(false); }}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="lookup-title">
         <div style={{display:'flex',justifyContent:'space-between',gap:15,alignItems:'start'}}>
@@ -84,7 +93,12 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="footer"><span>DARKSWAP / PRIVATE BETA</span><span>Routes live: <Link href="/swap" style={{color:'#d2b5ff'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d2b5ff'}}>Privacy swap</Link> · Explore and public swap are closed beta</span></footer>;
+  return <><RiskDisclaimer/><footer className="footer">
+    <span>DARKSWAP / PRIVATE BETA</span>
+    <span>Live: <Link href="/swap" style={{color:'#d2b5ff'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d2b5ff'}}>Privacy swap</Link>. Founder demos and the DARK holder program are not live.</span>
+    <span><Link href="/rewards" style={{color:'#d2b5ff'}} data-testid="link-footer-account-points">Account points</Link> · <Link href="/founder" style={{color:'#d2b5ff'}} data-testid="link-footer-founder">Founder preview</Link> · <Link href="/help" style={{color:'#d2b5ff'}} data-testid="link-footer-help">Help &amp; support</Link></span>
+    <span className="footer-external">NEAR memecoin trades: <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a></span>
+  </footer></>;
 }
 
 export function CopyButton({ value, name }: {value: string; name: string}) {
@@ -107,10 +121,11 @@ function TokenBadge({token}: {token: SwapToken}) {
   return <span className="token-icon">{token.icon && !broken ? <img src={token.icon} alt="" onError={() => setBroken(true)}/> : token.symbol.slice(0,2).toUpperCase()}</span>;
 }
 
-export function TokenPicker({side, token, onChange}: {side:'source'|'destination'; token: SwapToken | null; onChange:(token:SwapToken)=>void}) {
+export function TokenPicker({side, token, onChange, selectedSource}: {side:'source'|'destination'; token: SwapToken | null; onChange:(token:SwapToken)=>void; selectedSource?: SwapToken | null}) {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
+  const [chain, setChain] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   useEffect(() => { const timer = setTimeout(() => setDebounced(term.trim()), 220); return () => clearTimeout(timer); }, [term]);
   useEffect(() => {
@@ -120,22 +135,34 @@ export function TokenPicker({side, token, onChange}: {side:'source'|'destination
     document.addEventListener('mousedown',close); document.addEventListener('keydown',esc);
     return () => { document.removeEventListener('mousedown',close); document.removeEventListener('keydown',esc); };
   },[open]);
-  const params = {side, ...(debounced ? {term:debounced} : {})};
-  const results = useSearchSwapTokens(params, {query:{queryKey:getSearchSwapTokensQueryKey(params),staleTime:60_000,enabled:open}});
-  const tokens = (results.data?.tokens || []).filter(t => side !== 'source' || /sol/i.test(t.chain) || /solana/i.test(t.chainName));
+  const destination = side === 'destination';
+  const chains = useGetSwapChains({query:{queryKey:getGetSwapChainsQueryKey(),staleTime:60_000,enabled:open && destination}});
+  const params = {side, ...(destination && chain ? {chain} : {}), ...(debounced && (!destination || chain) ? {term:debounced} : {})};
+  const results = useSearchSwapTokens(params, {query:{queryKey:getSearchSwapTokensQueryKey(params),staleTime:60_000,enabled:open && (!destination || !!chain)}});
+  const tokens = (results.data?.tokens || []).filter(t => (side !== 'source' || /sol/i.test(t.chain) || /solana/i.test(t.chainName)) &&
+    (!selectedSource || t.chain !== selectedSource.chain || t.symbol !== selectedSource.symbol || t.name !== selectedSource.name));
+  const availableChains = (chains.data?.chains || []).filter(c => !term || `${c.name} ${c.id}`.toLowerCase().includes(term.toLowerCase())).slice().sort(compareDestinations);
+  const searchLabel = side === 'source' ? 'Search Solana assets' : !chain ? 'Search destination networks' : 'Search assets on this network';
   return <div ref={wrapper} style={{position:'relative'}}>
-    <button type="button" className="token-trigger" onClick={()=>{setOpen(!open);setTerm('');setDebounced('');}} aria-expanded={open} aria-label={`Select ${side} token`} data-testid={`button-select-${side}`}>
+    <button type="button" className="token-trigger" onClick={()=>{setOpen(!open);setTerm('');setDebounced('');setChain(null);}} aria-expanded={open} aria-label={`Select ${side} token`} data-testid={`button-select-${side}`}>
       {token ? <TokenBadge token={token}/> : <span className="token-icon"><Search size={13}/></span>}
       <span className="label">{token?.symbol || 'Select token'}</span><ChevronDown size={14}/>
     </button>
     {open && <div className="token-popover">
-       <div style={{position:'relative'}}><Search size={15} style={{position:'absolute',left:11,top:13,color:'#a8beb1'}}/><input className="input-standard" style={{paddingLeft:34}} autoFocus value={term} onChange={e=>setTerm(e.target.value)} placeholder={side === 'source' ? 'Search Solana assets' : 'Search tokens or chains'} data-testid={`input-search-${side}`}/></div>
+       {destination && chain && <button className="secondary-button" type="button" style={{marginBottom:10}} onClick={()=>{setChain(null);setTerm('');setDebounced('');}}>← All networks</button>}
+       <div style={{position:'relative'}}><Search size={15} style={{position:'absolute',left:11,top:13,color:'#a8beb1'}}/><input className="input-standard" style={{paddingLeft:34}} autoFocus value={term} onChange={e=>setTerm(e.target.value)} aria-label={searchLabel} placeholder={searchLabel} data-testid={`input-search-${side}`}/></div>
       <div className="token-list">
-        {results.isLoading || results.isFetching && !results.data ? <div style={{padding:'15px 4px'}}><div className="skeleton" style={{width:'80%',marginBottom:14}}/><div className="skeleton" style={{width:'60%',marginBottom:14}}/><div className="skeleton" style={{width:'75%'}}/></div>
+         {destination && !chain ? chains.isLoading ? <div className="skeleton" style={{margin:15}}/>
+           : chains.isError ? <div style={{padding:'15px 5px'}}><p className="quote-error">{errorText(chains.error)}</p><button className="secondary-button" type="button" onClick={()=>chains.refetch()}>Try again</button></div>
+           : availableChains.length === 0 ? <p className="muted-note" style={{padding:12}}>No destination networks found.</p>
+           : availableChains.map(c => <button key={c.id} className="token-option" type="button" onClick={()=>{setChain(c.id);setTerm('');setDebounced('');}} data-testid={`button-destination-chain-${c.id}`}><span><strong>{c.name}</strong><small>View available assets</small></span><ChevronDown size={14}/></button>)
+         : results.isLoading || results.isFetching && !results.data ? <div style={{padding:'15px 4px'}}><div className="skeleton" style={{width:'80%',marginBottom:14}}/><div className="skeleton" style={{width:'60%',marginBottom:14}}/><div className="skeleton" style={{width:'75%'}}/></div>
         : results.isError ? <div style={{padding:'15px 5px'}}><p className="quote-error" data-testid={`status-token-error-${side}`}>{errorText(results.error)}</p><button className="secondary-button" type="button" onClick={()=>results.refetch()} data-testid={`button-retry-${side}`}>Try again</button></div>
          : tokens.length === 0 ? <div className="token-empty" data-testid={`status-token-empty-${side}`}><Search size={16}/><p className="muted-note">No {side === 'source' ? 'Solana assets' : 'supported assets'} found. Try a different search.</p></div>
-        : tokens.map(t => <button key={t.id} type="button" className="token-option" onClick={()=>{onChange(t);setOpen(false);}} data-testid={`button-token-${side}-${t.id}`}><TokenBadge token={t}/><span><strong>{t.symbol}</strong><small>{t.name}</small></span><span className="chain-name">{t.chainName}</span></button>)}
+         : tokens.map(t => <button key={t.id} type="button" className="token-option" onClick={()=>{onChange(t);setOpen(false);setChain(null);setTerm('');setDebounced('');}} data-testid={`button-token-${side}-${t.id}`}><TokenBadge token={t}/><span><strong>{t.symbol}</strong><small>{t.name}</small></span><span className="chain-name">{t.chainName}</span></button>)}
       </div>
+       {destination && chain && (results.data?.total ?? 0) > (results.data?.tokens.length ?? 0) && <p className="muted-note" style={{marginTop:8}}>Search to find more assets on this network.</p>}
+       {destination && <p className="muted-note" style={{marginTop:8}}>A live quote confirms whether your selected pair is available.</p>}
     </div>}
   </div>;
 }

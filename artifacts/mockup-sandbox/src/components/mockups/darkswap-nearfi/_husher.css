@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+.ds-flow {
+  --bg: #090b22; --panel: #19213e; --panel2: #222d4d; --field: #273555;
+  --line: #374666; --text: #f3f2ff; --muted: #9aa8c6; --purple: #ae80f6; --bright: #d5b9ff; --blue: #507cf7;
+  min-height: 100dvh; color: var(--text); background: radial-gradient(ellipse 50% 30% at 50% 42%, #191938 0, transparent 85%), var(--bg);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; position: relative; overflow: hidden;
+}
+.ds-flow::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .18; background-image: radial-gradient(#8e9eca 0.6px, transparent 0.8px); background-size: 151px 113px; }
+.ds-flow * { box-sizing: border-box; }
+.ds-flow button, .ds-flow input, .ds-flow select { font: inherit; }
+.ds-flow button { cursor: pointer; }
+.ds-flow button:disabled { opacity: .45; cursor: not-allowed; }
+.ds-flow a { color: inherit; text-decoration: none; }
+.ds-flow :is(button,a,input,select):focus-visible { outline: 2px solid var(--bright); outline-offset: 3px; }
+.ds-flow .ds-demo { text-align: center; background: #302347; color: #ebdafa; border-bottom: 1px solid #62477d; padding: 7px 16px; font: 700 10px/1.45 'Space Mono', monospace; letter-spacing: .04em; }
+.ds-flow .ds-nav { width: min(100% - 52px, 1160px); height: 72px; margin: auto; display: flex; align-items: center; gap: 52px; }
+.ds-flow .ds-brand { display: flex; align-items: center; gap: 8px; flex: none; }
+.ds-flow .ds-brand img:first-child { width: 33px; height: 33px; object-fit: contain; }
+.ds-flow .ds-brand img:last-child { width: 123px; height: auto; object-fit: contain; mix-blend-mode: screen; }
+.ds-flow .ds-links { display: flex; align-items: center; gap: 29px; color: #a4adc6; font-weight: 700; font-size: 12px; }
+.ds-flow .ds-links a:hover, .ds-flow .ds-links a[aria-current="page"] { color: #f4edff; }
+.ds-flow .ds-nav-end { margin-left: auto; }
+.ds-flow .ds-nav-end a { display: inline-flex; gap: 8px; align-items: center; border: 1px solid #59617e; color: #e1d5f9; border-radius: 9px; padding: 9px 13px; font-size: 12px; font-weight: 700; }
+.ds-flow .ds-nav-end a:hover { border-color: var(--purple); }
+.ds-flow .ds-main { width: min(100% - 32px, 760px); margin: 0 auto; padding: 48px 0 84px; position: relative; z-index: 1; }
+.ds-flow .ds-main--track { width: min(100% - 32px, 760px); padding-top: 40px; }
+.ds-flow .ds-eyebrow { font: 700 10px 'Space Mono', monospace; letter-spacing: .13em; color: var(--purple); text-transform: uppercase; }
+.ds-flow h1 { font: 800 clamp(29px, 4vw, 42px)/1.15 'DM Sans', sans-serif; letter-spacing: -.045em; margin: 12px 0 10px; }
+.ds-flow h2 { font: 800 18px/1.3 'DM Sans', sans-serif; letter-spacing: -.025em; margin: 0; }
+.ds-flow p { line-height: 1.55; }
+.ds-flow .ds-intro { text-align: center; margin-bottom: 25px; }
+.ds-flow .ds-intro p { margin: 0; color: var(--muted); font-size: 12px; }
+.ds-flow .ds-card { border-radius: 20px; border: 1px solid #2b3655; background: #19223e; box-shadow: 0 30px 90px #02041666; }
+.ds-flow .ds-card-inner { padding: 18px; }
+.ds-flow .ds-tabs { display: flex; padding: 4px; background: #273554; border-radius: 10px; margin-bottom: 18px; }
+.ds-flow .ds-tabs span { flex: 1; text-align: center; padding: 11px 12px; border-radius: 8px; color: #b9c2d7; font-weight: 700; font-size: 12px; }
+.ds-flow .ds-tabs span:first-child { color: #fff; background: #465d8a; box-shadow: 0 2px 10px #10162e55; }
+.ds-flow .ds-pair { display: grid; grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr); align-items: center; gap: 6px; }
+.ds-flow .ds-labelrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #b79add; font-size: 12px; font-weight: 700; margin: 0 0 7px; }
+.ds-flow .ds-labelrow small { color: #9ba8c4; font-size: 10px; font-weight: 500; }
+.ds-flow .ds-box { display: flex; min-height: 51px; border: 1px solid #5d5294; background: #263451; border-radius: 9px; align-items: center; position: relative; }
+.ds-flow .ds-box:focus-within { border-color: #bd99fd; }
+.ds-flow .ds-amount { min-width: 0; width: 100%; background: transparent; border: 0; outline: 0; color: #f5efff; padding: 10px 12px; font-size: 15px; font-weight: 700; }
+.ds-flow .ds-amount::placeholder, .ds-flow .ds-input::placeholder { color: #8c9ab8; }
+.ds-flow .ds-asset { flex: none; margin: 5px; padding: 6px 7px; border: 0; background: #1d2946; color: #f5f3ff; display: flex; align-items: center; gap: 5px; border-radius: 7px; font-size: 12px; font-weight: 800; }
+.ds-flow .ds-coin { display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 50%; color: #f3ddff; background: linear-gradient(135deg,#7751b4,#b683ee); font-weight: 800; font-size: 11px; }
+.ds-flow .ds-coin--near { background: #eef0f1; color: #202a36; }
+.ds-flow .ds-underbox { display: flex; justify-content: space-between; gap: 7px; color: #8e9ab5; font-size: 10px; margin: 5px 1px 0; }
+.ds-flow .ds-swap-icon { color: #ad8df6; display: grid; place-items: center; margin-top: 14px; }
+.ds-flow .ds-dropdown { position: absolute; top: calc(100% + 6px); right: 0; z-index: 15; width: 220px; padding: 7px; background: #303a60; border: 1px solid #6b6c9c; border-radius: 9px; box-shadow: 0 15px 35px #050917a8; }
+.ds-flow .ds-dropdown button { width: 100%; padding: 10px; display: flex; gap: 9px; align-items: center; text-align: left; background: none; color: var(--text); border: 0; border-radius: 6px; font-size: 12px; }
+.ds-flow .ds-dropdown button:hover { background: #455179; }
+.ds-flow .ds-dropdown small { display: block; color: #aab7d5; font-size: 10px; }
+.ds-flow .ds-field { margin-top: 17px; }
+.ds-flow .ds-field label { display: block; font-size: 12px; color: #b6c2d9; margin: 0 0 7px; font-weight: 700; }
+.ds-flow .ds-input { width: 100%; height: 44px; color: var(--text); background: #263451; border: 1px solid #536284; border-radius: 8px; padding: 0 13px; outline: 0; font-size: 12px; }
+.ds-flow .ds-input:focus { border-color: var(--purple); }
+.ds-flow .ds-help { color: #9eacc7; font-size: 10px; margin: 5px 1px 0; }
+.ds-flow .ds-error { color: #ffc0b0; font-size: 11px; margin: 7px 0 0; }
+.ds-flow .ds-split { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+.ds-flow .ds-privacy { display: flex; gap: 9px; align-items: center; font-size: 11px; color: #e9e4f5; font-weight: 700; }
+.ds-flow .ds-privacy svg { color: #be9ff5; }
+.ds-flow .ds-primary, .ds-flow .ds-secondary { border: 0; min-height: 42px; border-radius: 9px; padding: 10px 20px; color: #fff; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: linear-gradient(105deg, #8f70d6, #486df5); transition: transform .18s, opacity .18s; }
+.ds-flow .ds-primary:not(:disabled):hover, .ds-flow .ds-secondary:not(:disabled):hover { transform: translateY(-2px); }
+.ds-flow .ds-secondary { background: #303b61; border: 1px solid #5d668e; }
+.ds-flow .ds-full { width: 100%; }
+.ds-flow .ds-inline { background: none; border: 0; padding: 0; color: #cdb5fb; font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.ds-flow .ds-quote { margin-top: 14px; padding: 12px 14px; background: #141c37; border: 1px solid #374563; border-radius: 9px; }
+.ds-flow .ds-quote-head { display: flex; justify-content: space-between; font: 700 10px 'Space Mono',monospace; color: #c1a3ee; letter-spacing: .04em; }
+.ds-flow .ds-quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.ds-flow .ds-quote-grid span, .ds-flow .ds-data span { display: block; font-size: 10px; color: var(--muted); }
+.ds-flow .ds-quote-grid strong { display: block; font-size: 13px; margin-top: 3px; }
+.ds-flow .ds-footnote { font-size: 10px; color: #91a0be; margin: 14px 0 0; text-align: center; }
+.ds-flow .ds-context { margin: 15px 0; padding: 12px 15px; border: 1px solid #3a4868; border-radius: 10px; background: #151d36; font-size: 11px; color: #adbad2; line-height: 1.6; }
+.ds-flow .ds-context strong { color: #e6dcfa; }
+.ds-flow .ds-context a { color: #cfb9ff; text-decoration: underline; text-underline-offset: 3px; }
+.ds-flow .ds-bottom { text-align: center; color: var(--muted); font-size: 11px; margin-top: 17px; }
+.ds-flow .ds-bottom a { color: #d3baff; font-weight: 700; }
+.ds-flow .ds-footer { text-align: center; border-top: 1px solid #262c49; padding: 19px; font-size: 10px; color: #7e8baa; position: relative; }
+.ds-flow .ds-overlay { position: fixed; inset: 0; z-index: 30; background: #05071bdc; display: grid; place-items: center; padding: 16px; }
+.ds-flow .ds-modal { width: min(100%, 490px); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 23px; background: #202b4a; border: 1px solid #69719b; border-radius: 15px; box-shadow: 0 30px 90px #0008; }
+.ds-flow .ds-modal-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.ds-flow .ds-iconbtn { background: #354262; border: 1px solid #606c89; border-radius: 7px; color: #fff; height: 28px; width: 28px; display: grid; place-items: center; }
+.ds-flow .ds-modal p { color: #acb9d0; font-size: 12px; }
+.ds-flow .ds-data { display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px solid #485371; padding: 10px 0; font-size: 12px; }
+.ds-flow .ds-data strong { text-align: right; overflow-wrap: anywhere; max-width: 65%; }
+.ds-flow .ds-warning { padding: 11px 13px; border: 1px solid #786c8c; background: #302b4b; border-radius: 8px; color: #e1d1f2; font-size: 11px; line-height: 1.55; margin: 16px 0; }
+.ds-flow .ds-back { display: inline-flex; align-items: center; gap: 6px; color: #b7a5e2; font-size: 11px; font-weight: 700; }
+.ds-flow .ds-progress { display: grid; grid-template-columns: repeat(4,1fr); margin: 23px 0 21px; border-bottom: 1px solid #53607e; }
+.ds-flow .ds-stage { display: flex; align-items: center; gap: 9px; color: #98a5c1; padding: 0 0 14px; position: relative; font-size: 11px; }
+.ds-flow .ds-stage::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #697893; position: absolute; bottom: -3px; left: 16px; }
+.ds-flow .ds-stage.is-active { color: #f5efff; }
+.ds-flow .ds-stage.is-active::after { background: #d3afff; box-shadow: 0 0 0 3px #9066d74a; }
+.ds-flow .ds-stage-icon { width: 32px; height: 32px; border-radius: 50%; background: #283455; display: grid; place-items: center; flex: none; color: #ab9cdb; }
+.ds-flow .ds-stage.is-active .ds-stage-icon { background: #3c3975; color: #d8c2ff; }
+.ds-flow .ds-stage b { display: block; font-size: 11px; }
+.ds-flow .ds-stage small { display: block; font-size: 9px; font-weight: 500; margin-top: 3px; color: #8290b0; }
+.ds-flow .ds-meta { display: flex; gap: 14px; justify-content: space-between; flex-wrap: wrap; margin: 0 2px 9px; color: #9aa8c6; font-size: 10px; }
+.ds-flow .ds-meta strong { color: #d8d0e8; }
+.ds-flow .ds-summary { display: flex; align-items: center; justify-content: center; gap: 11px; min-height: 63px; background: #202d52; border-radius: 12px; margin-bottom: 10px; font-size: 12px; color: #a8b5d3; }
+.ds-flow .ds-summary strong { font-size: 16px; color: #fff; }
+.ds-flow .ds-summary svg { color: #cab2f9; }
+.ds-flow .ds-deposit-grid { display: grid; grid-template-columns: minmax(0,1fr) 150px; gap: 9px; }
+.ds-flow .ds-deposit, .ds-flow .ds-qrbox, .ds-flow .ds-tips { border-radius: 12px; background: #1b2543; border: 1px solid #263454; }
+.ds-flow .ds-deposit { padding: 17px; }
+.ds-flow .ds-deposit h2 { font-size: 15px; margin-bottom: 12px; }
+.ds-flow .ds-deposit h2 strong { color: #ddbfff; }
+.ds-flow .ds-deposit .ds-data { display: block; }
+.ds-flow .ds-deposit .ds-data strong { display: block; max-width: none; text-align: left; margin-top: 4px; color: #bba6f7; font: 700 11px/1.5 'Space Mono',monospace; word-break: break-all; }
+.ds-flow .ds-qrbox { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 13px; text-align: center; }
+.ds-flow .ds-qr-placeholder { width: 93px; height: 93px; border: 7px solid #d3cce6; background: repeating-linear-gradient(45deg,#322d54 0 5px,#eee9f4 5px 10px); position: relative; }
+.ds-flow .ds-qr-placeholder::after { content: 'DEMO'; position: absolute; inset: 32px 7px; background: #eae5f2; color: #34284f; font: 800 13px 'DM Sans',sans-serif; }
+.ds-flow .ds-qrbox span { font: 700 9px/1.35 'Space Mono',monospace; color: #bdacdc; }
+.ds-flow .ds-tips { margin-top: 10px; padding: 17px; }
+.ds-flow .ds-tips h2 { font-size: 15px; margin-bottom: 4px; }
+.ds-flow .ds-tip { display: flex; align-items: start; gap: 12px; padding: 11px 0; border-top: 1px solid #303d59; color: #aab7ce; font-size: 11px; line-height: 1.55; }
+.ds-flow .ds-tip:first-of-type { border-top: 0; }
+.ds-flow .ds-tip svg { flex: none; color: #c3a5fa; margin-top: 1px; }
+.ds-flow .ds-tip strong { color: #e9e6f6; }
+.ds-flow .ds-select { margin-top: 10px; background: #263451; color: #f5efff; border: 1px solid #566584; padding: 8px; border-radius: 7px; font-size: 11px; }
+@media (max-width: 650px) {
+  .ds-flow .ds-nav { width: min(100% - 28px, 1160px); height: auto; min-height: 66px; gap: 12px; flex-wrap: wrap; padding: 10px 0; }
+  .ds-flow .ds-brand img:last-child { width: 105px; }
+  .ds-flow .ds-links { order: 3; width: 100%; gap: 20px; border-top: 1px solid #2e3450; padding: 10px 0 2px; }
+  .ds-flow .ds-main { padding-top: 30px; }
+  .ds-flow .ds-progress { gap: 4px; }
+  .ds-flow .ds-stage { flex-direction: column; text-align: center; gap: 5px; }
+  .ds-flow .ds-stage::after { left: 50%; }
+  .ds-flow .ds-stage small { display: none; }
+  .ds-flow .ds-deposit-grid { grid-template-columns: 1fr; }
+  .ds-flow .ds-qrbox { flex-direction: row; }
+}
+@media (max-width: 480px) {
+  .ds-flow .ds-pair { grid-template-columns: 1fr; }
+  .ds-flow .ds-swap-icon { margin: 0; height: 14px; transform: rotate(90deg); }
+  .ds-flow .ds-split { align-items: stretch; flex-direction: column; }
+  .ds-flow .ds-primary { width: 100%; }
+  .ds-flow .ds-summary { gap: 6px; font-size: 10px; }
+  .ds-flow .ds-summary strong { font-size: 12px; }
+  .ds-flow .ds-summary .ds-coin { width: 18px; height: 18px; font-size: 9px; }
+  .ds-flow .ds-stage b { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) { .ds-flow *, .ds-flow *::before, .ds-flow *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }

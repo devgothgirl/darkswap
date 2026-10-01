@@ -10,7 +10,604 @@ tags:
   - name: health
   - name: swap
   - name: discovery
+  - name: marketing
+  - name: near-market
+  - name: support
+  - name: rewards
+  - name: launch-discovery
+  - name: launch
+  - name: launch-auth
+  - name: launch-admin
 paths:
+  /stonkfun/tokens:
+    get:
+      operationId: getStonkfunTokens
+      tags: [launch-discovery]
+      summary: A bounded page of normalized StonkFun discovery tokens
+      description: |
+        Uses documented provider-wide q (name/symbol/mint), quoteMint and status
+        filters, with bounded page/pageSize. Matching case/prefix/fuzzy semantics
+        are provider-defined and not independently established. No creator or
+        quote-symbol search. When sort is omitted, trending uses upstream volume;
+        other views use newest. Graduating maps to status=aboutToGraduate and
+        graduated maps to status=graduated, trusting provider classification rather
+        than recalculating progress from market cap. Explicit conflicting status
+        or DARK quoteMint filters return 400. DARK requires the configured verified
+        mint and uses provider quoteMint filtering; unavailable DARK returns an
+        honest empty activation state. NEAR grouping may filter the current page
+        locally when multiple evidence-backed mints exist and must disclose this.
+        Provider q is catalog-wide, but local view filtering may still be page-only.
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - in: query
+          name: sort
+          description: Forwarded upstream; omitted defaults to volume for trending, newest otherwise.
+          schema: { type: string, enum: [newest, volume] }
+        - in: query
+          name: view
+          schema: { type: string, enum: [trending, new, dark, near, graduating, graduated], default: trending }
+        - in: query
+          name: q
+          description: Documented provider-wide token name/symbol/mint search. No verified creator lookup or pair-symbol search; use quoteMint for pair identity.
+          schema: { type: string, maxLength: 120, default: "" }
+        - in: query
+          name: quoteMint
+          description: Documented provider-wide exact quote mint filter; must not conflict with a verified ecosystem view.
+          schema: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        - in: query
+          name: status
+          description: Documented upstream status filter; view graduating/graduated binds the corresponding status.
+          schema: { type: string, enum: [new, aboutToGraduate, graduated] }
+      responses:
+        "200":
+          description: Normalized page including explicit freshness and coverage
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StonkfunTokensResponse" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "502": { $ref: "#/components/responses/LaunchProviderFailure" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /stonkfun/pairs:
+    get:
+      operationId: getStonkfunPairs
+      tags: [launch-discovery]
+      summary: Normalized upstream launchable pairs with local readiness
+      description: |
+        Always requests upstream launchable=true. Identity is network+mint and
+        selectBy=mint. Upstream launchable and launchLabReady are discovery facts,
+        not proof that this application's execution adapter is available. All
+        executionAvailable values are false. Returns upstream pairs only; the
+        locked DARK promotion card comes from /launch/config, not a fabricated pair.
+        Preparation choices require launchable=true AND launchLabReady=true.
+        False or absent launchLabReady is not readiness. Local order is verified
+        DARK, verified NEAR, stablecoin, other, then priority.
+        No native NEAR-chain compatibility is implied by a NEAR-symbol Solana mint.
+      responses:
+        "200":
+          description: Current pairs, ambiguity and freshness metadata
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StonkfunPairsResponse" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "502": { $ref: "#/components/responses/LaunchProviderFailure" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /stonkfun/tokens/{mint}:
+    get:
+      operationId: getStonkfunToken
+      tags: [launch-discovery]
+      summary: Resolve a verified mint from the bounded persistent discovery catalog
+      description: |
+        Does not invent an upstream token-detail endpoint. An unindexed mint is
+        NOT_INDEXED (404), not proof it does not exist. NOT_FOUND may be used only
+        when a verified source establishes absence. Provider failure is distinct.
+      parameters:
+        - $ref: "#/components/parameters/LaunchMint"
+      responses:
+        "200":
+          description: Verified normalized token and source age
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StonkfunTokenResponse" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "502": { $ref: "#/components/responses/LaunchProviderFailure" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/config:
+    get:
+      operationId: getLaunchConfig
+      tags: [launch]
+      summary: Public preparation-only launch configuration and capability gates
+      responses:
+        "200":
+          description: Public settings; execution can never be enabled by configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchConfig" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/auth/challenge:
+    post:
+      operationId: createLaunchAuthChallenge
+      tags: [launch-auth]
+      summary: Create an expiring single-use wallet ownership challenge
+      description: |
+        Requires an allowed same-origin request and rate protection. The exact
+        UTF-8 message binds the Solana wallet, mainnet-beta network, configured
+        application domain, nonce and expiry. Signing is authentication only:
+        no transaction, fee, spending approval or private key is requested.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchAuthChallengeInput" }
+      responses:
+        "200":
+          description: Sign exactly message as UTF-8 using wallet.signMessage
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchAuthChallenge" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/auth/verify:
+    post:
+      operationId: verifyLaunchAuth
+      tags: [launch-auth]
+      summary: Verify the wallet proof and establish an isolated secure session
+      description: |
+        Accepts a base64-encoded 64-byte Ed25519 signature of the challenge
+        message. Expired, consumed, wrong-wallet/domain/network proofs fail.
+        Sets an HttpOnly, SameSite cookie (Secure in HTTPS). Returns a CSRF token
+        for subsequent private mutations. Rotate session on authentication.
+        isAdmin is independently server-authorized and defaults false.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchAuthProofInput" }
+      responses:
+        "200":
+          description: Authenticated wallet session; cookie is never exposed in JSON
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchAuthenticatedSession" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/auth/session:
+    get:
+      operationId: getLaunchAuthSession
+      tags: [launch-auth]
+      summary: Read the current session without requiring a wallet connection
+      description: Unauthenticated sessions return wallet, csrfToken and expiresAt null and isAdmin false. Private responses use Cache-Control no-store.
+      responses:
+        "200":
+          description: Current session or explicit anonymous state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchAuthSession" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/auth/logout:
+    post:
+      operationId: logoutLaunchAuth
+      tags: [launch-auth]
+      summary: Revoke the session and clear its cookie
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      responses:
+        "204": { description: Session revoked; client must clear all previous wallet private query state }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+  /launch/drafts:
+    get:
+      operationId: getLaunchDrafts
+      tags: [launch]
+      summary: List only the authenticated wallet's private saved drafts
+      security: [{ launchSession: [] }]
+      responses:
+        "200":
+          description: Private drafts, newest update first; never launched tokens
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchDraftList" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+    post:
+      operationId: createLaunchDraft
+      tags: [launch]
+      summary: Persist a private preparation draft, not an upstream launch
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchDraftInput" }
+      responses:
+        "201":
+          description: Saved preparation draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchDraft" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/drafts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/LaunchId"
+    get:
+      operationId: getLaunchDraft
+      tags: [launch]
+      summary: Read an owned private draft
+      security: [{ launchSession: [] }]
+      responses:
+        "200":
+          description: Owned draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchDraft" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+    put:
+      operationId: updateLaunchDraft
+      tags: [launch]
+      summary: Replace an owned draft's editable configuration
+      description: Any edit invalidates prior configuration review. Logo references must be validated assets owned by this wallet. A saved pair is not a readiness guarantee.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchDraftInput" }
+      responses:
+        "200":
+          description: Updated preparation draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchDraft" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+    delete:
+      operationId: deleteLaunchDraft
+      tags: [launch]
+      summary: Delete an owned private draft
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      responses:
+        "204": { description: Draft deleted }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/logos/request-url:
+    post:
+      operationId: requestLaunchLogoUpload
+      tags: [launch]
+      summary: Reserve a private logo and obtain a short-lived presigned direct upload URL
+      description: |
+        No raw upload API. Request PNG/JPEG only, at most 1 MiB. Client PUTs the
+        file bytes directly to uploadURL with the declared Content-Type, then
+        calls complete. A reserved ID is not usable in a draft until byte
+        validation and safe re-encoding succeed. Original objects remain private.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchLogoUploadInput" }
+      responses:
+        "201":
+          description: Reserved private asset and direct upload URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchLogoUpload" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "413": { $ref: "#/components/responses/LaunchBadRequest" }
+        "429": { $ref: "#/components/responses/LaunchRateLimited" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/logos/{id}/complete:
+    post:
+      operationId: completeLaunchLogoUpload
+      tags: [launch]
+      summary: Validate uploaded private bytes and record a safe re-encoded logo
+      description: |
+        Owner-only. Validate actual length <=1048576, magic bytes and successful
+        decoding, not filename or declared MIME alone. Reject SVG, invalid
+        images and oversized dimensions/decompression bombs. Strip metadata,
+        re-encode to a separate private object, and never serve raw uploaded bytes.
+        Idempotent for an already validated owned ID.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchId"
+        - $ref: "#/components/parameters/LaunchCsrf"
+      responses:
+        "200":
+          description: Validated asset ID is now available for owned drafts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchLogo" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "413": { $ref: "#/components/responses/LaunchBadRequest" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/logos/{id}:
+    get:
+      operationId: getLaunchLogo
+      tags: [launch]
+      summary: Read only the authenticated owner's validated re-encoded logo
+      description: Sends private no-store cache policy and nosniff. Cross-wallet IDs return 404; unfinished uploads are never served.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchId"
+      responses:
+        "200":
+          description: Validated private image bytes
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "404": { $ref: "#/components/responses/LaunchNotFound" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/creator:
+    get:
+      operationId: getLaunchCreator
+      tags: [launch]
+      summary: Private creator dashboard with verified attribution and nullable metrics
+      description: No inferred ownership, summed/double-counted holder totals, reward issuance or linkage to swap reward ledgers. Missing evidence is null, never zero.
+      security: [{ launchSession: [] }]
+      responses:
+        "200":
+          description: Owned drafts, evidence-backed launches and planned incentive state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchCreatorResponse" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/admin/config:
+    get:
+      operationId: getLaunchAdminConfig
+      tags: [launch-admin]
+      summary: Read launch configuration as an independently authorized admin
+      security: [{ launchSession: [] }]
+      responses:
+        "200":
+          description: Auditable configuration; unconfigured admin authorization denies access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchConfig" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+    put:
+      operationId: updateLaunchAdminConfig
+      tags: [launch-admin]
+      summary: Replace proposed local configuration and append an audit record
+      description: |
+        Pair overrides require mint/network evidence and cannot create upstream
+        availability, change network support or bypass the unavailable adapter.
+        Fee/campaign/points proposals do not charge fees, execute campaigns,
+        issue claimable value or promise rewards. executionAvailable is immutable
+        false and is forbidden in this request body.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchConfigInput" }
+      responses:
+        "200":
+          description: Updated auditable configuration, execution still unavailable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchConfig" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/admin/reviews:
+    get:
+      operationId: getLaunchAdminReviews
+      tags: [launch-admin]
+      summary: Read evidence-backed metadata and wallet review flags
+      security: [{ launchSession: [] }]
+      responses:
+        "200":
+          description: Reviews, newest first; no claim of comprehensive fraud detection
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchReviewList" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+    post:
+      operationId: createLaunchAdminReview
+      tags: [launch-admin]
+      summary: Record an evidence-backed under_review flag and audit it
+      description: A review blocks automatic featured promotion and eligibility. Heuristics are not proof of identity. Metadata suppression is local, never an upstream edit.
+      security: [{ launchSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LaunchCsrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchReviewInput" }
+      responses:
+        "201":
+          description: Evidence-backed review saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchReview" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/admin/audit:
+    get:
+      operationId: getLaunchAdminAudit
+      tags: [launch-admin]
+      summary: Read bounded launch-only admin audit records
+      security: [{ launchSession: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Newest audit records first; no session secrets or swap histories
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LaunchAuditList" }
+        "400": { $ref: "#/components/responses/LaunchBadRequest" }
+        "401": { $ref: "#/components/responses/LaunchUnauthenticated" }
+        "403": { $ref: "#/components/responses/LaunchForbidden" }
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /launch/submit:
+    post:
+      operationId: submitLaunch
+      tags: [launch]
+      summary: Fail closed; launch execution is unavailable in this release
+      description: |
+        Every direct request returns 503 and executionAvailable=false, including
+        alternative pairs, changed admin settings and paused/unpaused states.
+        Never contacts a fabricated provider execution endpoint, charges fees,
+        prompts a wallet transaction, returns a signature or creates a launch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchSubmitInput" }
+      responses:
+        "503": { $ref: "#/components/responses/LaunchUnavailable" }
+  /support/requests:
+    post:
+      operationId: createSupportRequest
+      tags: [support]
+      summary: Email a swap support report to the DarkSwap support inbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportRequestInput"
+      responses:
+        "200":
+          description: Case saved; delivery is not yet guaranteed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportRequestResponse"
+        "400":
+          description: Invalid report
+        "429":
+          description: Too many requests
+        "503":
+          description: Case could not be saved
+  /support/requests/status:
+    get:
+      operationId: getSupportRequestStatus
+      tags: [support]
+      summary: Check delivery state of a support case using its private token
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Case delivery status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportRequestStatus"
+        "404":
+          description: Unknown case
+        "503":
+          description: Status unavailable
+  /near/trends:
+    get:
+      operationId: getNearTrends
+      tags: [near-market]
+      summary: Read-only NEAR liquidity pool trends from GeckoTerminal
+      parameters:
+        - in: query
+          name: view
+          schema:
+            type: string
+            enum: [trending, new]
+      responses:
+        "200":
+          description: Live NEAR pool activity, cached briefly
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearTrendsResponse"
+        "400":
+          description: Invalid view
+        "503":
+          description: Market data temporarily unavailable
+  /near/pools/search:
+    get:
+      operationId: searchNearPools
+      tags: [near-market]
+      summary: Search NEAR liquidity pools via GeckoTerminal (read-only)
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+        - in: query
+          name: page
+          description: Provider page number. Page 1 is the default; requests are limited to pages 1 through 10.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 1
+      responses:
+        "200":
+          description: Provider search matches for the requested NEAR page, cached briefly; not an exhaustive token directory. hasNextPage is true when the raw provider page is nonempty and page is below 10, meaning another page may be requested, not that it is guaranteed to contain matches. Stop only when a raw provider page is empty or page 10 is reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearPoolSearchResponse"
+        "400":
+          description: Invalid search query
+        "503":
+          description: Market data temporarily unavailable
   /healthz:
     get:
       operationId: healthCheck
@@ -23,6 +620,183 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /marketing/health:
+    get:
+      operationId: checkMarketingWebhookHealth
+      tags: [marketing]
+      summary: Check signed marketing webhook delivery before campaigns
+      description: Separate from swap health; returns no contact or provider identifiers.
+      responses:
+        "200":
+          description: Recent correlated webhook activity and no backlog or processing failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketingWebhookHealth"
+        "503":
+          description: Marketing campaigns paused or health check unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketingWebhookHealth"
+  /marketing/subscriptions:
+    post:
+      operationId: subscribeUpdates
+      tags: [marketing]
+      summary: Opt in to optional product updates and potential discounts
+      description: Requests an email confirmation after explicit consent. Only confirmed, non-suppressed contacts can receive marketing. Never links to swap orders or wallets.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketingSubscriptionInput"
+      responses:
+        "200":
+          description: Generic acknowledgement, including for an existing subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketingSubscriptionResponse"
+        "400":
+          description: Invalid email or consent
+        "429":
+          description: Too many requests
+        "503":
+          description: Subscription intake unavailable
+  /marketing/confirm:
+    get:
+      operationId: showMarketingConfirmation
+      tags: [marketing]
+      summary: Show an explicit confirmation form without changing consent
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Confirmation form
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: confirmMarketingSubscription
+      tags: [marketing]
+      summary: Verify opt-in with a single-use token expiring after 24 hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketingTokenInput"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/MarketingTokenInput"
+      responses:
+        "200":
+          description: Subscription confirmed
+          content:
+            text/html:
+              schema:
+                type: string
+        "400":
+          description: Invalid token
+        "410":
+          description: Expired, previously used, or inactive confirmation
+        "503":
+          description: Confirmation unavailable
+  /marketing/unsubscribe:
+    get:
+      operationId: showMarketingUnsubscribe
+      tags: [marketing]
+      summary: Show unsubscribe form without changing consent
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unsubscribe form
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: unsubscribeMarketing
+      tags: [marketing]
+      summary: Permanently suppress marketing, including RFC 8058 one-click requests
+      parameters:
+        - in: query
+          name: token
+          description: Token from the List-Unsubscribe URL for one-click requests
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketingTokenInput"
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                List-Unsubscribe:
+                  type: string
+                  enum: [One-Click]
+      responses:
+        "200":
+          description: Generic idempotent unsubscribe acknowledgement
+          content:
+            text/html:
+              schema:
+                type: string
+        "400":
+          description: Invalid token
+        "503":
+          description: Unsubscribe unavailable
+  /marketing/webhook/resend:
+    post:
+      operationId: receiveMarketingDeliveryEvent
+      tags: [marketing]
+      summary: Receive signed delivery activity, bounce and complaint events
+      description: Verifies Svix signature against the raw request body and rejects stale signatures. Never accepts unsigned suppression events.
+      parameters:
+        - in: header
+          name: svix-id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: svix-timestamp
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: svix-signature
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketingDeliveryEvent"
+      responses:
+        "204":
+          description: Event accepted or irrelevant event ignored
+        "400":
+          description: Invalid event
+        "401":
+          description: Missing or invalid webhook signature
+        "503":
+          description: Event processing unavailable
   /swap/tokens:
     get:
       operationId: searchSwapTokens
@@ -40,6 +814,11 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - in: query
+          name: chain
+          schema:
+            type: string
+            maxLength: 80
       responses:
         "200":
           description: Supported tokens
@@ -47,6 +826,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenList"
+  /swap/chains:
+    get:
+      operationId: getSwapChains
+      tags: [swap]
+      summary: List live CEX-enabled destination networks for the private route
+      responses:
+        "200":
+          description: Available catalog networks (a quote is still required for each pair)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapChainList"
   /swap/quotes:
     get:
       operationId: getPrivateQuotes
@@ -80,6 +871,13 @@ paths:
       operationId: createPrivateOrder
       tags: [swap]
       summary: Create a private swap order from a selected quote
+      description: Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the order is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
+      parameters:
+        - in: header
+          name: Authorization
+          required: false
+          description: Optional Privy access JWT as Bearer token. If supplied, disabled/unavailable rewards fail closed with 503 and inactive enrollment fails with 409; guest creation requires omitting this header.
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -93,6 +891,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SwapOrder"
+        "401":
+          description: Supplied Privy token is invalid or has no verified linked email
+        "409":
+          description: Supplied account is not currently enrolled; no order was created
+        "503":
+          description: Rewards verification is disabled or unavailable; no order was created
   /swap/orders/{id}:
     get:
       operationId: getPrivateOrder
@@ -110,6 +914,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SwapOrder"
+  /swap/near/service-status:
+    get:
+      operationId: getNearServiceStatus
+      tags: [swap]
+      summary: Cached public incident information and conservative selected-route eligibility
+      parameters:
+        - in: query
+          name: fromChain
+          schema: { type: string, minLength: 1, maxLength: 32 }
+        - in: query
+          name: toChain
+          schema: { type: string, minLength: 1, maxLength: 32 }
+      responses:
+        "200":
+          description: Incident observation, not a guarantee of route execution
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NearServiceStatus" }
+        "400":
+          description: Invalid chain query
   /swap/near/tokens:
     get:
       operationId: getNearTokens
@@ -150,6 +974,13 @@ paths:
       operationId: createNearOrder
       tags: [swap]
       summary: Confirm the preview and generate real NEAR Intents deposit instructions
+      description: Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the requestId is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
+      parameters:
+        - in: header
+          name: Authorization
+          required: false
+          description: Optional Privy access JWT as Bearer token. If supplied, disabled/unavailable rewards fail closed with 503 and inactive enrollment fails with 409; guest creation requires omitting this header.
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -161,6 +992,72 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/NearOrder" }
+        "401":
+          description: Supplied Privy token is invalid or has no verified linked email
+        "409":
+          description: Supplied account is not currently enrolled; no order was created
+        "503":
+          description: Rewards verification is disabled or unavailable; no order was created
+  /rewards/config:
+    get:
+      operationId: getRewardsConfig
+      tags: [rewards]
+      summary: Read public email rewards availability
+      responses:
+        "200":
+          description: Email rewards availability; Privy app ID is null when disabled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RewardsConfig" }
+  /rewards/me:
+    get:
+      operationId: getRewardsMe
+      tags: [rewards]
+      summary: Read the authenticated account balance, tier, and paginated points history
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string, maxLength: 200 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Rewards balance, current versioned points/cap/tier rules, and append-only ledger page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RewardsMe" }
+        "401":
+          description: Missing or invalid Privy access token or verified email
+        "503":
+          description: Rewards temporarily unavailable or not configured
+  /rewards/enroll:
+    post:
+      operationId: enrollRewards
+      tags: [rewards]
+      summary: Enroll the verified email account after explicit disclosure and consent
+      description: No signup credit or financial redemption is offered. Award 100 points for a successful provider-verified terminal swap, capped at 300 points per UTC day. Version 1 tiers are Starter (0), Plus (500), and Pro (2000). Email is obtained only from Privy's verified linked account, stored only while enrolled, and deleted on withdrawal. Withdrawal needs a valid Privy access token but not a currently linked email. The app-scoped Privy DID, immutable order association, and append-only points ledger are retained indefinitely to preserve history and prevent duplicate awards; they never contain email.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RewardsEnrollInput" }
+      responses:
+        "200":
+          description: Enrollment or consent withdrawal recorded; no signup points awarded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RewardsEnrollResponse" }
+        "400":
+          description: Consent is required
+        "401":
+          description: Missing or invalid Privy access token, or missing verified linked email when enrolling
+        "503":
+          description: Rewards temporarily unavailable or not configured
   /swap/near/orders/{requestId}:
     get:
       operationId: getNearOrderReceipt
@@ -315,7 +1212,796 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkxTransaction"
 components:
+  securitySchemes:
+    launchSession:
+      type: apiKey
+      in: cookie
+      name: darkswap_launch_session
+      description: Isolated HttpOnly wallet-proof session; same-origin cookie credentials required.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    LaunchMint:
+      in: path
+      name: mint
+      required: true
+      schema: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+    LaunchId:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" }
+    LaunchCsrf:
+      in: header
+      name: X-Launch-CSRF
+      required: true
+      description: csrfToken returned by authenticated session; validated together with allowed Origin.
+      schema: { type: string, minLength: 16, maxLength: 256 }
+  responses:
+    LaunchBadRequest:
+      description: Invalid or unsupported input, image, or query
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchUnauthenticated:
+      description: Wallet ownership session absent, expired or invalid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchForbidden:
+      description: Invalid Origin/CSRF proof or independently unauthorized administrator
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchNotFound:
+      description: Missing/private-other-owner resource, NOT_INDEXED mint, or evidence-backed NOT_FOUND
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchRateLimited:
+      description: Local or upstream rate limit; no silently substituted fabricated data
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchProviderFailure:
+      description: Provider timeout, transport failure or invalid upstream schema
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
+    LaunchUnavailable:
+      description: Explicit unavailable dependency/capability; submit always returns EXECUTION_UNAVAILABLE
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/LaunchApiError" }
   schemas:
+    LaunchSolanaAddress:
+      type: string
+      minLength: 32
+      maxLength: 44
+      pattern: "^[1-9A-HJ-NP-Za-km-z]{32,44}$"
+      description: Base58 Solana address; server must additionally validate decoded 32-byte public key.
+    LaunchApiError:
+      type: object
+      additionalProperties: false
+      required: [error, code, executionAvailable]
+      properties:
+        error: { type: string, minLength: 1 }
+        code:
+          type: string
+          enum: [INVALID_INPUT, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, NOT_INDEXED, RATE_LIMITED, PROVIDER_FAILURE, STORAGE_UNAVAILABLE, SERVICE_UNAVAILABLE, EXECUTION_UNAVAILABLE]
+        executionAvailable: { type: boolean, enum: [false] }
+    StonkfunSource:
+      type: object
+      additionalProperties: false
+      required: [provider, fetchedAt, generatedAt, stale, cacheAgeSeconds]
+      properties:
+        provider: { type: string, enum: [stonkfun] }
+        fetchedAt: { type: string, format: date-time }
+        generatedAt: { type: ["string", "null"], format: date-time }
+        stale: { type: boolean }
+        cacheAgeSeconds: { type: number, minimum: 0 }
+    StonkfunCoverage:
+      type: object
+      additionalProperties: false
+      required: [scope, searchScope, viewFilterScope, creatorSearchAvailable, holderMetricsAvailable, transactionMetricsAvailable, graduationStatusVerified, rankingSignals, warnings]
+      properties:
+        scope: { type: string, enum: [provider_page, indexed_catalog] }
+        searchScope: { type: string, enum: [provider_catalog, none] }
+        viewFilterScope: { type: string, enum: [provider_catalog, current_page, none], description: Distinguishes server-side provider filters from local multiple-mint NEAR filtering }
+        creatorSearchAvailable: { type: boolean, enum: [false] }
+        holderMetricsAvailable: { type: boolean, enum: [false] }
+        transactionMetricsAvailable: { type: boolean, enum: [false] }
+        graduationStatusVerified:
+          type: boolean
+          description: Documented new/aboutToGraduate/graduated categories are verified; precise progress algorithm is not. Never compute classification from current market cap.
+        rankingSignals:
+          type: array
+          items: { type: string, enum: [provider_volume, provider_newest] }
+        warnings:
+          type: array
+          items: { type: string }
+    StonkfunPagination:
+      type: object
+      additionalProperties: false
+      required: [page, pageSize, total, totalPages, returned, maxAccessiblePage]
+      properties:
+        page: { type: integer, minimum: 1, maximum: 100 }
+        pageSize: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0, description: Provider total AFTER upstream filters but BEFORE any additional local view filtering }
+        totalPages: { type: integer, minimum: 0, description: Provider page count AFTER upstream filters but BEFORE any additional local view filtering }
+        returned: { type: integer, minimum: 0, description: Count AFTER any additional local view filtering }
+        maxAccessiblePage: { type: integer, minimum: 1, maximum: 100, description: Minimum of upstream totalPages and local safety cap 100 (at least 1) }
+    StonkfunTokenLinks:
+      type: object
+      additionalProperties: false
+      required: [website, x, telegram, discord, github]
+      properties:
+        website: { type: ["string", "null"], format: uri }
+        x: { type: ["string", "null"], format: uri }
+        telegram: { type: ["string", "null"], format: uri }
+        discord: { type: ["string", "null"], format: uri }
+        github: { type: ["string", "null"], format: uri }
+      description: Only validated HTTP(S) links; unsafe or absent provider metadata becomes null.
+    StonkfunTokenQuote:
+      type: ["object", "null"]
+      additionalProperties: false
+      required: [mint, symbol, name, logoUrl, category, categoryLabel, group, verified]
+      properties:
+        mint: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        symbol: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 200 }
+        logoUrl: { type: ["string", "null"], format: uri }
+        category: { type: ["string", "null"] }
+        categoryLabel: { type: ["string", "null"] }
+        group: { type: string, enum: [dark, near, stablecoin, other] }
+        verified: { type: boolean, description: Quote mint is matched against the current validated pair catalog; not an authenticity endorsement }
+    StonkfunTokenMetrics:
+      type: object
+      additionalProperties: false
+      required: [priceUsd, marketCapUsd, fdvUsd, volume24hUsd, liquidityUsd, peakMarketCapUsd, priceChange24h, holders, transactions, uniqueBuyers, holderGrowth]
+      properties:
+        priceUsd: { type: ["number", "null"], minimum: 0 }
+        marketCapUsd: { type: ["number", "null"], minimum: 0 }
+        fdvUsd: { type: ["number", "null"], minimum: 0 }
+        volume24hUsd: { type: ["number", "null"], minimum: 0 }
+        liquidityUsd: { type: ["number", "null"], minimum: 0 }
+        peakMarketCapUsd: { type: ["number", "null"], minimum: 0 }
+        priceChange24h: { type: ["number", "null"], description: Raw provider value when present; units are not locally inferred }
+        holders: { type: ["integer", "null"], minimum: 0 }
+        transactions: { type: ["integer", "null"], minimum: 0 }
+        uniqueBuyers: { type: ["integer", "null"], minimum: 0 }
+        holderGrowth: { type: ["number", "null"] }
+      description: Null means unavailable, not zero. Current public discovery lacks holder/transaction/buyer/growth evidence.
+    StonkfunToken:
+      type: object
+      additionalProperties: false
+      required: [mint, network, pool, name, symbol, description, imageUrl, links, quote, launchpad, mode, quoteOnlyFees, transferFeeBps, metrics, status, graduationProgress, createdAt, graduatedAt, creatorWallet, darkPair, underReview, metadataSuppressed]
+      properties:
+        mint: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+        pool: { type: ["string", "null"] }
+        name: { type: string, maxLength: 200 }
+        symbol: { type: string, maxLength: 64 }
+        description: { type: ["string", "null"], maxLength: 2000 }
+        imageUrl: { type: ["string", "null"], format: uri }
+        links: { $ref: "#/components/schemas/StonkfunTokenLinks" }
+        quote: { $ref: "#/components/schemas/StonkfunTokenQuote" }
+        launchpad: { type: ["string", "null"] }
+        mode: { type: ["string", "null"] }
+        quoteOnlyFees: { type: ["boolean", "null"] }
+        transferFeeBps:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 10000
+          description: Provider token transfer fee metadata, NOT a verified token launch fee.
+        metrics: { $ref: "#/components/schemas/StonkfunTokenMetrics" }
+        status: { type: ["string", "null"], description: Raw upstream status; documented categories new/aboutToGraduate/graduated. Unknown future values are preserved, not reclassified }
+        graduationProgress: { type: ["number", "null"], description: Raw upstream value; units/thresholds not independently documented }
+        createdAt: { type: ["string", "null"], format: date-time }
+        graduatedAt: { type: ["string", "null"], format: date-time, description: Provider timestamp; may precede createdAt. Neither is asserted to be immutable chain launch time }
+        creatorWallet: { type: ["string", "null"], description: Null until verified attribution exists; never inferred from mint/pool }
+        darkPair: { type: boolean, description: True only for a verified configured DARK mint+network match }
+        underReview: { type: boolean }
+        metadataSuppressed: { type: boolean }
+      description: Untrusted provider text is plain text only. Resolve relative image URLs against provider origin; reject non-HTTP(S) URLs.
+    StonkfunTokensResponse:
+      type: object
+      additionalProperties: false
+      required: [tokens, pagination, network, view, q, sort, quoteMint, status, source, coverage]
+      properties:
+        tokens:
+          type: array
+          items: { $ref: "#/components/schemas/StonkfunToken" }
+        pagination: { $ref: "#/components/schemas/StonkfunPagination" }
+        network: { type: string, enum: [mainnet-beta] }
+        view: { type: string, enum: [trending, new, dark, near, graduating, graduated] }
+        q: { type: string }
+        sort: { type: string, enum: [newest, volume] }
+        quoteMint: { type: ["string", "null"], description: Effective upstream exact quote mint filter, including DARK view binding }
+        status: { type: ["string", "null"], enum: [new, aboutToGraduate, graduated, null], description: Effective upstream status filter }
+        source: { $ref: "#/components/schemas/StonkfunSource" }
+        coverage: { $ref: "#/components/schemas/StonkfunCoverage" }
+    StonkfunTokenResponse:
+      type: object
+      additionalProperties: false
+      required: [token, source, coverage]
+      properties:
+        token: { $ref: "#/components/schemas/StonkfunToken" }
+        source: { $ref: "#/components/schemas/StonkfunSource" }
+        coverage: { $ref: "#/components/schemas/StonkfunCoverage" }
+    StonkfunPair:
+      type: object
+      additionalProperties: false
+      required: [mint, network, symbol, name, decimals, logoUrl, category, categoryLabel, tokenProgram, launchable, launchLabReady, symbolAmbiguous, group, enabled, priority, evidenceUrl, executionAvailable, unavailableReason]
+      properties:
+        mint: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+        symbol: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 200 }
+        decimals: { type: ["integer", "null"], minimum: 0, maximum: 255 }
+        logoUrl: { type: ["string", "null"], format: uri }
+        category: { type: ["string", "null"] }
+        categoryLabel: { type: ["string", "null"] }
+        tokenProgram: { type: ["string", "null"] }
+        launchable: { type: boolean, description: Upstream discovery flag only }
+        launchLabReady: { type: ["boolean", "null"], description: Upstream discovery flag only; absent is null }
+        symbolAmbiguous: { type: boolean }
+        group: { type: string, enum: [dark, near, stablecoin, other] }
+        enabled: { type: boolean, description: Local preparation selector enablement, not execution availability }
+        priority: { type: integer, minimum: 1, maximum: 10000 }
+        evidenceUrl: { type: ["string", "null"], format: uri }
+        executionAvailable: { type: boolean, enum: [false] }
+        unavailableReason: { type: string, minLength: 1 }
+    StonkfunPairsResponse:
+      type: object
+      additionalProperties: false
+      required: [pairs, network, selectBy, ambiguousSymbolCount, source]
+      properties:
+        pairs:
+          type: array
+          items: { $ref: "#/components/schemas/StonkfunPair" }
+        network: { type: string, enum: [mainnet-beta] }
+        selectBy: { type: string, enum: [mint] }
+        ambiguousSymbolCount: { type: integer, minimum: 0 }
+        source: { $ref: "#/components/schemas/StonkfunSource" }
+    LaunchAuthChallengeInput:
+      type: object
+      additionalProperties: false
+      required: [wallet, network]
+      properties:
+        wallet: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+    LaunchAuthChallenge:
+      type: object
+      additionalProperties: false
+      required: [id, message, expiresAt]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        message: { type: string, minLength: 1, maxLength: 4096 }
+        expiresAt: { type: string, format: date-time }
+    LaunchAuthProofInput:
+      type: object
+      additionalProperties: false
+      required: [id, signature]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        signature:
+          type: string
+          minLength: 88
+          maxLength: 88
+          pattern: "^[A-Za-z0-9+/]{86}==$"
+          description: Canonical base64 encoding of a 64-byte Ed25519 signature.
+    LaunchAuthenticatedSession:
+      type: object
+      additionalProperties: false
+      required: [wallet, csrfToken, expiresAt, isAdmin]
+      properties:
+        wallet: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        csrfToken: { type: string, minLength: 16, maxLength: 256 }
+        expiresAt: { type: string, format: date-time }
+        isAdmin: { type: boolean }
+    LaunchAuthSession:
+      type: object
+      additionalProperties: false
+      required: [wallet, csrfToken, expiresAt, isAdmin]
+      properties:
+        wallet: { type: ["string", "null"] }
+        csrfToken: { type: ["string", "null"] }
+        expiresAt: { type: ["string", "null"], format: date-time }
+        isAdmin: { type: boolean, description: Always false for anonymous state }
+    LaunchAllocations:
+      type: object
+      additionalProperties: false
+      required: [creator, developer, liquidity, community]
+      description: Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.
+      properties:
+        creator: { type: number, minimum: 0, maximum: 100, default: 0 }
+        developer: { type: number, minimum: 0, maximum: 100, default: 0 }
+        liquidity: { type: number, minimum: 0, maximum: 100, default: 100 }
+        community: { type: number, minimum: 0, maximum: 100, default: 0 }
+    LaunchDraftInput:
+      type: object
+      additionalProperties: false
+      required: [name, symbol, description, website, x, telegram, discord, github, logoId, pairMint, network, supply, allocations]
+      description: Incomplete identity may be saved privately. Social URLs are empty strings or HTTP(S). No HTML execution, wallet owner overrides or readiness claims accepted.
+      properties:
+        name: { type: string, maxLength: 80, default: "" }
+        symbol: { type: string, maxLength: 16, pattern: "^[A-Za-z0-9_-]*$", default: "" }
+        description: { type: string, maxLength: 2000, default: "" }
+        website: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]", default: "" }
+        x: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]", default: "" }
+        telegram: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]", default: "" }
+        discord: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]", default: "" }
+        github: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]", default: "" }
+        logoId: { type: ["string", "null"], maxLength: 128, default: null }
+        pairMint: { type: ["string", "null"], pattern: "^[1-9A-HJ-NP-Za-km-z]{32,44}$", default: null }
+        network: { type: string, enum: [mainnet-beta], default: mainnet-beta }
+        supply: { type: string, pattern: "^[1-9][0-9]{0,77}$", default: "1000000000", description: Positive decimal integer string; never JS floating-point token quantities }
+        allocations: { $ref: "#/components/schemas/LaunchAllocations" }
+    LaunchIncentiveState:
+      type: object
+      additionalProperties: false
+      required: [dark_pair, dark_points, referral_volume, creator_score, campaign_eligible, builder_eligible, state, under_review]
+      properties:
+        dark_pair: { type: ["boolean", "null"] }
+        dark_points: { type: ["number", "null"], minimum: 0 }
+        referral_volume: { type: ["number", "null"], minimum: 0 }
+        creator_score: { type: ["number", "null"] }
+        campaign_eligible: { type: ["boolean", "null"] }
+        builder_eligible: { type: ["boolean", "null"] }
+        state: { type: string, enum: [planned, unverified, under_review] }
+        under_review: { type: boolean }
+      description: Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.
+    LaunchDraft:
+      type: object
+      additionalProperties: false
+      required: [name, symbol, description, website, x, telegram, discord, github, logoId, pairMint, network, supply, allocations, id, wallet, status, executionAvailable, unavailableReason, createdAt, updatedAt, incentives]
+      properties:
+        name: { type: string, maxLength: 80 }
+        symbol: { type: string, maxLength: 16, pattern: "^[A-Za-z0-9_-]*$" }
+        description: { type: string, maxLength: 2000 }
+        website: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]" }
+        x: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]" }
+        telegram: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]" }
+        discord: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]" }
+        github: { type: string, maxLength: 500, pattern: "^$|^https?:[/][/]" }
+        logoId: { type: ["string", "null"], maxLength: 128 }
+        pairMint: { type: ["string", "null"], pattern: "^[1-9A-HJ-NP-Za-km-z]{32,44}$" }
+        network: { type: string, enum: [mainnet-beta] }
+        supply: { type: string, pattern: "^[1-9][0-9]{0,77}$" }
+        allocations: { $ref: "#/components/schemas/LaunchAllocations" }
+        id: { type: string }
+        wallet: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        status: { type: string, enum: [preparation-ready] }
+        executionAvailable: { type: boolean, enum: [false] }
+        unavailableReason: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        incentives: { $ref: "#/components/schemas/LaunchIncentiveState" }
+    LaunchDraftList:
+      type: object
+      additionalProperties: false
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/LaunchDraft" }
+    LaunchLogoUploadInput:
+      type: object
+      additionalProperties: false
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200, description: Display filename only; must never determine storage path }
+        size: { type: integer, minimum: 1, maximum: 1048576 }
+        contentType: { type: string, enum: [image/png, image/jpeg] }
+    LaunchLogoUpload:
+      type: object
+      additionalProperties: false
+      required: [id, uploadURL]
+      properties:
+        id: { type: string }
+        uploadURL: { type: string, format: uri, description: Short-lived presigned private object PUT URL; do not persist in drafts or analytics }
+    LaunchLogo:
+      type: object
+      additionalProperties: false
+      required: [id]
+      properties:
+        id: { type: string }
+    LaunchCreatorMetrics:
+      type: object
+      additionalProperties: false
+      required: [totalVolumeUsd, darkVolumeUsd, holders, feesUsd, referrals, darkPoints]
+      properties:
+        totalVolumeUsd: { type: ["number", "null"], minimum: 0 }
+        darkVolumeUsd: { type: ["number", "null"], minimum: 0 }
+        holders: { type: ["integer", "null"], minimum: 0, description: Distinct verified holders only, never sum across launches }
+        feesUsd: { type: ["number", "null"], minimum: 0 }
+        referrals: { type: ["integer", "null"], minimum: 0 }
+        darkPoints: { type: ["number", "null"], minimum: 0 }
+    LaunchCreatorResponse:
+      type: object
+      additionalProperties: false
+      required: [wallet, drafts, launches, metrics, incentives, warnings]
+      properties:
+        wallet: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/LaunchDraft" }
+        launches:
+          type: array
+          items: { $ref: "#/components/schemas/StonkfunToken" }
+          description: Only verified creator attribution; currently empty without attribution evidence
+        metrics: { $ref: "#/components/schemas/LaunchCreatorMetrics" }
+        incentives: { $ref: "#/components/schemas/LaunchIncentiveState" }
+        warnings:
+          type: array
+          items: { type: string }
+    LaunchPairOverride:
+      type: object
+      additionalProperties: false
+      required: [mint, network, enabled, priority, group, evidenceUrl]
+      properties:
+        mint: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+        enabled: { type: boolean }
+        priority: { type: integer, minimum: 1, maximum: 10000 }
+        group: { type: string, enum: [other, near, stablecoin] }
+        evidenceUrl: { type: string, format: uri, maxLength: 1000, pattern: "^https?:[/][/]" }
+      description: No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.
+    LaunchFeaturedPair:
+      type: ["object", "null"]
+      additionalProperties: false
+      required: [mint, network]
+      properties:
+        mint: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+    LaunchFeeProposal:
+      type: ["object", "null"]
+      additionalProperties: false
+      required: [amount, currency, notes]
+      properties:
+        amount: { type: ["string", "null"], maxLength: 80, pattern: "^[0-9]+(\\.[0-9]+)?$" }
+        currency: { type: ["string", "null"], maxLength: 64 }
+        notes: { type: string, maxLength: 2000 }
+      description: Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.
+    LaunchCampaignProposal:
+      type: ["object", "null"]
+      additionalProperties: false
+      required: [name, description, eligibilityNotes]
+      properties:
+        name: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        eligibilityNotes: { type: string, maxLength: 2000 }
+      description: Inactive proposal only; does not execute a campaign or promise eligibility/rewards.
+    LaunchPointsProposal:
+      type: ["object", "null"]
+      additionalProperties: false
+      required: [name, description, formulaProposal]
+      properties:
+        name: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        formulaProposal: { type: string, maxLength: 2000 }
+      description: Inactive draft formula only; no earning, issuance, payouts or claimable value.
+    LaunchConfigInput:
+      type: object
+      additionalProperties: false
+      required: [darkPairingEnabled, darkTokenAddress, darkPairSymbol, darkPairPriority, nearPairingEnabled, pairOverrides, featuredPair, featuredMints, paused, banner, feeProposal, campaignProposal, pointsProposal]
+      properties:
+        darkPairingEnabled: { type: boolean, default: false }
+        darkTokenAddress: { type: ["string", "null"], pattern: "^[1-9A-HJ-NP-Za-km-z]{32,44}$", default: null }
+        darkPairSymbol: { type: string, enum: [DARK], default: DARK }
+        darkPairPriority: { type: integer, minimum: 1, maximum: 10000, default: 1 }
+        nearPairingEnabled: { type: boolean, default: false }
+        pairOverrides:
+          type: array
+          maxItems: 1000
+          items: { $ref: "#/components/schemas/LaunchPairOverride" }
+        featuredPair: { $ref: "#/components/schemas/LaunchFeaturedPair" }
+        featuredMints:
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        paused: { type: boolean, default: false }
+        banner: { type: ["string", "null"], maxLength: 500, description: Plain text only }
+        feeProposal: { $ref: "#/components/schemas/LaunchFeeProposal" }
+        campaignProposal: { $ref: "#/components/schemas/LaunchCampaignProposal" }
+        pointsProposal: { $ref: "#/components/schemas/LaunchPointsProposal" }
+    LaunchConfig:
+      type: object
+      additionalProperties: false
+      required: [darkPairingEnabled, darkTokenAddress, darkPairSymbol, darkPairPriority, nearPairingEnabled, pairOverrides, featuredPair, featuredMints, paused, banner, feeProposal, campaignProposal, pointsProposal, network, executionAvailable, executionState, unavailableReason, darkPairAvailable, darkPairMessage, defaultView, providerLaunchFee, launchDestination, updatedAt]
+      properties:
+        darkPairingEnabled: { type: boolean }
+        darkTokenAddress: { type: ["string", "null"], pattern: "^[1-9A-HJ-NP-Za-km-z]{32,44}$" }
+        darkPairSymbol: { type: string, enum: [DARK] }
+        darkPairPriority: { type: integer, minimum: 1, maximum: 10000 }
+        nearPairingEnabled: { type: boolean }
+        pairOverrides:
+          type: array
+          maxItems: 1000
+          items: { $ref: "#/components/schemas/LaunchPairOverride" }
+        featuredPair: { $ref: "#/components/schemas/LaunchFeaturedPair" }
+        featuredMints:
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        paused: { type: boolean }
+        banner: { type: ["string", "null"], maxLength: 500 }
+        feeProposal: { $ref: "#/components/schemas/LaunchFeeProposal" }
+        campaignProposal: { $ref: "#/components/schemas/LaunchCampaignProposal" }
+        pointsProposal: { $ref: "#/components/schemas/LaunchPointsProposal" }
+        network: { type: string, enum: [mainnet-beta] }
+        executionAvailable: { type: boolean, enum: [false], readOnly: true }
+        executionState: { type: string, enum: [unavailable], readOnly: true }
+        unavailableReason: { type: string, minLength: 1 }
+        darkPairAvailable: { type: boolean, description: Current validated upstream mint match plus configured enablement; not execution availability }
+        darkPairMessage: { type: string, description: When unavailable use '$DARK pairing is being activated for the DarkSwap ecosystem.' }
+        defaultView: { type: string, enum: [trending, dark], description: DARK only when verified DARK ecosystem discovery is live; otherwise trending }
+        providerLaunchFee: { type: "null", description: No verified launch fee contract exists }
+        launchDestination: { type: "null", description: No verified launch execution destination exists }
+        updatedAt: { type: string, format: date-time }
+    LaunchReviewInput:
+      type: object
+      additionalProperties: false
+      required: [targetType, target, network, reason, evidenceUrls, notes, suppressMetadata]
+      properties:
+        targetType: { type: string, enum: [token, wallet] }
+        target: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+        reason: { type: string, enum: [malicious_metadata, self_referral, circular_activity, transaction_spam, suspected_wallet_cluster, other] }
+        evidenceUrls:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: { type: string, format: uri, maxLength: 1000, pattern: "^https?:[/][/]" }
+        notes: { type: string, minLength: 1, maxLength: 2000 }
+        suppressMetadata: { type: boolean, description: Only token-target reviews may suppress local metadata }
+    LaunchReview:
+      type: object
+      additionalProperties: false
+      required: [targetType, target, network, reason, evidenceUrls, notes, suppressMetadata, id, status, createdBy, createdAt]
+      properties:
+        targetType: { type: string, enum: [token, wallet] }
+        target: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        network: { type: string, enum: [mainnet-beta] }
+        reason: { type: string, enum: [malicious_metadata, self_referral, circular_activity, transaction_spam, suspected_wallet_cluster, other] }
+        evidenceUrls:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: { type: string, format: uri, maxLength: 1000, pattern: "^https?:[/][/]" }
+        notes: { type: string, minLength: 1, maxLength: 2000 }
+        suppressMetadata: { type: boolean }
+        id: { type: string }
+        status: { type: string, enum: [under_review] }
+        createdBy: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        createdAt: { type: string, format: date-time }
+    LaunchReviewList:
+      type: object
+      additionalProperties: false
+      required: [reviews, detectors]
+      properties:
+        reviews:
+          type: array
+          items: { $ref: "#/components/schemas/LaunchReview" }
+        detectors:
+          type: array
+          items: { $ref: "#/components/schemas/LaunchDetectorStatus" }
+    LaunchDetectorStatus:
+      type: object
+      additionalProperties: false
+      required: [name, active, reason]
+      properties:
+        name: { type: string, enum: [self_referral, circular_activity, transaction_spam, wallet_cluster] }
+        active: { type: boolean }
+        reason: { type: string, minLength: 1 }
+      description: Missing transaction/referral/cluster evidence leaves detector inactive; aggregate discovery is insufficient.
+    LaunchAuditRecord:
+      type: object
+      additionalProperties: false
+      required: [id, actorWallet, action, targetId, summary, createdAt]
+      properties:
+        id: { type: string }
+        actorWallet: { $ref: "#/components/schemas/LaunchSolanaAddress" }
+        action: { type: string, enum: [config_updated, review_created] }
+        targetId: { type: ["string", "null"] }
+        summary: { type: string }
+        createdAt: { type: string, format: date-time }
+    LaunchAuditList:
+      type: object
+      additionalProperties: false
+      required: [records]
+      properties:
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/LaunchAuditRecord" }
+    LaunchSubmitInput:
+      type: object
+      additionalProperties: false
+      required: [draftId]
+      properties:
+        draftId: { type: string, minLength: 1, maxLength: 128 }
+    RewardsConfig:
+      type: object
+      required: [appId, enabled]
+      properties:
+        appId: { type: ["string", "null"] }
+        enabled: { type: boolean }
+    RewardsTier:
+      type: object
+      required: [id, name, threshold, version]
+      properties:
+        id: { type: string, enum: [starter, plus, pro] }
+        name: { type: string }
+        threshold: { type: integer, enum: [0, 500, 2000] }
+        version: { type: integer, const: 1 }
+    RewardsTierThreshold:
+      type: object
+      required: [id, name, threshold]
+      properties:
+        id: { type: string, enum: [starter, plus, pro] }
+        name: { type: string, enum: [Starter, Plus, Pro] }
+        threshold: { type: integer, enum: [0, 500, 2000] }
+    RewardsRuleConfig:
+      type: object
+      required: [version, pointsPerCompletedSwap, dailyCap, dailyCapPeriod, tiers]
+      properties:
+        version: { type: integer, const: 1 }
+        pointsPerCompletedSwap: { type: integer, const: 100 }
+        dailyCap: { type: integer, const: 300 }
+        dailyCapPeriod: { type: string, const: utc_day }
+        tiers:
+          type: array
+          items: { $ref: "#/components/schemas/RewardsTierThreshold" }
+    RewardsLedgerEntry:
+      type: object
+      required: [id, points, reason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        points: { type: integer }
+        reason: { type: string, enum: [swap_completed, swap_capped, swap_reversed, adjustment] }
+        route: { type: string, enum: [houdini, near] }
+        orderReference: { type: string }
+        createdAt: { type: string, format: date-time }
+    RewardsMe:
+      type: object
+      required: [enrolled, balance, tier, nextThreshold, ruleConfig, history, nextCursor]
+      properties:
+        enrolled: { type: boolean }
+        balance: { type: integer, minimum: 0 }
+        tier: { $ref: "#/components/schemas/RewardsTier" }
+        nextThreshold: { type: ["integer", "null"] }
+        ruleConfig: { $ref: "#/components/schemas/RewardsRuleConfig" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/RewardsLedgerEntry" }
+        nextCursor: { type: ["string", "null"] }
+    RewardsEnrollInput:
+      type: object
+      additionalProperties: false
+      required: [consent]
+      properties:
+        consent: { type: boolean }
+    RewardsEnrollResponse:
+      type: object
+      required: [enrolled, message]
+      properties:
+        enrolled: { type: boolean }
+        message: { type: string }
+    NearTrendPool:
+      type: object
+      required: [id, address, tokenSymbol, tokenName, tokenAddress, tokenImage, dex, priceUsd, priceChange24h, volume24h, liquidityUsd, buys24h, sells24h, createdAt, url]
+      properties:
+        id: { type: string }
+        address: { type: string }
+        tokenSymbol: { type: string }
+        tokenName: { type: string }
+        tokenAddress: { type: string }
+        tokenImage: { type: ["string", "null"] }
+        dex: { type: string }
+        priceUsd: { type: ["number", "null"] }
+        priceChange24h: { type: ["number", "null"] }
+        volume24h: { type: ["number", "null"] }
+        liquidityUsd: { type: ["number", "null"] }
+        buys24h: { type: integer }
+        sells24h: { type: integer }
+        createdAt: { type: ["string", "null"] }
+        url: { type: string }
+    NearTrendsResponse:
+      type: object
+      required: [view, updatedAt, source, pools]
+      properties:
+        view: { type: string, enum: [trending, new] }
+        updatedAt: { type: string }
+        source: { type: string }
+        pools:
+          type: array
+          items: { $ref: "#/components/schemas/NearTrendPool" }
+    NearPoolSearchResponse:
+      type: object
+      required: [query, page, hasNextPage, updatedAt, source, pools]
+      properties:
+        query: { type: string }
+        page: { type: integer, minimum: 1, maximum: 10 }
+        hasNextPage:
+          type: boolean
+          description: True only when the raw provider data array is nonempty and page is below 10. This indicates another page may be requested, not that it is guaranteed to contain matches. Stop only when a raw provider page is empty or page 10 is reached.
+        updatedAt: { type: string }
+        source: { type: string }
+        pools:
+          type: array
+          items: { $ref: "#/components/schemas/NearTrendPool" }
+    MarketingDeliveryEvent:
+      type: object
+      required: [type, data]
+      properties:
+        type:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+    MarketingWebhookHealth:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [healthy, not_ready, processing_failure, backlog, stale, unavailable]
+    MarketingTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+    MarketingSubscriptionInput:
+      type: object
+      additionalProperties: false
+      required: [email, consent]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        consent: { type: boolean, const: true }
+    SupportRequestInput:
+      type: object
+      additionalProperties: false
+      required: [email, issue, message]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        issue:
+          type: string
+          enum: [wrong_deposit, delayed_swap, refund, order_status, other]
+        route:
+          type: string
+          enum: [private_route, privacy_swap, unsure]
+        orderReference: { type: string, maxLength: 180 }
+        transactionHash: { type: string, maxLength: 180 }
+        message: { type: string, minLength: 20, maxLength: 2000 }
+        website: { type: string, maxLength: 100 }
+    SupportRequestResponse:
+      type: object
+      required: [message, status, token]
+      properties:
+        message: { type: string }
+        status: { type: string, enum: [pending, delivered, unconfirmed, failed] }
+        token: { type: string }
+    SupportRequestStatus:
+      type: object
+      required: [status, message]
+      properties:
+        status: { type: string, enum: [pending, delivered, failed, unconfirmed] }
+        message: { type: string }
+    MarketingSubscriptionResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
     BetaAccessError:
       type: object
       required: [error]
@@ -422,6 +2108,46 @@ components:
         requiresMemo: { type: boolean }
         icon: { type: string }
         price: { type: ["number", "null"] }
+    SwapChainList:
+      type: object
+      required: [chains]
+      properties:
+        chains:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string }
+              name: { type: string }
+    NearServiceIncident:
+      type: object
+      required: [id, scopeType, scopeValue, status, createdAt, impact]
+      properties:
+        id: { type: string }
+        scopeType: { type: string }
+        scopeValue: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        resolvedAt: { type: string }
+        impact: { type: string, enum: [matching, unrelated, unverified] }
+    NearServiceStatus:
+      type: object
+      required: [sourceUrl, lastSuccessAt, freshUntil, state, activeIncidents, recentlyResolved, eligibility, reason]
+      properties:
+        sourceUrl: { type: string }
+        lastSuccessAt: { type: ["string", "null"] }
+        freshUntil: { type: ["string", "null"] }
+        state: { type: string, enum: [fresh, stale, unavailable, invalid] }
+        activeIncidents:
+          type: array
+          items: { $ref: "#/components/schemas/NearServiceIncident" }
+        recentlyResolved:
+          type: array
+          items: { $ref: "#/components/schemas/NearServiceIncident" }
+        eligibility: { type: string, enum: [allowed, paused, unverified] }
+        reason: { type: string }
     NearToken:
       type: object
       required: [id, symbol, chain, chainName, decimals]
@@ -475,8 +2201,10 @@ components:
         requestId: { type: string, format: uuid }
     NearOrder:
       type: object
+      description: A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.
       required: [depositAddress, deadline, from, to, amountIn, amountOut, minAmountOut, recipient, refundTo, status, estimatedSeconds]
       properties:
+        routeStatus: { $ref: "#/components/schemas/NearServiceStatus" }
         depositAddress: { type: string }
         requestId: { type: string }
         depositMemo: { type: string }
@@ -535,7 +2263,7 @@ components:
       required: [quoteId, addressTo]
       additionalProperties: false
       properties:
-        quoteId: { type: string, minLength: 1, maxLength: 128 }
+        quoteId: { type: string, minLength: 1, maxLength: 4096 }
         addressTo: { type: string, minLength: 1, maxLength: 200 }
         destinationTag: { type: string, maxLength: 64 }
     SwapOrder:

@@ -9,6 +9,2169 @@ import * as zod from 'zod';
 
 
 /**
+ * Uses documented provider-wide q (name/symbol/mint), quoteMint and status
+ * filters, with bounded page/pageSize. Matching case/prefix/fuzzy semantics
+ * are provider-defined and not independently established. No creator or
+ * quote-symbol search. When sort is omitted, trending uses upstream volume;
+ * other views use newest. Graduating maps to status=aboutToGraduate and
+ * graduated maps to status=graduated, trusting provider classification rather
+ * than recalculating progress from market cap. Explicit conflicting status
+ * or DARK quoteMint filters return 400. DARK requires the configured verified
+ * mint and uses provider quoteMint filtering; unavailable DARK returns an
+ * honest empty activation state. NEAR grouping may filter the current page
+ * locally when multiple evidence-backed mints exist and must disclose this.
+ * Provider q is catalog-wide, but local view filtering may still be page-only.
+ * @summary A bounded page of normalized StonkFun discovery tokens
+ */
+export const getStonkfunTokensQueryPageDefault = 1;
+export const getStonkfunTokensQueryPageMax = 100;
+
+export const getStonkfunTokensQueryPageSizeDefault = 25;
+export const getStonkfunTokensQueryPageSizeMax = 100;
+
+export const getStonkfunTokensQueryViewDefault = `trending`;
+export const getStonkfunTokensQueryQDefault = ``;
+export const getStonkfunTokensQueryQMax = 120;
+
+export const getStonkfunTokensQueryQuoteMintMin = 32;
+export const getStonkfunTokensQueryQuoteMintMax = 44;
+
+
+export const getStonkfunTokensQueryQuoteMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+export const GetStonkfunTokensQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).max(getStonkfunTokensQueryPageMax).default(getStonkfunTokensQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(getStonkfunTokensQueryPageSizeMax).default(getStonkfunTokensQueryPageSizeDefault),
+  "sort": zod.enum(['newest', 'volume']).optional().describe('Forwarded upstream; omitted defaults to volume for trending, newest otherwise.'),
+  "view": zod.enum(['trending', 'new', 'dark', 'near', 'graduating', 'graduated']).default(getStonkfunTokensQueryViewDefault),
+  "q": zod.coerce.string().max(getStonkfunTokensQueryQMax).default(getStonkfunTokensQueryQDefault).describe('Documented provider-wide token name/symbol/mint search. No verified creator lookup or pair-symbol search; use quoteMint for pair identity.'),
+  "quoteMint": zod.coerce.string().min(getStonkfunTokensQueryQuoteMintMin).max(getStonkfunTokensQueryQuoteMintMax).regex(getStonkfunTokensQueryQuoteMintRegExp).optional().describe('Documented provider-wide exact quote mint filter; must not conflict with a verified ecosystem view.'),
+  "status": zod.enum(['new', 'aboutToGraduate', 'graduated']).optional().describe('Documented upstream status filter; view graduating/graduated binds the corresponding status.')
+})
+
+export const getStonkfunTokensResponseTokensItemMintMin = 32;
+export const getStonkfunTokensResponseTokensItemMintMax = 44;
+
+
+export const getStonkfunTokensResponseTokensItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getStonkfunTokensResponseTokensItemNameMax = 200;
+
+export const getStonkfunTokensResponseTokensItemSymbolMax = 64;
+
+export const getStonkfunTokensResponseTokensItemDescriptionMax = 2000;
+
+export const getStonkfunTokensResponseTokensItemQuoteMintMin = 32;
+export const getStonkfunTokensResponseTokensItemQuoteMintMax = 44;
+
+
+export const getStonkfunTokensResponseTokensItemQuoteMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getStonkfunTokensResponseTokensItemQuoteSymbolMax = 64;
+
+export const getStonkfunTokensResponseTokensItemQuoteNameMax = 200;
+
+export const getStonkfunTokensResponseTokensItemTransferFeeBpsMin = 0;
+export const getStonkfunTokensResponseTokensItemTransferFeeBpsMax = 10000;
+
+export const getStonkfunTokensResponseTokensItemMetricsPriceUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsMarketCapUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsFdvUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsVolume24hUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsLiquidityUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsPeakMarketCapUsdMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsHoldersMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsTransactionsMin = 0;
+
+export const getStonkfunTokensResponseTokensItemMetricsUniqueBuyersMin = 0;
+
+export const getStonkfunTokensResponsePaginationPageMax = 100;
+
+
+export const getStonkfunTokensResponsePaginationTotalMin = 0;
+
+export const getStonkfunTokensResponsePaginationTotalPagesMin = 0;
+
+export const getStonkfunTokensResponsePaginationReturnedMin = 0;
+
+export const getStonkfunTokensResponsePaginationMaxAccessiblePageMax = 100;
+
+export const getStonkfunTokensResponseSourceCacheAgeSecondsMin = 0;
+
+
+
+export const GetStonkfunTokensResponse = zod.object({
+  "tokens": zod.array(zod.object({
+  "mint": zod.string().min(getStonkfunTokensResponseTokensItemMintMin).max(getStonkfunTokensResponseTokensItemMintMax).regex(getStonkfunTokensResponseTokensItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "pool": zod.string().nullable(),
+  "name": zod.string().max(getStonkfunTokensResponseTokensItemNameMax),
+  "symbol": zod.string().max(getStonkfunTokensResponseTokensItemSymbolMax),
+  "description": zod.string().max(getStonkfunTokensResponseTokensItemDescriptionMax).nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "links": zod.object({
+  "website": zod.string().url().nullable(),
+  "x": zod.string().url().nullable(),
+  "telegram": zod.string().url().nullable(),
+  "discord": zod.string().url().nullable(),
+  "github": zod.string().url().nullable()
+}).describe('Only validated HTTP(S) links; unsafe or absent provider metadata becomes null.'),
+  "quote": zod.object({
+  "mint": zod.string().min(getStonkfunTokensResponseTokensItemQuoteMintMin).max(getStonkfunTokensResponseTokensItemQuoteMintMax).regex(getStonkfunTokensResponseTokensItemQuoteMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "symbol": zod.string().max(getStonkfunTokensResponseTokensItemQuoteSymbolMax),
+  "name": zod.string().max(getStonkfunTokensResponseTokensItemQuoteNameMax),
+  "logoUrl": zod.string().url().nullable(),
+  "category": zod.string().nullable(),
+  "categoryLabel": zod.string().nullable(),
+  "group": zod.enum(['dark', 'near', 'stablecoin', 'other']),
+  "verified": zod.boolean().describe('Quote mint is matched against the current validated pair catalog; not an authenticity endorsement')
+}).nullable(),
+  "launchpad": zod.string().nullable(),
+  "mode": zod.string().nullable(),
+  "quoteOnlyFees": zod.boolean().nullable(),
+  "transferFeeBps": zod.number().int().min(getStonkfunTokensResponseTokensItemTransferFeeBpsMin).max(getStonkfunTokensResponseTokensItemTransferFeeBpsMax).nullable().describe('Provider token transfer fee metadata, NOT a verified token launch fee.'),
+  "metrics": zod.object({
+  "priceUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsPriceUsdMin).nullable(),
+  "marketCapUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsMarketCapUsdMin).nullable(),
+  "fdvUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsFdvUsdMin).nullable(),
+  "volume24hUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsVolume24hUsdMin).nullable(),
+  "liquidityUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsLiquidityUsdMin).nullable(),
+  "peakMarketCapUsd": zod.number().min(getStonkfunTokensResponseTokensItemMetricsPeakMarketCapUsdMin).nullable(),
+  "priceChange24h": zod.number().nullable().describe('Raw provider value when present; units are not locally inferred'),
+  "holders": zod.number().int().min(getStonkfunTokensResponseTokensItemMetricsHoldersMin).nullable(),
+  "transactions": zod.number().int().min(getStonkfunTokensResponseTokensItemMetricsTransactionsMin).nullable(),
+  "uniqueBuyers": zod.number().int().min(getStonkfunTokensResponseTokensItemMetricsUniqueBuyersMin).nullable(),
+  "holderGrowth": zod.number().nullable()
+}).describe('Null means unavailable, not zero. Current public discovery lacks holder/transaction/buyer/growth evidence.'),
+  "status": zod.string().nullable().describe('Raw upstream status; documented categories new/aboutToGraduate/graduated. Unknown future values are preserved'),
+  "graduationProgress": zod.number().nullable().describe('Raw upstream value; units/thresholds not independently documented'),
+  "createdAt": zod.coerce.date().nullable(),
+  "graduatedAt": zod.coerce.date().nullable().describe('Provider timestamp; may precede createdAt. Neither is asserted to be immutable chain launch time'),
+  "creatorWallet": zod.string().nullable().describe('Null until verified attribution exists; never inferred from mint/pool'),
+  "darkPair": zod.boolean().describe('True only for a verified configured DARK mint+network match'),
+  "underReview": zod.boolean(),
+  "metadataSuppressed": zod.boolean()
+}).describe('Untrusted provider text is plain text only. Resolve relative image URLs against provider origin; reject non-HTTP(S) URLs.')),
+  "pagination": zod.object({
+  "page": zod.number().int().min(1).max(getStonkfunTokensResponsePaginationPageMax),
+  "pageSize": zod.number().int().min(1),
+  "total": zod.number().int().min(getStonkfunTokensResponsePaginationTotalMin).describe('Provider total AFTER upstream filters but BEFORE any additional local view filtering'),
+  "totalPages": zod.number().int().min(getStonkfunTokensResponsePaginationTotalPagesMin).describe('Provider page count AFTER upstream filters but BEFORE any additional local view filtering'),
+  "returned": zod.number().int().min(getStonkfunTokensResponsePaginationReturnedMin).describe('Count AFTER any additional local view filtering'),
+  "maxAccessiblePage": zod.number().int().min(1).max(getStonkfunTokensResponsePaginationMaxAccessiblePageMax).describe('Minimum of upstream totalPages and local safety cap 100 (at least 1)')
+}),
+  "network": zod.enum(['mainnet-beta']),
+  "view": zod.enum(['trending', 'new', 'dark', 'near', 'graduating', 'graduated']),
+  "q": zod.string(),
+  "sort": zod.enum(['newest', 'volume']),
+  "quoteMint": zod.string().nullable().describe('Effective upstream exact quote mint filter'),
+  "status": zod.union([zod.literal('new'),zod.literal('aboutToGraduate'),zod.literal('graduated'),zod.literal(null)]).nullable().describe('Effective upstream status filter'),
+  "source": zod.object({
+  "provider": zod.enum(['stonkfun']),
+  "fetchedAt": zod.coerce.date(),
+  "generatedAt": zod.coerce.date().nullable(),
+  "stale": zod.boolean(),
+  "cacheAgeSeconds": zod.number().min(getStonkfunTokensResponseSourceCacheAgeSecondsMin)
+}),
+  "coverage": zod.object({
+  "scope": zod.enum(['provider_page', 'indexed_catalog']),
+  "searchScope": zod.enum(['provider_catalog', 'none']),
+  "viewFilterScope": zod.enum(['provider_catalog', 'current_page', 'none']).describe('Distinguishes server-side provider filters from local multiple-mint NEAR filtering'),
+  "creatorSearchAvailable": zod.literal(false),
+  "holderMetricsAvailable": zod.literal(false),
+  "transactionMetricsAvailable": zod.literal(false),
+  "graduationStatusVerified": zod.boolean().describe('Documented new/aboutToGraduate/graduated categories are verified; precise progress algorithm is not. Never compute classification from current market cap.'),
+  "rankingSignals": zod.array(zod.enum(['provider_volume', 'provider_newest'])),
+  "warnings": zod.array(zod.string())
+})
+})
+
+
+/**
+ * Always requests upstream launchable=true. Identity is network+mint and
+ * selectBy=mint. Upstream launchable and launchLabReady are discovery facts,
+ * not proof that this application's execution adapter is available. All
+ * executionAvailable values are false. Returns upstream pairs only; the
+ * locked DARK promotion card comes from /launch/config, not a fabricated pair.
+ * Preparation choices require launchable=true AND launchLabReady=true.
+ * False or absent launchLabReady is not readiness. Local order is verified
+ * DARK, verified NEAR, stablecoin, other, then priority.
+ * No native NEAR-chain compatibility is implied by a NEAR-symbol Solana mint.
+ * @summary Normalized upstream launchable pairs with local readiness
+ */
+export const getStonkfunPairsResponsePairsItemMintMin = 32;
+export const getStonkfunPairsResponsePairsItemMintMax = 44;
+
+
+export const getStonkfunPairsResponsePairsItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getStonkfunPairsResponsePairsItemSymbolMax = 64;
+
+export const getStonkfunPairsResponsePairsItemNameMax = 200;
+
+export const getStonkfunPairsResponsePairsItemDecimalsMin = 0;
+export const getStonkfunPairsResponsePairsItemDecimalsMax = 255;
+
+export const getStonkfunPairsResponsePairsItemPriorityMax = 10000;
+
+
+export const getStonkfunPairsResponseAmbiguousSymbolCountMin = 0;
+
+export const getStonkfunPairsResponseSourceCacheAgeSecondsMin = 0;
+
+
+
+export const GetStonkfunPairsResponse = zod.object({
+  "pairs": zod.array(zod.object({
+  "mint": zod.string().min(getStonkfunPairsResponsePairsItemMintMin).max(getStonkfunPairsResponsePairsItemMintMax).regex(getStonkfunPairsResponsePairsItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "symbol": zod.string().max(getStonkfunPairsResponsePairsItemSymbolMax),
+  "name": zod.string().max(getStonkfunPairsResponsePairsItemNameMax),
+  "decimals": zod.number().int().min(getStonkfunPairsResponsePairsItemDecimalsMin).max(getStonkfunPairsResponsePairsItemDecimalsMax).nullable(),
+  "logoUrl": zod.string().url().nullable(),
+  "category": zod.string().nullable(),
+  "categoryLabel": zod.string().nullable(),
+  "tokenProgram": zod.string().nullable(),
+  "launchable": zod.boolean().describe('Upstream discovery flag only'),
+  "launchLabReady": zod.boolean().nullable().describe('Upstream discovery flag only; absent is null'),
+  "symbolAmbiguous": zod.boolean(),
+  "group": zod.enum(['dark', 'near', 'stablecoin', 'other']),
+  "enabled": zod.boolean().describe('Local preparation selector enablement'),
+  "priority": zod.number().int().min(1).max(getStonkfunPairsResponsePairsItemPriorityMax),
+  "evidenceUrl": zod.string().url().nullable(),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1)
+})),
+  "network": zod.enum(['mainnet-beta']),
+  "selectBy": zod.enum(['mint']),
+  "ambiguousSymbolCount": zod.number().int().min(getStonkfunPairsResponseAmbiguousSymbolCountMin),
+  "source": zod.object({
+  "provider": zod.enum(['stonkfun']),
+  "fetchedAt": zod.coerce.date(),
+  "generatedAt": zod.coerce.date().nullable(),
+  "stale": zod.boolean(),
+  "cacheAgeSeconds": zod.number().min(getStonkfunPairsResponseSourceCacheAgeSecondsMin)
+})
+})
+
+
+/**
+ * Does not invent an upstream token-detail endpoint. An unindexed mint is
+ * NOT_INDEXED (404), not proof it does not exist. NOT_FOUND may be used only
+ * when a verified source establishes absence. Provider failure is distinct.
+ * @summary Resolve a verified mint from the bounded persistent discovery catalog
+ */
+export const getStonkfunTokenPathMintMin = 32;
+export const getStonkfunTokenPathMintMax = 44;
+
+
+export const getStonkfunTokenPathMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+export const GetStonkfunTokenParams = zod.object({
+  "mint": zod.coerce.string().min(getStonkfunTokenPathMintMin).max(getStonkfunTokenPathMintMax).regex(getStonkfunTokenPathMintRegExp)
+})
+
+export const getStonkfunTokenResponseTokenMintMin = 32;
+export const getStonkfunTokenResponseTokenMintMax = 44;
+
+
+export const getStonkfunTokenResponseTokenMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getStonkfunTokenResponseTokenNameMax = 200;
+
+export const getStonkfunTokenResponseTokenSymbolMax = 64;
+
+export const getStonkfunTokenResponseTokenDescriptionMax = 2000;
+
+export const getStonkfunTokenResponseTokenQuoteMintMin = 32;
+export const getStonkfunTokenResponseTokenQuoteMintMax = 44;
+
+
+export const getStonkfunTokenResponseTokenQuoteMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getStonkfunTokenResponseTokenQuoteSymbolMax = 64;
+
+export const getStonkfunTokenResponseTokenQuoteNameMax = 200;
+
+export const getStonkfunTokenResponseTokenTransferFeeBpsMin = 0;
+export const getStonkfunTokenResponseTokenTransferFeeBpsMax = 10000;
+
+export const getStonkfunTokenResponseTokenMetricsPriceUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsMarketCapUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsFdvUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsVolume24hUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsLiquidityUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsPeakMarketCapUsdMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsHoldersMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsTransactionsMin = 0;
+
+export const getStonkfunTokenResponseTokenMetricsUniqueBuyersMin = 0;
+
+export const getStonkfunTokenResponseSourceCacheAgeSecondsMin = 0;
+
+
+
+export const GetStonkfunTokenResponse = zod.object({
+  "token": zod.object({
+  "mint": zod.string().min(getStonkfunTokenResponseTokenMintMin).max(getStonkfunTokenResponseTokenMintMax).regex(getStonkfunTokenResponseTokenMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "pool": zod.string().nullable(),
+  "name": zod.string().max(getStonkfunTokenResponseTokenNameMax),
+  "symbol": zod.string().max(getStonkfunTokenResponseTokenSymbolMax),
+  "description": zod.string().max(getStonkfunTokenResponseTokenDescriptionMax).nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "links": zod.object({
+  "website": zod.string().url().nullable(),
+  "x": zod.string().url().nullable(),
+  "telegram": zod.string().url().nullable(),
+  "discord": zod.string().url().nullable(),
+  "github": zod.string().url().nullable()
+}).describe('Only validated HTTP(S) links; unsafe or absent provider metadata becomes null.'),
+  "quote": zod.object({
+  "mint": zod.string().min(getStonkfunTokenResponseTokenQuoteMintMin).max(getStonkfunTokenResponseTokenQuoteMintMax).regex(getStonkfunTokenResponseTokenQuoteMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "symbol": zod.string().max(getStonkfunTokenResponseTokenQuoteSymbolMax),
+  "name": zod.string().max(getStonkfunTokenResponseTokenQuoteNameMax),
+  "logoUrl": zod.string().url().nullable(),
+  "category": zod.string().nullable(),
+  "categoryLabel": zod.string().nullable(),
+  "group": zod.enum(['dark', 'near', 'stablecoin', 'other']),
+  "verified": zod.boolean().describe('Quote mint is matched against the current validated pair catalog; not an authenticity endorsement')
+}).nullable(),
+  "launchpad": zod.string().nullable(),
+  "mode": zod.string().nullable(),
+  "quoteOnlyFees": zod.boolean().nullable(),
+  "transferFeeBps": zod.number().int().min(getStonkfunTokenResponseTokenTransferFeeBpsMin).max(getStonkfunTokenResponseTokenTransferFeeBpsMax).nullable().describe('Provider token transfer fee metadata, NOT a verified token launch fee.'),
+  "metrics": zod.object({
+  "priceUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsPriceUsdMin).nullable(),
+  "marketCapUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsMarketCapUsdMin).nullable(),
+  "fdvUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsFdvUsdMin).nullable(),
+  "volume24hUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsVolume24hUsdMin).nullable(),
+  "liquidityUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsLiquidityUsdMin).nullable(),
+  "peakMarketCapUsd": zod.number().min(getStonkfunTokenResponseTokenMetricsPeakMarketCapUsdMin).nullable(),
+  "priceChange24h": zod.number().nullable().describe('Raw provider value when present; units are not locally inferred'),
+  "holders": zod.number().int().min(getStonkfunTokenResponseTokenMetricsHoldersMin).nullable(),
+  "transactions": zod.number().int().min(getStonkfunTokenResponseTokenMetricsTransactionsMin).nullable(),
+  "uniqueBuyers": zod.number().int().min(getStonkfunTokenResponseTokenMetricsUniqueBuyersMin).nullable(),
+  "holderGrowth": zod.number().nullable()
+}).describe('Null means unavailable, not zero. Current public discovery lacks holder/transaction/buyer/growth evidence.'),
+  "status": zod.string().nullable().describe('Raw upstream status; documented categories new/aboutToGraduate/graduated. Unknown future values are preserved'),
+  "graduationProgress": zod.number().nullable().describe('Raw upstream value; units/thresholds not independently documented'),
+  "createdAt": zod.coerce.date().nullable(),
+  "graduatedAt": zod.coerce.date().nullable().describe('Provider timestamp; may precede createdAt. Neither is asserted to be immutable chain launch time'),
+  "creatorWallet": zod.string().nullable().describe('Null until verified attribution exists; never inferred from mint/pool'),
+  "darkPair": zod.boolean().describe('True only for a verified configured DARK mint+network match'),
+  "underReview": zod.boolean(),
+  "metadataSuppressed": zod.boolean()
+}).describe('Untrusted provider text is plain text only. Resolve relative image URLs against provider origin; reject non-HTTP(S) URLs.'),
+  "source": zod.object({
+  "provider": zod.enum(['stonkfun']),
+  "fetchedAt": zod.coerce.date(),
+  "generatedAt": zod.coerce.date().nullable(),
+  "stale": zod.boolean(),
+  "cacheAgeSeconds": zod.number().min(getStonkfunTokenResponseSourceCacheAgeSecondsMin)
+}),
+  "coverage": zod.object({
+  "scope": zod.enum(['provider_page', 'indexed_catalog']),
+  "searchScope": zod.enum(['provider_catalog', 'none']),
+  "viewFilterScope": zod.enum(['provider_catalog', 'current_page', 'none']).describe('Distinguishes server-side provider filters from local multiple-mint NEAR filtering'),
+  "creatorSearchAvailable": zod.literal(false),
+  "holderMetricsAvailable": zod.literal(false),
+  "transactionMetricsAvailable": zod.literal(false),
+  "graduationStatusVerified": zod.boolean().describe('Documented new/aboutToGraduate/graduated categories are verified; precise progress algorithm is not. Never compute classification from current market cap.'),
+  "rankingSignals": zod.array(zod.enum(['provider_volume', 'provider_newest'])),
+  "warnings": zod.array(zod.string())
+})
+})
+
+
+/**
+ * @summary Public preparation-only launch configuration and capability gates
+ */
+export const getLaunchConfigResponseDarkTokenAddressRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchConfigResponseDarkPairPriorityMax = 10000;
+
+export const getLaunchConfigResponsePairOverridesItemMintMin = 32;
+export const getLaunchConfigResponsePairOverridesItemMintMax = 44;
+
+
+export const getLaunchConfigResponsePairOverridesItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchConfigResponsePairOverridesItemPriorityMax = 10000;
+
+export const getLaunchConfigResponsePairOverridesItemEvidenceUrlMax = 1000;
+
+
+export const getLaunchConfigResponsePairOverridesItemEvidenceUrlRegExp = new RegExp('^https?:[/][/]');
+export const getLaunchConfigResponsePairOverridesMax = 1000;
+
+export const getLaunchConfigResponseFeaturedPairMintMin = 32;
+export const getLaunchConfigResponseFeaturedPairMintMax = 44;
+
+
+export const getLaunchConfigResponseFeaturedPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchConfigResponseFeaturedMintsItemMin = 32;
+export const getLaunchConfigResponseFeaturedMintsItemMax = 44;
+
+
+export const getLaunchConfigResponseFeaturedMintsItemRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchConfigResponseFeaturedMintsMax = 100;
+
+export const getLaunchConfigResponseBannerMax = 500;
+
+export const getLaunchConfigResponseFeeProposalAmountMax = 80;
+
+
+export const getLaunchConfigResponseFeeProposalAmountRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const getLaunchConfigResponseFeeProposalCurrencyMax = 64;
+
+export const getLaunchConfigResponseFeeProposalNotesMax = 2000;
+
+export const getLaunchConfigResponseCampaignProposalNameMax = 120;
+
+export const getLaunchConfigResponseCampaignProposalDescriptionMax = 2000;
+
+export const getLaunchConfigResponseCampaignProposalEligibilityNotesMax = 2000;
+
+export const getLaunchConfigResponsePointsProposalNameMax = 120;
+
+export const getLaunchConfigResponsePointsProposalDescriptionMax = 2000;
+
+export const getLaunchConfigResponsePointsProposalFormulaProposalMax = 2000;
+
+
+
+
+export const GetLaunchConfigResponse = zod.object({
+  "darkPairingEnabled": zod.boolean(),
+  "darkTokenAddress": zod.string().regex(getLaunchConfigResponseDarkTokenAddressRegExp).nullable(),
+  "darkPairSymbol": zod.enum(['DARK']),
+  "darkPairPriority": zod.number().int().min(1).max(getLaunchConfigResponseDarkPairPriorityMax),
+  "nearPairingEnabled": zod.boolean(),
+  "pairOverrides": zod.array(zod.object({
+  "mint": zod.string().min(getLaunchConfigResponsePairOverridesItemMintMin).max(getLaunchConfigResponsePairOverridesItemMintMax).regex(getLaunchConfigResponsePairOverridesItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "enabled": zod.boolean(),
+  "priority": zod.number().int().min(1).max(getLaunchConfigResponsePairOverridesItemPriorityMax),
+  "group": zod.enum(['other', 'near', 'stablecoin']),
+  "evidenceUrl": zod.string().url().max(getLaunchConfigResponsePairOverridesItemEvidenceUrlMax).regex(getLaunchConfigResponsePairOverridesItemEvidenceUrlRegExp)
+}).describe('No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.')).max(getLaunchConfigResponsePairOverridesMax),
+  "featuredPair": zod.object({
+  "mint": zod.string().min(getLaunchConfigResponseFeaturedPairMintMin).max(getLaunchConfigResponseFeaturedPairMintMax).regex(getLaunchConfigResponseFeaturedPairMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta'])
+}).nullable(),
+  "featuredMints": zod.array(zod.string().min(getLaunchConfigResponseFeaturedMintsItemMin).max(getLaunchConfigResponseFeaturedMintsItemMax).regex(getLaunchConfigResponseFeaturedMintsItemRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.')).max(getLaunchConfigResponseFeaturedMintsMax),
+  "paused": zod.boolean(),
+  "banner": zod.string().max(getLaunchConfigResponseBannerMax).nullable(),
+  "feeProposal": zod.object({
+  "amount": zod.string().max(getLaunchConfigResponseFeeProposalAmountMax).regex(getLaunchConfigResponseFeeProposalAmountRegExp).nullable(),
+  "currency": zod.string().max(getLaunchConfigResponseFeeProposalCurrencyMax).nullable(),
+  "notes": zod.string().max(getLaunchConfigResponseFeeProposalNotesMax)
+}).nullable().describe('Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.'),
+  "campaignProposal": zod.object({
+  "name": zod.string().max(getLaunchConfigResponseCampaignProposalNameMax),
+  "description": zod.string().max(getLaunchConfigResponseCampaignProposalDescriptionMax),
+  "eligibilityNotes": zod.string().max(getLaunchConfigResponseCampaignProposalEligibilityNotesMax)
+}).nullable().describe('Inactive proposal only; does not execute a campaign or promise eligibility/rewards.'),
+  "pointsProposal": zod.object({
+  "name": zod.string().max(getLaunchConfigResponsePointsProposalNameMax),
+  "description": zod.string().max(getLaunchConfigResponsePointsProposalDescriptionMax),
+  "formulaProposal": zod.string().max(getLaunchConfigResponsePointsProposalFormulaProposalMax)
+}).nullable().describe('Inactive draft formula only; no earning, issuance, payouts or claimable value.'),
+  "network": zod.enum(['mainnet-beta']),
+  "executionAvailable": zod.literal(false),
+  "executionState": zod.enum(['unavailable']),
+  "unavailableReason": zod.string().min(1),
+  "darkPairAvailable": zod.boolean().describe('Current validated upstream mint match plus configured enablement; not execution availability'),
+  "darkPairMessage": zod.string().describe('When unavailable use \'$DARK pairing is being activated for the DarkSwap ecosystem.\''),
+  "defaultView": zod.enum(['trending', 'dark']).describe('DARK only when verified DARK ecosystem discovery is live; otherwise trending'),
+  "providerLaunchFee": zod.null().describe('No verified launch fee contract exists'),
+  "launchDestination": zod.null().describe('No verified launch execution destination exists'),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Requires an allowed same-origin request and rate protection. The exact
+ * UTF-8 message binds the Solana wallet, mainnet-beta network, configured
+ * application domain, nonce and expiry. Signing is authentication only:
+ * no transaction, fee, spending approval or private key is requested.
+ * @summary Create an expiring single-use wallet ownership challenge
+ */
+export const createLaunchAuthChallengeBodyWalletMin = 32;
+export const createLaunchAuthChallengeBodyWalletMax = 44;
+
+
+export const createLaunchAuthChallengeBodyWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+export const CreateLaunchAuthChallengeBody = zod.object({
+  "wallet": zod.string().min(createLaunchAuthChallengeBodyWalletMin).max(createLaunchAuthChallengeBodyWalletMax).regex(createLaunchAuthChallengeBodyWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta'])
+})
+
+export const createLaunchAuthChallengeResponseIdMax = 128;
+
+export const createLaunchAuthChallengeResponseMessageMax = 4096;
+
+
+
+export const CreateLaunchAuthChallengeResponse = zod.object({
+  "id": zod.string().min(1).max(createLaunchAuthChallengeResponseIdMax),
+  "message": zod.string().min(1).max(createLaunchAuthChallengeResponseMessageMax),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * Accepts a base64-encoded 64-byte Ed25519 signature of the challenge
+ * message. Expired, consumed, wrong-wallet/domain/network proofs fail.
+ * Sets an HttpOnly, SameSite cookie (Secure in HTTPS). Returns a CSRF token
+ * for subsequent private mutations. Rotate session on authentication.
+ * isAdmin is independently server-authorized and defaults false.
+ * @summary Verify the wallet proof and establish an isolated secure session
+ */
+export const verifyLaunchAuthBodyIdMax = 128;
+
+export const verifyLaunchAuthBodySignatureMin = 88;
+export const verifyLaunchAuthBodySignatureMax = 88;
+
+
+export const verifyLaunchAuthBodySignatureRegExp = new RegExp('^[A-Za-z0-9+/]{86}==$');
+
+
+export const VerifyLaunchAuthBody = zod.object({
+  "id": zod.string().min(1).max(verifyLaunchAuthBodyIdMax),
+  "signature": zod.string().min(verifyLaunchAuthBodySignatureMin).max(verifyLaunchAuthBodySignatureMax).regex(verifyLaunchAuthBodySignatureRegExp).describe('Canonical base64 encoding of a 64-byte Ed25519 signature.')
+})
+
+export const verifyLaunchAuthResponseWalletMin = 32;
+export const verifyLaunchAuthResponseWalletMax = 44;
+
+
+export const verifyLaunchAuthResponseWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const verifyLaunchAuthResponseCsrfTokenMin = 16;
+export const verifyLaunchAuthResponseCsrfTokenMax = 256;
+
+
+
+export const VerifyLaunchAuthResponse = zod.object({
+  "wallet": zod.string().min(verifyLaunchAuthResponseWalletMin).max(verifyLaunchAuthResponseWalletMax).regex(verifyLaunchAuthResponseWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "csrfToken": zod.string().min(verifyLaunchAuthResponseCsrfTokenMin).max(verifyLaunchAuthResponseCsrfTokenMax),
+  "expiresAt": zod.coerce.date(),
+  "isAdmin": zod.boolean()
+})
+
+
+/**
+ * Unauthenticated sessions return wallet, csrfToken and expiresAt null and isAdmin false. Private responses use Cache-Control no-store.
+ * @summary Read the current session without requiring a wallet connection
+ */
+export const GetLaunchAuthSessionResponse = zod.object({
+  "wallet": zod.string().nullable(),
+  "csrfToken": zod.string().nullable(),
+  "expiresAt": zod.coerce.date().nullable(),
+  "isAdmin": zod.boolean().describe('Always false for anonymous state')
+})
+
+
+/**
+ * @summary Revoke the session and clear its cookie
+ */
+export const logoutLaunchAuthHeaderXLaunchCSRFMin = 16;
+export const logoutLaunchAuthHeaderXLaunchCSRFMax = 256;
+
+
+
+export const LogoutLaunchAuthHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(logoutLaunchAuthHeaderXLaunchCSRFMin).max(logoutLaunchAuthHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const LogoutLaunchAuthResponse = zod.void()
+
+
+/**
+ * @summary List only the authenticated wallet's private saved drafts
+ */
+export const getLaunchDraftsResponseDraftsItemNameMax = 80;
+
+export const getLaunchDraftsResponseDraftsItemSymbolMax = 16;
+
+
+export const getLaunchDraftsResponseDraftsItemSymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const getLaunchDraftsResponseDraftsItemDescriptionMax = 2000;
+
+export const getLaunchDraftsResponseDraftsItemWebsiteMax = 500;
+
+
+export const getLaunchDraftsResponseDraftsItemWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftsResponseDraftsItemXMax = 500;
+
+
+export const getLaunchDraftsResponseDraftsItemXRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftsResponseDraftsItemTelegramMax = 500;
+
+
+export const getLaunchDraftsResponseDraftsItemTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftsResponseDraftsItemDiscordMax = 500;
+
+
+export const getLaunchDraftsResponseDraftsItemDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftsResponseDraftsItemGithubMax = 500;
+
+
+export const getLaunchDraftsResponseDraftsItemGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftsResponseDraftsItemLogoIdMax = 128;
+
+export const getLaunchDraftsResponseDraftsItemPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchDraftsResponseDraftsItemSupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const getLaunchDraftsResponseDraftsItemAllocationsCreatorDefault = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsCreatorMin = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsCreatorMax = 100;
+
+export const getLaunchDraftsResponseDraftsItemAllocationsDeveloperDefault = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsDeveloperMin = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsDeveloperMax = 100;
+
+export const getLaunchDraftsResponseDraftsItemAllocationsLiquidityDefault = 100;
+export const getLaunchDraftsResponseDraftsItemAllocationsLiquidityMin = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsLiquidityMax = 100;
+
+export const getLaunchDraftsResponseDraftsItemAllocationsCommunityDefault = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsCommunityMin = 0;
+export const getLaunchDraftsResponseDraftsItemAllocationsCommunityMax = 100;
+
+export const getLaunchDraftsResponseDraftsItemWalletMin = 32;
+export const getLaunchDraftsResponseDraftsItemWalletMax = 44;
+
+
+export const getLaunchDraftsResponseDraftsItemWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+export const getLaunchDraftsResponseDraftsItemIncentivesDarkPointsMin = 0;
+
+export const getLaunchDraftsResponseDraftsItemIncentivesReferralVolumeMin = 0;
+
+
+
+export const GetLaunchDraftsResponse = zod.object({
+  "drafts": zod.array(zod.object({
+  "name": zod.string().max(getLaunchDraftsResponseDraftsItemNameMax),
+  "symbol": zod.string().max(getLaunchDraftsResponseDraftsItemSymbolMax).regex(getLaunchDraftsResponseDraftsItemSymbolRegExp),
+  "description": zod.string().max(getLaunchDraftsResponseDraftsItemDescriptionMax),
+  "website": zod.string().max(getLaunchDraftsResponseDraftsItemWebsiteMax).regex(getLaunchDraftsResponseDraftsItemWebsiteRegExp),
+  "x": zod.string().max(getLaunchDraftsResponseDraftsItemXMax).regex(getLaunchDraftsResponseDraftsItemXRegExp),
+  "telegram": zod.string().max(getLaunchDraftsResponseDraftsItemTelegramMax).regex(getLaunchDraftsResponseDraftsItemTelegramRegExp),
+  "discord": zod.string().max(getLaunchDraftsResponseDraftsItemDiscordMax).regex(getLaunchDraftsResponseDraftsItemDiscordRegExp),
+  "github": zod.string().max(getLaunchDraftsResponseDraftsItemGithubMax).regex(getLaunchDraftsResponseDraftsItemGithubRegExp),
+  "logoId": zod.string().max(getLaunchDraftsResponseDraftsItemLogoIdMax).nullable(),
+  "pairMint": zod.string().regex(getLaunchDraftsResponseDraftsItemPairMintRegExp).nullable(),
+  "network": zod.enum(['mainnet-beta']),
+  "supply": zod.string().regex(getLaunchDraftsResponseDraftsItemSupplyRegExp),
+  "allocations": zod.object({
+  "creator": zod.number().min(getLaunchDraftsResponseDraftsItemAllocationsCreatorMin).max(getLaunchDraftsResponseDraftsItemAllocationsCreatorMax).default(getLaunchDraftsResponseDraftsItemAllocationsCreatorDefault),
+  "developer": zod.number().min(getLaunchDraftsResponseDraftsItemAllocationsDeveloperMin).max(getLaunchDraftsResponseDraftsItemAllocationsDeveloperMax).default(getLaunchDraftsResponseDraftsItemAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(getLaunchDraftsResponseDraftsItemAllocationsLiquidityMin).max(getLaunchDraftsResponseDraftsItemAllocationsLiquidityMax).default(getLaunchDraftsResponseDraftsItemAllocationsLiquidityDefault),
+  "community": zod.number().min(getLaunchDraftsResponseDraftsItemAllocationsCommunityMin).max(getLaunchDraftsResponseDraftsItemAllocationsCommunityMax).default(getLaunchDraftsResponseDraftsItemAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.'),
+  "id": zod.string(),
+  "wallet": zod.string().min(getLaunchDraftsResponseDraftsItemWalletMin).max(getLaunchDraftsResponseDraftsItemWalletMax).regex(getLaunchDraftsResponseDraftsItemWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "status": zod.enum(['preparation-ready']),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(getLaunchDraftsResponseDraftsItemIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(getLaunchDraftsResponseDraftsItemIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.')
+}))
+})
+
+
+/**
+ * @summary Persist a private preparation draft, not an upstream launch
+ */
+export const createLaunchDraftHeaderXLaunchCSRFMin = 16;
+export const createLaunchDraftHeaderXLaunchCSRFMax = 256;
+
+
+
+export const CreateLaunchDraftHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(createLaunchDraftHeaderXLaunchCSRFMin).max(createLaunchDraftHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const createLaunchDraftBodyNameDefault = ``;
+export const createLaunchDraftBodyNameMax = 80;
+
+export const createLaunchDraftBodySymbolDefault = ``;
+export const createLaunchDraftBodySymbolMax = 16;
+
+
+export const createLaunchDraftBodySymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const createLaunchDraftBodyDescriptionDefault = ``;
+export const createLaunchDraftBodyDescriptionMax = 2000;
+
+export const createLaunchDraftBodyWebsiteDefault = ``;
+export const createLaunchDraftBodyWebsiteMax = 500;
+
+
+export const createLaunchDraftBodyWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftBodyXDefault = ``;
+export const createLaunchDraftBodyXMax = 500;
+
+
+export const createLaunchDraftBodyXRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftBodyTelegramDefault = ``;
+export const createLaunchDraftBodyTelegramMax = 500;
+
+
+export const createLaunchDraftBodyTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftBodyDiscordDefault = ``;
+export const createLaunchDraftBodyDiscordMax = 500;
+
+
+export const createLaunchDraftBodyDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftBodyGithubDefault = ``;
+export const createLaunchDraftBodyGithubMax = 500;
+
+
+export const createLaunchDraftBodyGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftBodyLogoIdDefault = null;
+export const createLaunchDraftBodyLogoIdMax = 128;
+
+export const createLaunchDraftBodyPairMintDefault = null;
+export const createLaunchDraftBodyPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const createLaunchDraftBodyNetworkDefault = `mainnet-beta`;
+export const createLaunchDraftBodySupplyDefault = `1000000000`;
+export const createLaunchDraftBodySupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const createLaunchDraftBodyAllocationsCreatorDefault = 0;
+export const createLaunchDraftBodyAllocationsCreatorMin = 0;
+export const createLaunchDraftBodyAllocationsCreatorMax = 100;
+
+export const createLaunchDraftBodyAllocationsDeveloperDefault = 0;
+export const createLaunchDraftBodyAllocationsDeveloperMin = 0;
+export const createLaunchDraftBodyAllocationsDeveloperMax = 100;
+
+export const createLaunchDraftBodyAllocationsLiquidityDefault = 100;
+export const createLaunchDraftBodyAllocationsLiquidityMin = 0;
+export const createLaunchDraftBodyAllocationsLiquidityMax = 100;
+
+export const createLaunchDraftBodyAllocationsCommunityDefault = 0;
+export const createLaunchDraftBodyAllocationsCommunityMin = 0;
+export const createLaunchDraftBodyAllocationsCommunityMax = 100;
+
+
+
+export const CreateLaunchDraftBody = zod.object({
+  "name": zod.string().max(createLaunchDraftBodyNameMax).default(createLaunchDraftBodyNameDefault),
+  "symbol": zod.string().max(createLaunchDraftBodySymbolMax).regex(createLaunchDraftBodySymbolRegExp).default(createLaunchDraftBodySymbolDefault),
+  "description": zod.string().max(createLaunchDraftBodyDescriptionMax).default(createLaunchDraftBodyDescriptionDefault),
+  "website": zod.string().max(createLaunchDraftBodyWebsiteMax).regex(createLaunchDraftBodyWebsiteRegExp).default(createLaunchDraftBodyWebsiteDefault),
+  "x": zod.string().max(createLaunchDraftBodyXMax).regex(createLaunchDraftBodyXRegExp).default(createLaunchDraftBodyXDefault),
+  "telegram": zod.string().max(createLaunchDraftBodyTelegramMax).regex(createLaunchDraftBodyTelegramRegExp).default(createLaunchDraftBodyTelegramDefault),
+  "discord": zod.string().max(createLaunchDraftBodyDiscordMax).regex(createLaunchDraftBodyDiscordRegExp).default(createLaunchDraftBodyDiscordDefault),
+  "github": zod.string().max(createLaunchDraftBodyGithubMax).regex(createLaunchDraftBodyGithubRegExp).default(createLaunchDraftBodyGithubDefault),
+  "logoId": zod.string().max(createLaunchDraftBodyLogoIdMax).nullable().default(createLaunchDraftBodyLogoIdDefault),
+  "pairMint": zod.string().regex(createLaunchDraftBodyPairMintRegExp).nullable().default(createLaunchDraftBodyPairMintDefault),
+  "network": zod.enum(['mainnet-beta']).default(createLaunchDraftBodyNetworkDefault),
+  "supply": zod.string().regex(createLaunchDraftBodySupplyRegExp).default(createLaunchDraftBodySupplyDefault).describe('Positive decimal integer string; never JS floating-point token quantities'),
+  "allocations": zod.object({
+  "creator": zod.number().min(createLaunchDraftBodyAllocationsCreatorMin).max(createLaunchDraftBodyAllocationsCreatorMax).default(createLaunchDraftBodyAllocationsCreatorDefault),
+  "developer": zod.number().min(createLaunchDraftBodyAllocationsDeveloperMin).max(createLaunchDraftBodyAllocationsDeveloperMax).default(createLaunchDraftBodyAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(createLaunchDraftBodyAllocationsLiquidityMin).max(createLaunchDraftBodyAllocationsLiquidityMax).default(createLaunchDraftBodyAllocationsLiquidityDefault),
+  "community": zod.number().min(createLaunchDraftBodyAllocationsCommunityMin).max(createLaunchDraftBodyAllocationsCommunityMax).default(createLaunchDraftBodyAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.')
+}).describe('Incomplete identity may be saved privately. Social URLs are empty strings or HTTP(S). No HTML execution, wallet owner overrides or readiness claims accepted.')
+
+export const createLaunchDraftResponseNameMax = 80;
+
+export const createLaunchDraftResponseSymbolMax = 16;
+
+
+export const createLaunchDraftResponseSymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const createLaunchDraftResponseDescriptionMax = 2000;
+
+export const createLaunchDraftResponseWebsiteMax = 500;
+
+
+export const createLaunchDraftResponseWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftResponseXMax = 500;
+
+
+export const createLaunchDraftResponseXRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftResponseTelegramMax = 500;
+
+
+export const createLaunchDraftResponseTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftResponseDiscordMax = 500;
+
+
+export const createLaunchDraftResponseDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftResponseGithubMax = 500;
+
+
+export const createLaunchDraftResponseGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const createLaunchDraftResponseLogoIdMax = 128;
+
+export const createLaunchDraftResponsePairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const createLaunchDraftResponseSupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const createLaunchDraftResponseAllocationsCreatorDefault = 0;
+export const createLaunchDraftResponseAllocationsCreatorMin = 0;
+export const createLaunchDraftResponseAllocationsCreatorMax = 100;
+
+export const createLaunchDraftResponseAllocationsDeveloperDefault = 0;
+export const createLaunchDraftResponseAllocationsDeveloperMin = 0;
+export const createLaunchDraftResponseAllocationsDeveloperMax = 100;
+
+export const createLaunchDraftResponseAllocationsLiquidityDefault = 100;
+export const createLaunchDraftResponseAllocationsLiquidityMin = 0;
+export const createLaunchDraftResponseAllocationsLiquidityMax = 100;
+
+export const createLaunchDraftResponseAllocationsCommunityDefault = 0;
+export const createLaunchDraftResponseAllocationsCommunityMin = 0;
+export const createLaunchDraftResponseAllocationsCommunityMax = 100;
+
+export const createLaunchDraftResponseWalletMin = 32;
+export const createLaunchDraftResponseWalletMax = 44;
+
+
+export const createLaunchDraftResponseWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+export const createLaunchDraftResponseIncentivesDarkPointsMin = 0;
+
+export const createLaunchDraftResponseIncentivesReferralVolumeMin = 0;
+
+
+
+export const CreateLaunchDraftResponse = zod.object({
+  "name": zod.string().max(createLaunchDraftResponseNameMax),
+  "symbol": zod.string().max(createLaunchDraftResponseSymbolMax).regex(createLaunchDraftResponseSymbolRegExp),
+  "description": zod.string().max(createLaunchDraftResponseDescriptionMax),
+  "website": zod.string().max(createLaunchDraftResponseWebsiteMax).regex(createLaunchDraftResponseWebsiteRegExp),
+  "x": zod.string().max(createLaunchDraftResponseXMax).regex(createLaunchDraftResponseXRegExp),
+  "telegram": zod.string().max(createLaunchDraftResponseTelegramMax).regex(createLaunchDraftResponseTelegramRegExp),
+  "discord": zod.string().max(createLaunchDraftResponseDiscordMax).regex(createLaunchDraftResponseDiscordRegExp),
+  "github": zod.string().max(createLaunchDraftResponseGithubMax).regex(createLaunchDraftResponseGithubRegExp),
+  "logoId": zod.string().max(createLaunchDraftResponseLogoIdMax).nullable(),
+  "pairMint": zod.string().regex(createLaunchDraftResponsePairMintRegExp).nullable(),
+  "network": zod.enum(['mainnet-beta']),
+  "supply": zod.string().regex(createLaunchDraftResponseSupplyRegExp),
+  "allocations": zod.object({
+  "creator": zod.number().min(createLaunchDraftResponseAllocationsCreatorMin).max(createLaunchDraftResponseAllocationsCreatorMax).default(createLaunchDraftResponseAllocationsCreatorDefault),
+  "developer": zod.number().min(createLaunchDraftResponseAllocationsDeveloperMin).max(createLaunchDraftResponseAllocationsDeveloperMax).default(createLaunchDraftResponseAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(createLaunchDraftResponseAllocationsLiquidityMin).max(createLaunchDraftResponseAllocationsLiquidityMax).default(createLaunchDraftResponseAllocationsLiquidityDefault),
+  "community": zod.number().min(createLaunchDraftResponseAllocationsCommunityMin).max(createLaunchDraftResponseAllocationsCommunityMax).default(createLaunchDraftResponseAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.'),
+  "id": zod.string(),
+  "wallet": zod.string().min(createLaunchDraftResponseWalletMin).max(createLaunchDraftResponseWalletMax).regex(createLaunchDraftResponseWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "status": zod.enum(['preparation-ready']),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(createLaunchDraftResponseIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(createLaunchDraftResponseIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.')
+})
+
+
+/**
+ * @summary Read an owned private draft
+ */
+export const getLaunchDraftPathIdMax = 128;
+
+
+export const getLaunchDraftPathIdRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const GetLaunchDraftParams = zod.object({
+  "id": zod.coerce.string().min(1).max(getLaunchDraftPathIdMax).regex(getLaunchDraftPathIdRegExp)
+})
+
+export const getLaunchDraftResponseNameMax = 80;
+
+export const getLaunchDraftResponseSymbolMax = 16;
+
+
+export const getLaunchDraftResponseSymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const getLaunchDraftResponseDescriptionMax = 2000;
+
+export const getLaunchDraftResponseWebsiteMax = 500;
+
+
+export const getLaunchDraftResponseWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftResponseXMax = 500;
+
+
+export const getLaunchDraftResponseXRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftResponseTelegramMax = 500;
+
+
+export const getLaunchDraftResponseTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftResponseDiscordMax = 500;
+
+
+export const getLaunchDraftResponseDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftResponseGithubMax = 500;
+
+
+export const getLaunchDraftResponseGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchDraftResponseLogoIdMax = 128;
+
+export const getLaunchDraftResponsePairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchDraftResponseSupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const getLaunchDraftResponseAllocationsCreatorDefault = 0;
+export const getLaunchDraftResponseAllocationsCreatorMin = 0;
+export const getLaunchDraftResponseAllocationsCreatorMax = 100;
+
+export const getLaunchDraftResponseAllocationsDeveloperDefault = 0;
+export const getLaunchDraftResponseAllocationsDeveloperMin = 0;
+export const getLaunchDraftResponseAllocationsDeveloperMax = 100;
+
+export const getLaunchDraftResponseAllocationsLiquidityDefault = 100;
+export const getLaunchDraftResponseAllocationsLiquidityMin = 0;
+export const getLaunchDraftResponseAllocationsLiquidityMax = 100;
+
+export const getLaunchDraftResponseAllocationsCommunityDefault = 0;
+export const getLaunchDraftResponseAllocationsCommunityMin = 0;
+export const getLaunchDraftResponseAllocationsCommunityMax = 100;
+
+export const getLaunchDraftResponseWalletMin = 32;
+export const getLaunchDraftResponseWalletMax = 44;
+
+
+export const getLaunchDraftResponseWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+export const getLaunchDraftResponseIncentivesDarkPointsMin = 0;
+
+export const getLaunchDraftResponseIncentivesReferralVolumeMin = 0;
+
+
+
+export const GetLaunchDraftResponse = zod.object({
+  "name": zod.string().max(getLaunchDraftResponseNameMax),
+  "symbol": zod.string().max(getLaunchDraftResponseSymbolMax).regex(getLaunchDraftResponseSymbolRegExp),
+  "description": zod.string().max(getLaunchDraftResponseDescriptionMax),
+  "website": zod.string().max(getLaunchDraftResponseWebsiteMax).regex(getLaunchDraftResponseWebsiteRegExp),
+  "x": zod.string().max(getLaunchDraftResponseXMax).regex(getLaunchDraftResponseXRegExp),
+  "telegram": zod.string().max(getLaunchDraftResponseTelegramMax).regex(getLaunchDraftResponseTelegramRegExp),
+  "discord": zod.string().max(getLaunchDraftResponseDiscordMax).regex(getLaunchDraftResponseDiscordRegExp),
+  "github": zod.string().max(getLaunchDraftResponseGithubMax).regex(getLaunchDraftResponseGithubRegExp),
+  "logoId": zod.string().max(getLaunchDraftResponseLogoIdMax).nullable(),
+  "pairMint": zod.string().regex(getLaunchDraftResponsePairMintRegExp).nullable(),
+  "network": zod.enum(['mainnet-beta']),
+  "supply": zod.string().regex(getLaunchDraftResponseSupplyRegExp),
+  "allocations": zod.object({
+  "creator": zod.number().min(getLaunchDraftResponseAllocationsCreatorMin).max(getLaunchDraftResponseAllocationsCreatorMax).default(getLaunchDraftResponseAllocationsCreatorDefault),
+  "developer": zod.number().min(getLaunchDraftResponseAllocationsDeveloperMin).max(getLaunchDraftResponseAllocationsDeveloperMax).default(getLaunchDraftResponseAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(getLaunchDraftResponseAllocationsLiquidityMin).max(getLaunchDraftResponseAllocationsLiquidityMax).default(getLaunchDraftResponseAllocationsLiquidityDefault),
+  "community": zod.number().min(getLaunchDraftResponseAllocationsCommunityMin).max(getLaunchDraftResponseAllocationsCommunityMax).default(getLaunchDraftResponseAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.'),
+  "id": zod.string(),
+  "wallet": zod.string().min(getLaunchDraftResponseWalletMin).max(getLaunchDraftResponseWalletMax).regex(getLaunchDraftResponseWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "status": zod.enum(['preparation-ready']),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(getLaunchDraftResponseIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(getLaunchDraftResponseIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.')
+})
+
+
+/**
+ * Any edit invalidates prior configuration review. Logo references must be validated assets owned by this wallet. A saved pair is not a readiness guarantee.
+ * @summary Replace an owned draft's editable configuration
+ */
+export const updateLaunchDraftPathIdMax = 128;
+
+
+export const updateLaunchDraftPathIdRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const UpdateLaunchDraftParams = zod.object({
+  "id": zod.coerce.string().min(1).max(updateLaunchDraftPathIdMax).regex(updateLaunchDraftPathIdRegExp)
+})
+
+export const updateLaunchDraftHeaderXLaunchCSRFMin = 16;
+export const updateLaunchDraftHeaderXLaunchCSRFMax = 256;
+
+
+
+export const UpdateLaunchDraftHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(updateLaunchDraftHeaderXLaunchCSRFMin).max(updateLaunchDraftHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const updateLaunchDraftBodyNameDefault = ``;
+export const updateLaunchDraftBodyNameMax = 80;
+
+export const updateLaunchDraftBodySymbolDefault = ``;
+export const updateLaunchDraftBodySymbolMax = 16;
+
+
+export const updateLaunchDraftBodySymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const updateLaunchDraftBodyDescriptionDefault = ``;
+export const updateLaunchDraftBodyDescriptionMax = 2000;
+
+export const updateLaunchDraftBodyWebsiteDefault = ``;
+export const updateLaunchDraftBodyWebsiteMax = 500;
+
+
+export const updateLaunchDraftBodyWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftBodyXDefault = ``;
+export const updateLaunchDraftBodyXMax = 500;
+
+
+export const updateLaunchDraftBodyXRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftBodyTelegramDefault = ``;
+export const updateLaunchDraftBodyTelegramMax = 500;
+
+
+export const updateLaunchDraftBodyTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftBodyDiscordDefault = ``;
+export const updateLaunchDraftBodyDiscordMax = 500;
+
+
+export const updateLaunchDraftBodyDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftBodyGithubDefault = ``;
+export const updateLaunchDraftBodyGithubMax = 500;
+
+
+export const updateLaunchDraftBodyGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftBodyLogoIdDefault = null;
+export const updateLaunchDraftBodyLogoIdMax = 128;
+
+export const updateLaunchDraftBodyPairMintDefault = null;
+export const updateLaunchDraftBodyPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchDraftBodyNetworkDefault = `mainnet-beta`;
+export const updateLaunchDraftBodySupplyDefault = `1000000000`;
+export const updateLaunchDraftBodySupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const updateLaunchDraftBodyAllocationsCreatorDefault = 0;
+export const updateLaunchDraftBodyAllocationsCreatorMin = 0;
+export const updateLaunchDraftBodyAllocationsCreatorMax = 100;
+
+export const updateLaunchDraftBodyAllocationsDeveloperDefault = 0;
+export const updateLaunchDraftBodyAllocationsDeveloperMin = 0;
+export const updateLaunchDraftBodyAllocationsDeveloperMax = 100;
+
+export const updateLaunchDraftBodyAllocationsLiquidityDefault = 100;
+export const updateLaunchDraftBodyAllocationsLiquidityMin = 0;
+export const updateLaunchDraftBodyAllocationsLiquidityMax = 100;
+
+export const updateLaunchDraftBodyAllocationsCommunityDefault = 0;
+export const updateLaunchDraftBodyAllocationsCommunityMin = 0;
+export const updateLaunchDraftBodyAllocationsCommunityMax = 100;
+
+
+
+export const UpdateLaunchDraftBody = zod.object({
+  "name": zod.string().max(updateLaunchDraftBodyNameMax).default(updateLaunchDraftBodyNameDefault),
+  "symbol": zod.string().max(updateLaunchDraftBodySymbolMax).regex(updateLaunchDraftBodySymbolRegExp).default(updateLaunchDraftBodySymbolDefault),
+  "description": zod.string().max(updateLaunchDraftBodyDescriptionMax).default(updateLaunchDraftBodyDescriptionDefault),
+  "website": zod.string().max(updateLaunchDraftBodyWebsiteMax).regex(updateLaunchDraftBodyWebsiteRegExp).default(updateLaunchDraftBodyWebsiteDefault),
+  "x": zod.string().max(updateLaunchDraftBodyXMax).regex(updateLaunchDraftBodyXRegExp).default(updateLaunchDraftBodyXDefault),
+  "telegram": zod.string().max(updateLaunchDraftBodyTelegramMax).regex(updateLaunchDraftBodyTelegramRegExp).default(updateLaunchDraftBodyTelegramDefault),
+  "discord": zod.string().max(updateLaunchDraftBodyDiscordMax).regex(updateLaunchDraftBodyDiscordRegExp).default(updateLaunchDraftBodyDiscordDefault),
+  "github": zod.string().max(updateLaunchDraftBodyGithubMax).regex(updateLaunchDraftBodyGithubRegExp).default(updateLaunchDraftBodyGithubDefault),
+  "logoId": zod.string().max(updateLaunchDraftBodyLogoIdMax).nullable().default(updateLaunchDraftBodyLogoIdDefault),
+  "pairMint": zod.string().regex(updateLaunchDraftBodyPairMintRegExp).nullable().default(updateLaunchDraftBodyPairMintDefault),
+  "network": zod.enum(['mainnet-beta']).default(updateLaunchDraftBodyNetworkDefault),
+  "supply": zod.string().regex(updateLaunchDraftBodySupplyRegExp).default(updateLaunchDraftBodySupplyDefault).describe('Positive decimal integer string; never JS floating-point token quantities'),
+  "allocations": zod.object({
+  "creator": zod.number().min(updateLaunchDraftBodyAllocationsCreatorMin).max(updateLaunchDraftBodyAllocationsCreatorMax).default(updateLaunchDraftBodyAllocationsCreatorDefault),
+  "developer": zod.number().min(updateLaunchDraftBodyAllocationsDeveloperMin).max(updateLaunchDraftBodyAllocationsDeveloperMax).default(updateLaunchDraftBodyAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(updateLaunchDraftBodyAllocationsLiquidityMin).max(updateLaunchDraftBodyAllocationsLiquidityMax).default(updateLaunchDraftBodyAllocationsLiquidityDefault),
+  "community": zod.number().min(updateLaunchDraftBodyAllocationsCommunityMin).max(updateLaunchDraftBodyAllocationsCommunityMax).default(updateLaunchDraftBodyAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.')
+}).describe('Incomplete identity may be saved privately. Social URLs are empty strings or HTTP(S). No HTML execution, wallet owner overrides or readiness claims accepted.')
+
+export const updateLaunchDraftResponseNameMax = 80;
+
+export const updateLaunchDraftResponseSymbolMax = 16;
+
+
+export const updateLaunchDraftResponseSymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const updateLaunchDraftResponseDescriptionMax = 2000;
+
+export const updateLaunchDraftResponseWebsiteMax = 500;
+
+
+export const updateLaunchDraftResponseWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftResponseXMax = 500;
+
+
+export const updateLaunchDraftResponseXRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftResponseTelegramMax = 500;
+
+
+export const updateLaunchDraftResponseTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftResponseDiscordMax = 500;
+
+
+export const updateLaunchDraftResponseDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftResponseGithubMax = 500;
+
+
+export const updateLaunchDraftResponseGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const updateLaunchDraftResponseLogoIdMax = 128;
+
+export const updateLaunchDraftResponsePairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchDraftResponseSupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const updateLaunchDraftResponseAllocationsCreatorDefault = 0;
+export const updateLaunchDraftResponseAllocationsCreatorMin = 0;
+export const updateLaunchDraftResponseAllocationsCreatorMax = 100;
+
+export const updateLaunchDraftResponseAllocationsDeveloperDefault = 0;
+export const updateLaunchDraftResponseAllocationsDeveloperMin = 0;
+export const updateLaunchDraftResponseAllocationsDeveloperMax = 100;
+
+export const updateLaunchDraftResponseAllocationsLiquidityDefault = 100;
+export const updateLaunchDraftResponseAllocationsLiquidityMin = 0;
+export const updateLaunchDraftResponseAllocationsLiquidityMax = 100;
+
+export const updateLaunchDraftResponseAllocationsCommunityDefault = 0;
+export const updateLaunchDraftResponseAllocationsCommunityMin = 0;
+export const updateLaunchDraftResponseAllocationsCommunityMax = 100;
+
+export const updateLaunchDraftResponseWalletMin = 32;
+export const updateLaunchDraftResponseWalletMax = 44;
+
+
+export const updateLaunchDraftResponseWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+export const updateLaunchDraftResponseIncentivesDarkPointsMin = 0;
+
+export const updateLaunchDraftResponseIncentivesReferralVolumeMin = 0;
+
+
+
+export const UpdateLaunchDraftResponse = zod.object({
+  "name": zod.string().max(updateLaunchDraftResponseNameMax),
+  "symbol": zod.string().max(updateLaunchDraftResponseSymbolMax).regex(updateLaunchDraftResponseSymbolRegExp),
+  "description": zod.string().max(updateLaunchDraftResponseDescriptionMax),
+  "website": zod.string().max(updateLaunchDraftResponseWebsiteMax).regex(updateLaunchDraftResponseWebsiteRegExp),
+  "x": zod.string().max(updateLaunchDraftResponseXMax).regex(updateLaunchDraftResponseXRegExp),
+  "telegram": zod.string().max(updateLaunchDraftResponseTelegramMax).regex(updateLaunchDraftResponseTelegramRegExp),
+  "discord": zod.string().max(updateLaunchDraftResponseDiscordMax).regex(updateLaunchDraftResponseDiscordRegExp),
+  "github": zod.string().max(updateLaunchDraftResponseGithubMax).regex(updateLaunchDraftResponseGithubRegExp),
+  "logoId": zod.string().max(updateLaunchDraftResponseLogoIdMax).nullable(),
+  "pairMint": zod.string().regex(updateLaunchDraftResponsePairMintRegExp).nullable(),
+  "network": zod.enum(['mainnet-beta']),
+  "supply": zod.string().regex(updateLaunchDraftResponseSupplyRegExp),
+  "allocations": zod.object({
+  "creator": zod.number().min(updateLaunchDraftResponseAllocationsCreatorMin).max(updateLaunchDraftResponseAllocationsCreatorMax).default(updateLaunchDraftResponseAllocationsCreatorDefault),
+  "developer": zod.number().min(updateLaunchDraftResponseAllocationsDeveloperMin).max(updateLaunchDraftResponseAllocationsDeveloperMax).default(updateLaunchDraftResponseAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(updateLaunchDraftResponseAllocationsLiquidityMin).max(updateLaunchDraftResponseAllocationsLiquidityMax).default(updateLaunchDraftResponseAllocationsLiquidityDefault),
+  "community": zod.number().min(updateLaunchDraftResponseAllocationsCommunityMin).max(updateLaunchDraftResponseAllocationsCommunityMax).default(updateLaunchDraftResponseAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.'),
+  "id": zod.string(),
+  "wallet": zod.string().min(updateLaunchDraftResponseWalletMin).max(updateLaunchDraftResponseWalletMax).regex(updateLaunchDraftResponseWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "status": zod.enum(['preparation-ready']),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(updateLaunchDraftResponseIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(updateLaunchDraftResponseIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.')
+})
+
+
+/**
+ * @summary Delete an owned private draft
+ */
+export const deleteLaunchDraftPathIdMax = 128;
+
+
+export const deleteLaunchDraftPathIdRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const DeleteLaunchDraftParams = zod.object({
+  "id": zod.coerce.string().min(1).max(deleteLaunchDraftPathIdMax).regex(deleteLaunchDraftPathIdRegExp)
+})
+
+export const deleteLaunchDraftHeaderXLaunchCSRFMin = 16;
+export const deleteLaunchDraftHeaderXLaunchCSRFMax = 256;
+
+
+
+export const DeleteLaunchDraftHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(deleteLaunchDraftHeaderXLaunchCSRFMin).max(deleteLaunchDraftHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const DeleteLaunchDraftResponse = zod.void()
+
+
+/**
+ * No raw upload API. Request PNG/JPEG only, at most 1 MiB. Client PUTs the
+ * file bytes directly to uploadURL with the declared Content-Type, then
+ * calls complete. A reserved ID is not usable in a draft until byte
+ * validation and safe re-encoding succeed. Original objects remain private.
+ * @summary Reserve a private logo and obtain a short-lived presigned direct upload URL
+ */
+export const requestLaunchLogoUploadHeaderXLaunchCSRFMin = 16;
+export const requestLaunchLogoUploadHeaderXLaunchCSRFMax = 256;
+
+
+
+export const RequestLaunchLogoUploadHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(requestLaunchLogoUploadHeaderXLaunchCSRFMin).max(requestLaunchLogoUploadHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const requestLaunchLogoUploadBodyNameMax = 200;
+
+export const requestLaunchLogoUploadBodySizeMax = 1048576;
+
+
+
+export const RequestLaunchLogoUploadBody = zod.object({
+  "name": zod.string().min(1).max(requestLaunchLogoUploadBodyNameMax).describe('Display filename only; must never determine storage path'),
+  "size": zod.number().int().min(1).max(requestLaunchLogoUploadBodySizeMax),
+  "contentType": zod.enum(['image/png', 'image/jpeg'])
+})
+
+export const RequestLaunchLogoUploadResponse = zod.object({
+  "id": zod.string(),
+  "uploadURL": zod.string().url().describe('Short-lived presigned private object PUT URL; do not persist in drafts or analytics')
+})
+
+
+/**
+ * Owner-only. Validate actual length <=1048576, magic bytes and successful
+ * decoding, not filename or declared MIME alone. Reject SVG, invalid
+ * images and oversized dimensions/decompression bombs. Strip metadata,
+ * re-encode to a separate private object, and never serve raw uploaded bytes.
+ * Idempotent for an already validated owned ID.
+ * @summary Validate uploaded private bytes and record a safe re-encoded logo
+ */
+export const completeLaunchLogoUploadPathIdMax = 128;
+
+
+export const completeLaunchLogoUploadPathIdRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const CompleteLaunchLogoUploadParams = zod.object({
+  "id": zod.coerce.string().min(1).max(completeLaunchLogoUploadPathIdMax).regex(completeLaunchLogoUploadPathIdRegExp)
+})
+
+export const completeLaunchLogoUploadHeaderXLaunchCSRFMin = 16;
+export const completeLaunchLogoUploadHeaderXLaunchCSRFMax = 256;
+
+
+
+export const CompleteLaunchLogoUploadHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(completeLaunchLogoUploadHeaderXLaunchCSRFMin).max(completeLaunchLogoUploadHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const CompleteLaunchLogoUploadResponse = zod.object({
+  "id": zod.string()
+})
+
+
+/**
+ * Sends private no-store cache policy and nosniff. Cross-wallet IDs return 404; unfinished uploads are never served.
+ * @summary Read only the authenticated owner's validated re-encoded logo
+ */
+export const getLaunchLogoPathIdMax = 128;
+
+
+export const getLaunchLogoPathIdRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const GetLaunchLogoParams = zod.object({
+  "id": zod.coerce.string().min(1).max(getLaunchLogoPathIdMax).regex(getLaunchLogoPathIdRegExp)
+})
+
+export const GetLaunchLogoResponse = zod.unknown()
+
+
+/**
+ * No inferred ownership, summed/double-counted holder totals, reward issuance or linkage to swap reward ledgers. Missing evidence is null, never zero.
+ * @summary Private creator dashboard with verified attribution and nullable metrics
+ */
+export const getLaunchCreatorResponseWalletMin = 32;
+export const getLaunchCreatorResponseWalletMax = 44;
+
+
+export const getLaunchCreatorResponseWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchCreatorResponseDraftsItemNameMax = 80;
+
+export const getLaunchCreatorResponseDraftsItemSymbolMax = 16;
+
+
+export const getLaunchCreatorResponseDraftsItemSymbolRegExp = new RegExp('^[A-Za-z0-9_-]*$');
+export const getLaunchCreatorResponseDraftsItemDescriptionMax = 2000;
+
+export const getLaunchCreatorResponseDraftsItemWebsiteMax = 500;
+
+
+export const getLaunchCreatorResponseDraftsItemWebsiteRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchCreatorResponseDraftsItemXMax = 500;
+
+
+export const getLaunchCreatorResponseDraftsItemXRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchCreatorResponseDraftsItemTelegramMax = 500;
+
+
+export const getLaunchCreatorResponseDraftsItemTelegramRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchCreatorResponseDraftsItemDiscordMax = 500;
+
+
+export const getLaunchCreatorResponseDraftsItemDiscordRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchCreatorResponseDraftsItemGithubMax = 500;
+
+
+export const getLaunchCreatorResponseDraftsItemGithubRegExp = new RegExp('^$|^https?:[/][/]');
+export const getLaunchCreatorResponseDraftsItemLogoIdMax = 128;
+
+export const getLaunchCreatorResponseDraftsItemPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchCreatorResponseDraftsItemSupplyRegExp = new RegExp('^[1-9][0-9]{0,77}$');
+export const getLaunchCreatorResponseDraftsItemAllocationsCreatorDefault = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsCreatorMin = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsCreatorMax = 100;
+
+export const getLaunchCreatorResponseDraftsItemAllocationsDeveloperDefault = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsDeveloperMin = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsDeveloperMax = 100;
+
+export const getLaunchCreatorResponseDraftsItemAllocationsLiquidityDefault = 100;
+export const getLaunchCreatorResponseDraftsItemAllocationsLiquidityMin = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsLiquidityMax = 100;
+
+export const getLaunchCreatorResponseDraftsItemAllocationsCommunityDefault = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsCommunityMin = 0;
+export const getLaunchCreatorResponseDraftsItemAllocationsCommunityMax = 100;
+
+export const getLaunchCreatorResponseDraftsItemWalletMin = 32;
+export const getLaunchCreatorResponseDraftsItemWalletMax = 44;
+
+
+export const getLaunchCreatorResponseDraftsItemWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+export const getLaunchCreatorResponseDraftsItemIncentivesDarkPointsMin = 0;
+
+export const getLaunchCreatorResponseDraftsItemIncentivesReferralVolumeMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMintMin = 32;
+export const getLaunchCreatorResponseLaunchesItemMintMax = 44;
+
+
+export const getLaunchCreatorResponseLaunchesItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchCreatorResponseLaunchesItemNameMax = 200;
+
+export const getLaunchCreatorResponseLaunchesItemSymbolMax = 64;
+
+export const getLaunchCreatorResponseLaunchesItemDescriptionMax = 2000;
+
+export const getLaunchCreatorResponseLaunchesItemQuoteMintMin = 32;
+export const getLaunchCreatorResponseLaunchesItemQuoteMintMax = 44;
+
+
+export const getLaunchCreatorResponseLaunchesItemQuoteMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchCreatorResponseLaunchesItemQuoteSymbolMax = 64;
+
+export const getLaunchCreatorResponseLaunchesItemQuoteNameMax = 200;
+
+export const getLaunchCreatorResponseLaunchesItemTransferFeeBpsMin = 0;
+export const getLaunchCreatorResponseLaunchesItemTransferFeeBpsMax = 10000;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsPriceUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsMarketCapUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsFdvUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsVolume24hUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsLiquidityUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsPeakMarketCapUsdMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsHoldersMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsTransactionsMin = 0;
+
+export const getLaunchCreatorResponseLaunchesItemMetricsUniqueBuyersMin = 0;
+
+export const getLaunchCreatorResponseMetricsTotalVolumeUsdMin = 0;
+
+export const getLaunchCreatorResponseMetricsDarkVolumeUsdMin = 0;
+
+export const getLaunchCreatorResponseMetricsHoldersMin = 0;
+
+export const getLaunchCreatorResponseMetricsFeesUsdMin = 0;
+
+export const getLaunchCreatorResponseMetricsReferralsMin = 0;
+
+export const getLaunchCreatorResponseMetricsDarkPointsMin = 0;
+
+export const getLaunchCreatorResponseIncentivesDarkPointsMin = 0;
+
+export const getLaunchCreatorResponseIncentivesReferralVolumeMin = 0;
+
+
+
+export const GetLaunchCreatorResponse = zod.object({
+  "wallet": zod.string().min(getLaunchCreatorResponseWalletMin).max(getLaunchCreatorResponseWalletMax).regex(getLaunchCreatorResponseWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "drafts": zod.array(zod.object({
+  "name": zod.string().max(getLaunchCreatorResponseDraftsItemNameMax),
+  "symbol": zod.string().max(getLaunchCreatorResponseDraftsItemSymbolMax).regex(getLaunchCreatorResponseDraftsItemSymbolRegExp),
+  "description": zod.string().max(getLaunchCreatorResponseDraftsItemDescriptionMax),
+  "website": zod.string().max(getLaunchCreatorResponseDraftsItemWebsiteMax).regex(getLaunchCreatorResponseDraftsItemWebsiteRegExp),
+  "x": zod.string().max(getLaunchCreatorResponseDraftsItemXMax).regex(getLaunchCreatorResponseDraftsItemXRegExp),
+  "telegram": zod.string().max(getLaunchCreatorResponseDraftsItemTelegramMax).regex(getLaunchCreatorResponseDraftsItemTelegramRegExp),
+  "discord": zod.string().max(getLaunchCreatorResponseDraftsItemDiscordMax).regex(getLaunchCreatorResponseDraftsItemDiscordRegExp),
+  "github": zod.string().max(getLaunchCreatorResponseDraftsItemGithubMax).regex(getLaunchCreatorResponseDraftsItemGithubRegExp),
+  "logoId": zod.string().max(getLaunchCreatorResponseDraftsItemLogoIdMax).nullable(),
+  "pairMint": zod.string().regex(getLaunchCreatorResponseDraftsItemPairMintRegExp).nullable(),
+  "network": zod.enum(['mainnet-beta']),
+  "supply": zod.string().regex(getLaunchCreatorResponseDraftsItemSupplyRegExp),
+  "allocations": zod.object({
+  "creator": zod.number().min(getLaunchCreatorResponseDraftsItemAllocationsCreatorMin).max(getLaunchCreatorResponseDraftsItemAllocationsCreatorMax).default(getLaunchCreatorResponseDraftsItemAllocationsCreatorDefault),
+  "developer": zod.number().min(getLaunchCreatorResponseDraftsItemAllocationsDeveloperMin).max(getLaunchCreatorResponseDraftsItemAllocationsDeveloperMax).default(getLaunchCreatorResponseDraftsItemAllocationsDeveloperDefault),
+  "liquidity": zod.number().min(getLaunchCreatorResponseDraftsItemAllocationsLiquidityMin).max(getLaunchCreatorResponseDraftsItemAllocationsLiquidityMax).default(getLaunchCreatorResponseDraftsItemAllocationsLiquidityDefault),
+  "community": zod.number().min(getLaunchCreatorResponseDraftsItemAllocationsCommunityMin).max(getLaunchCreatorResponseDraftsItemAllocationsCommunityMax).default(getLaunchCreatorResponseDraftsItemAllocationsCommunityDefault)
+}).describe('Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.'),
+  "id": zod.string(),
+  "wallet": zod.string().min(getLaunchCreatorResponseDraftsItemWalletMin).max(getLaunchCreatorResponseDraftsItemWalletMax).regex(getLaunchCreatorResponseDraftsItemWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "status": zod.enum(['preparation-ready']),
+  "executionAvailable": zod.literal(false),
+  "unavailableReason": zod.string().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(getLaunchCreatorResponseDraftsItemIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(getLaunchCreatorResponseDraftsItemIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.')
+})),
+  "launches": zod.array(zod.object({
+  "mint": zod.string().min(getLaunchCreatorResponseLaunchesItemMintMin).max(getLaunchCreatorResponseLaunchesItemMintMax).regex(getLaunchCreatorResponseLaunchesItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "pool": zod.string().nullable(),
+  "name": zod.string().max(getLaunchCreatorResponseLaunchesItemNameMax),
+  "symbol": zod.string().max(getLaunchCreatorResponseLaunchesItemSymbolMax),
+  "description": zod.string().max(getLaunchCreatorResponseLaunchesItemDescriptionMax).nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "links": zod.object({
+  "website": zod.string().url().nullable(),
+  "x": zod.string().url().nullable(),
+  "telegram": zod.string().url().nullable(),
+  "discord": zod.string().url().nullable(),
+  "github": zod.string().url().nullable()
+}).describe('Only validated HTTP(S) links; unsafe or absent provider metadata becomes null.'),
+  "quote": zod.object({
+  "mint": zod.string().min(getLaunchCreatorResponseLaunchesItemQuoteMintMin).max(getLaunchCreatorResponseLaunchesItemQuoteMintMax).regex(getLaunchCreatorResponseLaunchesItemQuoteMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "symbol": zod.string().max(getLaunchCreatorResponseLaunchesItemQuoteSymbolMax),
+  "name": zod.string().max(getLaunchCreatorResponseLaunchesItemQuoteNameMax),
+  "logoUrl": zod.string().url().nullable(),
+  "category": zod.string().nullable(),
+  "categoryLabel": zod.string().nullable(),
+  "group": zod.enum(['dark', 'near', 'stablecoin', 'other']),
+  "verified": zod.boolean().describe('Quote mint is matched against the current validated pair catalog; not an authenticity endorsement')
+}).nullable(),
+  "launchpad": zod.string().nullable(),
+  "mode": zod.string().nullable(),
+  "quoteOnlyFees": zod.boolean().nullable(),
+  "transferFeeBps": zod.number().int().min(getLaunchCreatorResponseLaunchesItemTransferFeeBpsMin).max(getLaunchCreatorResponseLaunchesItemTransferFeeBpsMax).nullable().describe('Provider token transfer fee metadata, NOT a verified token launch fee.'),
+  "metrics": zod.object({
+  "priceUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsPriceUsdMin).nullable(),
+  "marketCapUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsMarketCapUsdMin).nullable(),
+  "fdvUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsFdvUsdMin).nullable(),
+  "volume24hUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsVolume24hUsdMin).nullable(),
+  "liquidityUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsLiquidityUsdMin).nullable(),
+  "peakMarketCapUsd": zod.number().min(getLaunchCreatorResponseLaunchesItemMetricsPeakMarketCapUsdMin).nullable(),
+  "priceChange24h": zod.number().nullable().describe('Raw provider value when present; units are not locally inferred'),
+  "holders": zod.number().int().min(getLaunchCreatorResponseLaunchesItemMetricsHoldersMin).nullable(),
+  "transactions": zod.number().int().min(getLaunchCreatorResponseLaunchesItemMetricsTransactionsMin).nullable(),
+  "uniqueBuyers": zod.number().int().min(getLaunchCreatorResponseLaunchesItemMetricsUniqueBuyersMin).nullable(),
+  "holderGrowth": zod.number().nullable()
+}).describe('Null means unavailable, not zero. Current public discovery lacks holder/transaction/buyer/growth evidence.'),
+  "status": zod.string().nullable().describe('Raw upstream status; documented categories new/aboutToGraduate/graduated. Unknown future values are preserved'),
+  "graduationProgress": zod.number().nullable().describe('Raw upstream value; units/thresholds not independently documented'),
+  "createdAt": zod.coerce.date().nullable(),
+  "graduatedAt": zod.coerce.date().nullable().describe('Provider timestamp; may precede createdAt. Neither is asserted to be immutable chain launch time'),
+  "creatorWallet": zod.string().nullable().describe('Null until verified attribution exists; never inferred from mint/pool'),
+  "darkPair": zod.boolean().describe('True only for a verified configured DARK mint+network match'),
+  "underReview": zod.boolean(),
+  "metadataSuppressed": zod.boolean()
+}).describe('Untrusted provider text is plain text only. Resolve relative image URLs against provider origin; reject non-HTTP(S) URLs.')).describe('Only verified creator attribution; currently empty without attribution evidence'),
+  "metrics": zod.object({
+  "totalVolumeUsd": zod.number().min(getLaunchCreatorResponseMetricsTotalVolumeUsdMin).nullable(),
+  "darkVolumeUsd": zod.number().min(getLaunchCreatorResponseMetricsDarkVolumeUsdMin).nullable(),
+  "holders": zod.number().int().min(getLaunchCreatorResponseMetricsHoldersMin).nullable().describe('Distinct verified holders only'),
+  "feesUsd": zod.number().min(getLaunchCreatorResponseMetricsFeesUsdMin).nullable(),
+  "referrals": zod.number().int().min(getLaunchCreatorResponseMetricsReferralsMin).nullable(),
+  "darkPoints": zod.number().min(getLaunchCreatorResponseMetricsDarkPointsMin).nullable()
+}),
+  "incentives": zod.object({
+  "dark_pair": zod.boolean().nullable(),
+  "dark_points": zod.number().min(getLaunchCreatorResponseIncentivesDarkPointsMin).nullable(),
+  "referral_volume": zod.number().min(getLaunchCreatorResponseIncentivesReferralVolumeMin).nullable(),
+  "creator_score": zod.number().nullable(),
+  "campaign_eligible": zod.boolean().nullable(),
+  "builder_eligible": zod.boolean().nullable(),
+  "state": zod.enum(['planned', 'unverified', 'under_review']),
+  "under_review": zod.boolean()
+}).describe('Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.'),
+  "warnings": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Read launch configuration as an independently authorized admin
+ */
+export const getLaunchAdminConfigResponseDarkTokenAddressRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchAdminConfigResponseDarkPairPriorityMax = 10000;
+
+export const getLaunchAdminConfigResponsePairOverridesItemMintMin = 32;
+export const getLaunchAdminConfigResponsePairOverridesItemMintMax = 44;
+
+
+export const getLaunchAdminConfigResponsePairOverridesItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchAdminConfigResponsePairOverridesItemPriorityMax = 10000;
+
+export const getLaunchAdminConfigResponsePairOverridesItemEvidenceUrlMax = 1000;
+
+
+export const getLaunchAdminConfigResponsePairOverridesItemEvidenceUrlRegExp = new RegExp('^https?:[/][/]');
+export const getLaunchAdminConfigResponsePairOverridesMax = 1000;
+
+export const getLaunchAdminConfigResponseFeaturedPairMintMin = 32;
+export const getLaunchAdminConfigResponseFeaturedPairMintMax = 44;
+
+
+export const getLaunchAdminConfigResponseFeaturedPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchAdminConfigResponseFeaturedMintsItemMin = 32;
+export const getLaunchAdminConfigResponseFeaturedMintsItemMax = 44;
+
+
+export const getLaunchAdminConfigResponseFeaturedMintsItemRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchAdminConfigResponseFeaturedMintsMax = 100;
+
+export const getLaunchAdminConfigResponseBannerMax = 500;
+
+export const getLaunchAdminConfigResponseFeeProposalAmountMax = 80;
+
+
+export const getLaunchAdminConfigResponseFeeProposalAmountRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const getLaunchAdminConfigResponseFeeProposalCurrencyMax = 64;
+
+export const getLaunchAdminConfigResponseFeeProposalNotesMax = 2000;
+
+export const getLaunchAdminConfigResponseCampaignProposalNameMax = 120;
+
+export const getLaunchAdminConfigResponseCampaignProposalDescriptionMax = 2000;
+
+export const getLaunchAdminConfigResponseCampaignProposalEligibilityNotesMax = 2000;
+
+export const getLaunchAdminConfigResponsePointsProposalNameMax = 120;
+
+export const getLaunchAdminConfigResponsePointsProposalDescriptionMax = 2000;
+
+export const getLaunchAdminConfigResponsePointsProposalFormulaProposalMax = 2000;
+
+
+
+
+export const GetLaunchAdminConfigResponse = zod.object({
+  "darkPairingEnabled": zod.boolean(),
+  "darkTokenAddress": zod.string().regex(getLaunchAdminConfigResponseDarkTokenAddressRegExp).nullable(),
+  "darkPairSymbol": zod.enum(['DARK']),
+  "darkPairPriority": zod.number().int().min(1).max(getLaunchAdminConfigResponseDarkPairPriorityMax),
+  "nearPairingEnabled": zod.boolean(),
+  "pairOverrides": zod.array(zod.object({
+  "mint": zod.string().min(getLaunchAdminConfigResponsePairOverridesItemMintMin).max(getLaunchAdminConfigResponsePairOverridesItemMintMax).regex(getLaunchAdminConfigResponsePairOverridesItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "enabled": zod.boolean(),
+  "priority": zod.number().int().min(1).max(getLaunchAdminConfigResponsePairOverridesItemPriorityMax),
+  "group": zod.enum(['other', 'near', 'stablecoin']),
+  "evidenceUrl": zod.string().url().max(getLaunchAdminConfigResponsePairOverridesItemEvidenceUrlMax).regex(getLaunchAdminConfigResponsePairOverridesItemEvidenceUrlRegExp)
+}).describe('No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.')).max(getLaunchAdminConfigResponsePairOverridesMax),
+  "featuredPair": zod.object({
+  "mint": zod.string().min(getLaunchAdminConfigResponseFeaturedPairMintMin).max(getLaunchAdminConfigResponseFeaturedPairMintMax).regex(getLaunchAdminConfigResponseFeaturedPairMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta'])
+}).nullable(),
+  "featuredMints": zod.array(zod.string().min(getLaunchAdminConfigResponseFeaturedMintsItemMin).max(getLaunchAdminConfigResponseFeaturedMintsItemMax).regex(getLaunchAdminConfigResponseFeaturedMintsItemRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.')).max(getLaunchAdminConfigResponseFeaturedMintsMax),
+  "paused": zod.boolean(),
+  "banner": zod.string().max(getLaunchAdminConfigResponseBannerMax).nullable(),
+  "feeProposal": zod.object({
+  "amount": zod.string().max(getLaunchAdminConfigResponseFeeProposalAmountMax).regex(getLaunchAdminConfigResponseFeeProposalAmountRegExp).nullable(),
+  "currency": zod.string().max(getLaunchAdminConfigResponseFeeProposalCurrencyMax).nullable(),
+  "notes": zod.string().max(getLaunchAdminConfigResponseFeeProposalNotesMax)
+}).nullable().describe('Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.'),
+  "campaignProposal": zod.object({
+  "name": zod.string().max(getLaunchAdminConfigResponseCampaignProposalNameMax),
+  "description": zod.string().max(getLaunchAdminConfigResponseCampaignProposalDescriptionMax),
+  "eligibilityNotes": zod.string().max(getLaunchAdminConfigResponseCampaignProposalEligibilityNotesMax)
+}).nullable().describe('Inactive proposal only; does not execute a campaign or promise eligibility/rewards.'),
+  "pointsProposal": zod.object({
+  "name": zod.string().max(getLaunchAdminConfigResponsePointsProposalNameMax),
+  "description": zod.string().max(getLaunchAdminConfigResponsePointsProposalDescriptionMax),
+  "formulaProposal": zod.string().max(getLaunchAdminConfigResponsePointsProposalFormulaProposalMax)
+}).nullable().describe('Inactive draft formula only; no earning, issuance, payouts or claimable value.'),
+  "network": zod.enum(['mainnet-beta']),
+  "executionAvailable": zod.literal(false),
+  "executionState": zod.enum(['unavailable']),
+  "unavailableReason": zod.string().min(1),
+  "darkPairAvailable": zod.boolean().describe('Current validated upstream mint match plus configured enablement; not execution availability'),
+  "darkPairMessage": zod.string().describe('When unavailable use \'$DARK pairing is being activated for the DarkSwap ecosystem.\''),
+  "defaultView": zod.enum(['trending', 'dark']).describe('DARK only when verified DARK ecosystem discovery is live; otherwise trending'),
+  "providerLaunchFee": zod.null().describe('No verified launch fee contract exists'),
+  "launchDestination": zod.null().describe('No verified launch execution destination exists'),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Pair overrides require mint/network evidence and cannot create upstream
+ * availability, change network support or bypass the unavailable adapter.
+ * Fee/campaign/points proposals do not charge fees, execute campaigns,
+ * issue claimable value or promise rewards. executionAvailable is immutable
+ * false and is forbidden in this request body.
+ * @summary Replace proposed local configuration and append an audit record
+ */
+export const updateLaunchAdminConfigHeaderXLaunchCSRFMin = 16;
+export const updateLaunchAdminConfigHeaderXLaunchCSRFMax = 256;
+
+
+
+export const UpdateLaunchAdminConfigHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(updateLaunchAdminConfigHeaderXLaunchCSRFMin).max(updateLaunchAdminConfigHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const updateLaunchAdminConfigBodyDarkPairingEnabledDefault = false;
+export const updateLaunchAdminConfigBodyDarkTokenAddressDefault = null;
+export const updateLaunchAdminConfigBodyDarkTokenAddressRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigBodyDarkPairSymbolDefault = `DARK`;
+export const updateLaunchAdminConfigBodyDarkPairPriorityDefault = 1;
+export const updateLaunchAdminConfigBodyDarkPairPriorityMax = 10000;
+
+export const updateLaunchAdminConfigBodyNearPairingEnabledDefault = false;
+export const updateLaunchAdminConfigBodyPairOverridesItemMintMin = 32;
+export const updateLaunchAdminConfigBodyPairOverridesItemMintMax = 44;
+
+
+export const updateLaunchAdminConfigBodyPairOverridesItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigBodyPairOverridesItemPriorityMax = 10000;
+
+export const updateLaunchAdminConfigBodyPairOverridesItemEvidenceUrlMax = 1000;
+
+
+export const updateLaunchAdminConfigBodyPairOverridesItemEvidenceUrlRegExp = new RegExp('^https?:[/][/]');
+export const updateLaunchAdminConfigBodyPairOverridesMax = 1000;
+
+export const updateLaunchAdminConfigBodyFeaturedPairMintMin = 32;
+export const updateLaunchAdminConfigBodyFeaturedPairMintMax = 44;
+
+
+export const updateLaunchAdminConfigBodyFeaturedPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigBodyFeaturedMintsItemMin = 32;
+export const updateLaunchAdminConfigBodyFeaturedMintsItemMax = 44;
+
+
+export const updateLaunchAdminConfigBodyFeaturedMintsItemRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigBodyFeaturedMintsMax = 100;
+
+export const updateLaunchAdminConfigBodyPausedDefault = false;
+export const updateLaunchAdminConfigBodyBannerMax = 500;
+
+export const updateLaunchAdminConfigBodyFeeProposalAmountMax = 80;
+
+
+export const updateLaunchAdminConfigBodyFeeProposalAmountRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const updateLaunchAdminConfigBodyFeeProposalCurrencyMax = 64;
+
+export const updateLaunchAdminConfigBodyFeeProposalNotesMax = 2000;
+
+export const updateLaunchAdminConfigBodyCampaignProposalNameMax = 120;
+
+export const updateLaunchAdminConfigBodyCampaignProposalDescriptionMax = 2000;
+
+export const updateLaunchAdminConfigBodyCampaignProposalEligibilityNotesMax = 2000;
+
+export const updateLaunchAdminConfigBodyPointsProposalNameMax = 120;
+
+export const updateLaunchAdminConfigBodyPointsProposalDescriptionMax = 2000;
+
+export const updateLaunchAdminConfigBodyPointsProposalFormulaProposalMax = 2000;
+
+
+
+export const UpdateLaunchAdminConfigBody = zod.object({
+  "darkPairingEnabled": zod.boolean().default(updateLaunchAdminConfigBodyDarkPairingEnabledDefault),
+  "darkTokenAddress": zod.string().regex(updateLaunchAdminConfigBodyDarkTokenAddressRegExp).nullable().default(updateLaunchAdminConfigBodyDarkTokenAddressDefault),
+  "darkPairSymbol": zod.enum(['DARK']).default(updateLaunchAdminConfigBodyDarkPairSymbolDefault),
+  "darkPairPriority": zod.number().int().min(1).max(updateLaunchAdminConfigBodyDarkPairPriorityMax).default(updateLaunchAdminConfigBodyDarkPairPriorityDefault),
+  "nearPairingEnabled": zod.boolean().default(updateLaunchAdminConfigBodyNearPairingEnabledDefault),
+  "pairOverrides": zod.array(zod.object({
+  "mint": zod.string().min(updateLaunchAdminConfigBodyPairOverridesItemMintMin).max(updateLaunchAdminConfigBodyPairOverridesItemMintMax).regex(updateLaunchAdminConfigBodyPairOverridesItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "enabled": zod.boolean(),
+  "priority": zod.number().int().min(1).max(updateLaunchAdminConfigBodyPairOverridesItemPriorityMax),
+  "group": zod.enum(['other', 'near', 'stablecoin']),
+  "evidenceUrl": zod.string().url().max(updateLaunchAdminConfigBodyPairOverridesItemEvidenceUrlMax).regex(updateLaunchAdminConfigBodyPairOverridesItemEvidenceUrlRegExp)
+}).describe('No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.')).max(updateLaunchAdminConfigBodyPairOverridesMax),
+  "featuredPair": zod.object({
+  "mint": zod.string().min(updateLaunchAdminConfigBodyFeaturedPairMintMin).max(updateLaunchAdminConfigBodyFeaturedPairMintMax).regex(updateLaunchAdminConfigBodyFeaturedPairMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta'])
+}).nullable(),
+  "featuredMints": zod.array(zod.string().min(updateLaunchAdminConfigBodyFeaturedMintsItemMin).max(updateLaunchAdminConfigBodyFeaturedMintsItemMax).regex(updateLaunchAdminConfigBodyFeaturedMintsItemRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.')).max(updateLaunchAdminConfigBodyFeaturedMintsMax),
+  "paused": zod.boolean().default(updateLaunchAdminConfigBodyPausedDefault),
+  "banner": zod.string().max(updateLaunchAdminConfigBodyBannerMax).nullable().describe('Plain text only'),
+  "feeProposal": zod.object({
+  "amount": zod.string().max(updateLaunchAdminConfigBodyFeeProposalAmountMax).regex(updateLaunchAdminConfigBodyFeeProposalAmountRegExp).nullable(),
+  "currency": zod.string().max(updateLaunchAdminConfigBodyFeeProposalCurrencyMax).nullable(),
+  "notes": zod.string().max(updateLaunchAdminConfigBodyFeeProposalNotesMax)
+}).nullable().describe('Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.'),
+  "campaignProposal": zod.object({
+  "name": zod.string().max(updateLaunchAdminConfigBodyCampaignProposalNameMax),
+  "description": zod.string().max(updateLaunchAdminConfigBodyCampaignProposalDescriptionMax),
+  "eligibilityNotes": zod.string().max(updateLaunchAdminConfigBodyCampaignProposalEligibilityNotesMax)
+}).nullable().describe('Inactive proposal only; does not execute a campaign or promise eligibility/rewards.'),
+  "pointsProposal": zod.object({
+  "name": zod.string().max(updateLaunchAdminConfigBodyPointsProposalNameMax),
+  "description": zod.string().max(updateLaunchAdminConfigBodyPointsProposalDescriptionMax),
+  "formulaProposal": zod.string().max(updateLaunchAdminConfigBodyPointsProposalFormulaProposalMax)
+}).nullable().describe('Inactive draft formula only; no earning, issuance, payouts or claimable value.')
+})
+
+export const updateLaunchAdminConfigResponseDarkTokenAddressRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigResponseDarkPairPriorityMax = 10000;
+
+export const updateLaunchAdminConfigResponsePairOverridesItemMintMin = 32;
+export const updateLaunchAdminConfigResponsePairOverridesItemMintMax = 44;
+
+
+export const updateLaunchAdminConfigResponsePairOverridesItemMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigResponsePairOverridesItemPriorityMax = 10000;
+
+export const updateLaunchAdminConfigResponsePairOverridesItemEvidenceUrlMax = 1000;
+
+
+export const updateLaunchAdminConfigResponsePairOverridesItemEvidenceUrlRegExp = new RegExp('^https?:[/][/]');
+export const updateLaunchAdminConfigResponsePairOverridesMax = 1000;
+
+export const updateLaunchAdminConfigResponseFeaturedPairMintMin = 32;
+export const updateLaunchAdminConfigResponseFeaturedPairMintMax = 44;
+
+
+export const updateLaunchAdminConfigResponseFeaturedPairMintRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigResponseFeaturedMintsItemMin = 32;
+export const updateLaunchAdminConfigResponseFeaturedMintsItemMax = 44;
+
+
+export const updateLaunchAdminConfigResponseFeaturedMintsItemRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const updateLaunchAdminConfigResponseFeaturedMintsMax = 100;
+
+export const updateLaunchAdminConfigResponseBannerMax = 500;
+
+export const updateLaunchAdminConfigResponseFeeProposalAmountMax = 80;
+
+
+export const updateLaunchAdminConfigResponseFeeProposalAmountRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const updateLaunchAdminConfigResponseFeeProposalCurrencyMax = 64;
+
+export const updateLaunchAdminConfigResponseFeeProposalNotesMax = 2000;
+
+export const updateLaunchAdminConfigResponseCampaignProposalNameMax = 120;
+
+export const updateLaunchAdminConfigResponseCampaignProposalDescriptionMax = 2000;
+
+export const updateLaunchAdminConfigResponseCampaignProposalEligibilityNotesMax = 2000;
+
+export const updateLaunchAdminConfigResponsePointsProposalNameMax = 120;
+
+export const updateLaunchAdminConfigResponsePointsProposalDescriptionMax = 2000;
+
+export const updateLaunchAdminConfigResponsePointsProposalFormulaProposalMax = 2000;
+
+
+
+
+export const UpdateLaunchAdminConfigResponse = zod.object({
+  "darkPairingEnabled": zod.boolean(),
+  "darkTokenAddress": zod.string().regex(updateLaunchAdminConfigResponseDarkTokenAddressRegExp).nullable(),
+  "darkPairSymbol": zod.enum(['DARK']),
+  "darkPairPriority": zod.number().int().min(1).max(updateLaunchAdminConfigResponseDarkPairPriorityMax),
+  "nearPairingEnabled": zod.boolean(),
+  "pairOverrides": zod.array(zod.object({
+  "mint": zod.string().min(updateLaunchAdminConfigResponsePairOverridesItemMintMin).max(updateLaunchAdminConfigResponsePairOverridesItemMintMax).regex(updateLaunchAdminConfigResponsePairOverridesItemMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "enabled": zod.boolean(),
+  "priority": zod.number().int().min(1).max(updateLaunchAdminConfigResponsePairOverridesItemPriorityMax),
+  "group": zod.enum(['other', 'near', 'stablecoin']),
+  "evidenceUrl": zod.string().url().max(updateLaunchAdminConfigResponsePairOverridesItemEvidenceUrlMax).regex(updateLaunchAdminConfigResponsePairOverridesItemEvidenceUrlRegExp)
+}).describe('No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.')).max(updateLaunchAdminConfigResponsePairOverridesMax),
+  "featuredPair": zod.object({
+  "mint": zod.string().min(updateLaunchAdminConfigResponseFeaturedPairMintMin).max(updateLaunchAdminConfigResponseFeaturedPairMintMax).regex(updateLaunchAdminConfigResponseFeaturedPairMintRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta'])
+}).nullable(),
+  "featuredMints": zod.array(zod.string().min(updateLaunchAdminConfigResponseFeaturedMintsItemMin).max(updateLaunchAdminConfigResponseFeaturedMintsItemMax).regex(updateLaunchAdminConfigResponseFeaturedMintsItemRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.')).max(updateLaunchAdminConfigResponseFeaturedMintsMax),
+  "paused": zod.boolean(),
+  "banner": zod.string().max(updateLaunchAdminConfigResponseBannerMax).nullable(),
+  "feeProposal": zod.object({
+  "amount": zod.string().max(updateLaunchAdminConfigResponseFeeProposalAmountMax).regex(updateLaunchAdminConfigResponseFeeProposalAmountRegExp).nullable(),
+  "currency": zod.string().max(updateLaunchAdminConfigResponseFeeProposalCurrencyMax).nullable(),
+  "notes": zod.string().max(updateLaunchAdminConfigResponseFeeProposalNotesMax)
+}).nullable().describe('Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.'),
+  "campaignProposal": zod.object({
+  "name": zod.string().max(updateLaunchAdminConfigResponseCampaignProposalNameMax),
+  "description": zod.string().max(updateLaunchAdminConfigResponseCampaignProposalDescriptionMax),
+  "eligibilityNotes": zod.string().max(updateLaunchAdminConfigResponseCampaignProposalEligibilityNotesMax)
+}).nullable().describe('Inactive proposal only; does not execute a campaign or promise eligibility/rewards.'),
+  "pointsProposal": zod.object({
+  "name": zod.string().max(updateLaunchAdminConfigResponsePointsProposalNameMax),
+  "description": zod.string().max(updateLaunchAdminConfigResponsePointsProposalDescriptionMax),
+  "formulaProposal": zod.string().max(updateLaunchAdminConfigResponsePointsProposalFormulaProposalMax)
+}).nullable().describe('Inactive draft formula only; no earning, issuance, payouts or claimable value.'),
+  "network": zod.enum(['mainnet-beta']),
+  "executionAvailable": zod.literal(false),
+  "executionState": zod.enum(['unavailable']),
+  "unavailableReason": zod.string().min(1),
+  "darkPairAvailable": zod.boolean().describe('Current validated upstream mint match plus configured enablement; not execution availability'),
+  "darkPairMessage": zod.string().describe('When unavailable use \'$DARK pairing is being activated for the DarkSwap ecosystem.\''),
+  "defaultView": zod.enum(['trending', 'dark']).describe('DARK only when verified DARK ecosystem discovery is live; otherwise trending'),
+  "providerLaunchFee": zod.null().describe('No verified launch fee contract exists'),
+  "launchDestination": zod.null().describe('No verified launch execution destination exists'),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Read evidence-backed metadata and wallet review flags
+ */
+export const getLaunchAdminReviewsResponseReviewsItemTargetMin = 32;
+export const getLaunchAdminReviewsResponseReviewsItemTargetMax = 44;
+
+
+export const getLaunchAdminReviewsResponseReviewsItemTargetRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsItemMax = 1000;
+
+
+export const getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsItemRegExp = new RegExp('^https?:[/][/]');
+export const getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsMax = 10;
+
+export const getLaunchAdminReviewsResponseReviewsItemNotesMax = 2000;
+
+export const getLaunchAdminReviewsResponseReviewsItemCreatedByMin = 32;
+export const getLaunchAdminReviewsResponseReviewsItemCreatedByMax = 44;
+
+
+export const getLaunchAdminReviewsResponseReviewsItemCreatedByRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+
+export const GetLaunchAdminReviewsResponse = zod.object({
+  "reviews": zod.array(zod.object({
+  "targetType": zod.enum(['token', 'wallet']),
+  "target": zod.string().min(getLaunchAdminReviewsResponseReviewsItemTargetMin).max(getLaunchAdminReviewsResponseReviewsItemTargetMax).regex(getLaunchAdminReviewsResponseReviewsItemTargetRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "reason": zod.enum(['malicious_metadata', 'self_referral', 'circular_activity', 'transaction_spam', 'suspected_wallet_cluster', 'other']),
+  "evidenceUrls": zod.array(zod.string().url().max(getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsItemMax).regex(getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsItemRegExp)).min(1).max(getLaunchAdminReviewsResponseReviewsItemEvidenceUrlsMax),
+  "notes": zod.string().min(1).max(getLaunchAdminReviewsResponseReviewsItemNotesMax),
+  "suppressMetadata": zod.boolean(),
+  "id": zod.string(),
+  "status": zod.enum(['under_review']),
+  "createdBy": zod.string().min(getLaunchAdminReviewsResponseReviewsItemCreatedByMin).max(getLaunchAdminReviewsResponseReviewsItemCreatedByMax).regex(getLaunchAdminReviewsResponseReviewsItemCreatedByRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "createdAt": zod.coerce.date()
+})),
+  "detectors": zod.array(zod.object({
+  "name": zod.enum(['self_referral', 'circular_activity', 'transaction_spam', 'wallet_cluster']),
+  "active": zod.boolean(),
+  "reason": zod.string().min(1)
+}).describe('Missing transaction/referral/cluster evidence leaves detector inactive; aggregate discovery is insufficient.'))
+})
+
+
+/**
+ * A review blocks automatic featured promotion and eligibility. Heuristics are not proof of identity. Metadata suppression is local, never an upstream edit.
+ * @summary Record an evidence-backed under_review flag and audit it
+ */
+export const createLaunchAdminReviewHeaderXLaunchCSRFMin = 16;
+export const createLaunchAdminReviewHeaderXLaunchCSRFMax = 256;
+
+
+
+export const CreateLaunchAdminReviewHeader = zod.object({
+  "X-Launch-CSRF": zod.string().min(createLaunchAdminReviewHeaderXLaunchCSRFMin).max(createLaunchAdminReviewHeaderXLaunchCSRFMax).describe('csrfToken returned by authenticated session; validated together with allowed Origin.')
+})
+
+export const createLaunchAdminReviewBodyTargetMin = 32;
+export const createLaunchAdminReviewBodyTargetMax = 44;
+
+
+export const createLaunchAdminReviewBodyTargetRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const createLaunchAdminReviewBodyEvidenceUrlsItemMax = 1000;
+
+
+export const createLaunchAdminReviewBodyEvidenceUrlsItemRegExp = new RegExp('^https?:[/][/]');
+export const createLaunchAdminReviewBodyEvidenceUrlsMax = 10;
+
+export const createLaunchAdminReviewBodyNotesMax = 2000;
+
+
+
+export const CreateLaunchAdminReviewBody = zod.object({
+  "targetType": zod.enum(['token', 'wallet']),
+  "target": zod.string().min(createLaunchAdminReviewBodyTargetMin).max(createLaunchAdminReviewBodyTargetMax).regex(createLaunchAdminReviewBodyTargetRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "reason": zod.enum(['malicious_metadata', 'self_referral', 'circular_activity', 'transaction_spam', 'suspected_wallet_cluster', 'other']),
+  "evidenceUrls": zod.array(zod.string().url().max(createLaunchAdminReviewBodyEvidenceUrlsItemMax).regex(createLaunchAdminReviewBodyEvidenceUrlsItemRegExp)).min(1).max(createLaunchAdminReviewBodyEvidenceUrlsMax),
+  "notes": zod.string().min(1).max(createLaunchAdminReviewBodyNotesMax),
+  "suppressMetadata": zod.boolean().describe('Only token-target reviews may suppress local metadata')
+})
+
+export const createLaunchAdminReviewResponseTargetMin = 32;
+export const createLaunchAdminReviewResponseTargetMax = 44;
+
+
+export const createLaunchAdminReviewResponseTargetRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+export const createLaunchAdminReviewResponseEvidenceUrlsItemMax = 1000;
+
+
+export const createLaunchAdminReviewResponseEvidenceUrlsItemRegExp = new RegExp('^https?:[/][/]');
+export const createLaunchAdminReviewResponseEvidenceUrlsMax = 10;
+
+export const createLaunchAdminReviewResponseNotesMax = 2000;
+
+export const createLaunchAdminReviewResponseCreatedByMin = 32;
+export const createLaunchAdminReviewResponseCreatedByMax = 44;
+
+
+export const createLaunchAdminReviewResponseCreatedByRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+export const CreateLaunchAdminReviewResponse = zod.object({
+  "targetType": zod.enum(['token', 'wallet']),
+  "target": zod.string().min(createLaunchAdminReviewResponseTargetMin).max(createLaunchAdminReviewResponseTargetMax).regex(createLaunchAdminReviewResponseTargetRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "network": zod.enum(['mainnet-beta']),
+  "reason": zod.enum(['malicious_metadata', 'self_referral', 'circular_activity', 'transaction_spam', 'suspected_wallet_cluster', 'other']),
+  "evidenceUrls": zod.array(zod.string().url().max(createLaunchAdminReviewResponseEvidenceUrlsItemMax).regex(createLaunchAdminReviewResponseEvidenceUrlsItemRegExp)).min(1).max(createLaunchAdminReviewResponseEvidenceUrlsMax),
+  "notes": zod.string().min(1).max(createLaunchAdminReviewResponseNotesMax),
+  "suppressMetadata": zod.boolean(),
+  "id": zod.string(),
+  "status": zod.enum(['under_review']),
+  "createdBy": zod.string().min(createLaunchAdminReviewResponseCreatedByMin).max(createLaunchAdminReviewResponseCreatedByMax).regex(createLaunchAdminReviewResponseCreatedByRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Read bounded launch-only admin audit records
+ */
+export const getLaunchAdminAuditQueryLimitDefault = 50;
+export const getLaunchAdminAuditQueryLimitMax = 100;
+
+
+
+export const GetLaunchAdminAuditQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getLaunchAdminAuditQueryLimitMax).default(getLaunchAdminAuditQueryLimitDefault)
+})
+
+export const getLaunchAdminAuditResponseRecordsItemActorWalletMin = 32;
+export const getLaunchAdminAuditResponseRecordsItemActorWalletMax = 44;
+
+
+export const getLaunchAdminAuditResponseRecordsItemActorWalletRegExp = new RegExp('^[1-9A-HJ-NP-Za-km-z]{32,44}$');
+
+
+export const GetLaunchAdminAuditResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "actorWallet": zod.string().min(getLaunchAdminAuditResponseRecordsItemActorWalletMin).max(getLaunchAdminAuditResponseRecordsItemActorWalletMax).regex(getLaunchAdminAuditResponseRecordsItemActorWalletRegExp).describe('Base58 Solana address; server must additionally validate decoded 32-byte public key.'),
+  "action": zod.enum(['config_updated', 'review_created']),
+  "targetId": zod.string().nullable(),
+  "summary": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Every direct request returns 503 and executionAvailable=false, including
+ * alternative pairs, changed admin settings and paused/unpaused states.
+ * Never contacts a fabricated provider execution endpoint, charges fees,
+ * prompts a wallet transaction, returns a signature or creates a launch.
+ * @summary Fail closed; launch execution is unavailable in this release
+ */
+export const submitLaunchBodyDraftIdMax = 128;
+
+
+
+export const SubmitLaunchBody = zod.object({
+  "draftId": zod.string().min(1).max(submitLaunchBodyDraftIdMax)
+})
+
+export const SubmitLaunchResponse = zod.void()
+
+
+/**
+ * @summary Email a swap support report to the DarkSwap support inbox
+ */
+export const createSupportRequestBodyEmailMax = 254;
+
+export const createSupportRequestBodyOrderReferenceMax = 180;
+
+export const createSupportRequestBodyTransactionHashMax = 180;
+
+export const createSupportRequestBodyMessageMin = 20;
+export const createSupportRequestBodyMessageMax = 2000;
+
+export const createSupportRequestBodyWebsiteMax = 100;
+
+
+
+export const CreateSupportRequestBody = zod.object({
+  "email": zod.string().email().max(createSupportRequestBodyEmailMax),
+  "issue": zod.enum(['wrong_deposit', 'delayed_swap', 'refund', 'order_status', 'other']),
+  "route": zod.enum(['private_route', 'privacy_swap', 'unsure']).optional(),
+  "orderReference": zod.string().max(createSupportRequestBodyOrderReferenceMax).optional(),
+  "transactionHash": zod.string().max(createSupportRequestBodyTransactionHashMax).optional(),
+  "message": zod.string().min(createSupportRequestBodyMessageMin).max(createSupportRequestBodyMessageMax),
+  "website": zod.string().max(createSupportRequestBodyWebsiteMax).optional()
+})
+
+export const CreateSupportRequestResponse = zod.object({
+  "message": zod.string(),
+  "status": zod.enum(['pending', 'delivered', 'unconfirmed', 'failed']),
+  "token": zod.string()
+})
+
+
+/**
+ * @summary Check delivery state of a support case using its private token
+ */
+export const GetSupportRequestStatusQueryParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetSupportRequestStatusResponse = zod.object({
+  "status": zod.enum(['pending', 'delivered', 'failed', 'unconfirmed']),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Read-only NEAR liquidity pool trends from GeckoTerminal
+ */
+export const GetNearTrendsQueryParams = zod.object({
+  "view": zod.enum(['trending', 'new']).optional()
+})
+
+export const GetNearTrendsResponse = zod.object({
+  "view": zod.enum(['trending', 'new']),
+  "updatedAt": zod.string(),
+  "source": zod.string(),
+  "pools": zod.array(zod.object({
+  "id": zod.string(),
+  "address": zod.string(),
+  "tokenSymbol": zod.string(),
+  "tokenName": zod.string(),
+  "tokenAddress": zod.string(),
+  "tokenImage": zod.string().nullable(),
+  "dex": zod.string(),
+  "priceUsd": zod.number().nullable(),
+  "priceChange24h": zod.number().nullable(),
+  "volume24h": zod.number().nullable(),
+  "liquidityUsd": zod.number().nullable(),
+  "buys24h": zod.number().int(),
+  "sells24h": zod.number().int(),
+  "createdAt": zod.string().nullable(),
+  "url": zod.string()
+}))
+})
+
+
+/**
+ * @summary Search NEAR liquidity pools via GeckoTerminal (read-only)
+ */
+export const searchNearPoolsQueryQueryMin = 2;
+export const searchNearPoolsQueryQueryMax = 100;
+
+export const searchNearPoolsQueryPageDefault = 1;
+export const searchNearPoolsQueryPageMax = 10;
+
+
+
+export const SearchNearPoolsQueryParams = zod.object({
+  "query": zod.coerce.string().min(searchNearPoolsQueryQueryMin).max(searchNearPoolsQueryQueryMax),
+  "page": zod.coerce.number().int().min(1).max(searchNearPoolsQueryPageMax).default(searchNearPoolsQueryPageDefault).describe('Provider page number. Page 1 is the default; requests are limited to pages 1 through 10.')
+})
+
+export const searchNearPoolsResponsePageMax = 10;
+
+
+
+export const SearchNearPoolsResponse = zod.object({
+  "query": zod.string(),
+  "page": zod.number().int().min(1).max(searchNearPoolsResponsePageMax),
+  "hasNextPage": zod.boolean().describe('True only when the raw provider data array is nonempty and page is below 10. This indicates another page may be requested, not that it is guaranteed to contain matches. Stop only when a raw provider page is empty or page 10 is reached.'),
+  "updatedAt": zod.string(),
+  "source": zod.string(),
+  "pools": zod.array(zod.object({
+  "id": zod.string(),
+  "address": zod.string(),
+  "tokenSymbol": zod.string(),
+  "tokenName": zod.string(),
+  "tokenAddress": zod.string(),
+  "tokenImage": zod.string().nullable(),
+  "dex": zod.string(),
+  "priceUsd": zod.number().nullable(),
+  "priceChange24h": zod.number().nullable(),
+  "volume24h": zod.number().nullable(),
+  "liquidityUsd": zod.number().nullable(),
+  "buys24h": zod.number().int(),
+  "sells24h": zod.number().int(),
+  "createdAt": zod.string().nullable(),
+  "url": zod.string()
+}))
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -17,15 +2180,113 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * Separate from swap health; returns no contact or provider identifiers.
+ * @summary Check signed marketing webhook delivery before campaigns
+ */
+export const CheckMarketingWebhookHealthResponse = zod.object({
+  "status": zod.enum(['healthy', 'not_ready', 'processing_failure', 'backlog', 'stale', 'unavailable'])
+})
+
+
+/**
+ * Requests an email confirmation after explicit consent. Only confirmed, non-suppressed contacts can receive marketing. Never links to swap orders or wallets.
+ * @summary Opt in to optional product updates and potential discounts
+ */
+export const subscribeUpdatesBodyEmailMax = 254;
+
+
+
+export const SubscribeUpdatesBody = zod.object({
+  "email": zod.string().email().max(subscribeUpdatesBodyEmailMax),
+  "consent": zod.literal(true)
+})
+
+export const SubscribeUpdatesResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Show an explicit confirmation form without changing consent
+ */
+export const ShowMarketingConfirmationQueryParams = zod.object({
+  "token": zod.coerce.string().optional()
+})
+
+export const ShowMarketingConfirmationResponse = zod.unknown()
+
+
+/**
+ * @summary Verify opt-in with a single-use token expiring after 24 hours
+ */
+export const confirmMarketingSubscriptionBodyTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const ConfirmMarketingSubscriptionBody = zod.object({
+  "token": zod.string().regex(confirmMarketingSubscriptionBodyTokenRegExp)
+})
+
+export const ConfirmMarketingSubscriptionResponse = zod.unknown()
+
+
+/**
+ * @summary Show unsubscribe form without changing consent
+ */
+export const ShowMarketingUnsubscribeQueryParams = zod.object({
+  "token": zod.coerce.string().optional()
+})
+
+export const ShowMarketingUnsubscribeResponse = zod.unknown()
+
+
+/**
+ * @summary Permanently suppress marketing, including RFC 8058 one-click requests
+ */
+export const UnsubscribeMarketingQueryParams = zod.object({
+  "token": zod.coerce.string().optional().describe('Token from the List-Unsubscribe URL for one-click requests')
+})
+
+export const unsubscribeMarketingBodyTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const UnsubscribeMarketingBody = zod.object({
+  "token": zod.string().regex(unsubscribeMarketingBodyTokenRegExp)
+})
+
+export const UnsubscribeMarketingResponse = zod.unknown()
+
+
+/**
+ * Verifies Svix signature against the raw request body and rejects stale signatures. Never accepts unsigned suppression events.
+ * @summary Receive signed delivery activity, bounce and complaint events
+ */
+export const ReceiveMarketingDeliveryEventHeader = zod.object({
+  "svix-id": zod.string(),
+  "svix-timestamp": zod.string(),
+  "svix-signature": zod.string()
+})
+
+export const ReceiveMarketingDeliveryEventBody = zod.object({
+  "type": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown())
+})
+
+export const ReceiveMarketingDeliveryEventResponse = zod.void()
+
+
+/**
  * @summary Find CEX-supported tokens; source results are Solana-only
  */
 export const searchSwapTokensQueryTermMax = 100;
+
+export const searchSwapTokensQueryChainMax = 80;
 
 
 
 export const SearchSwapTokensQueryParams = zod.object({
   "side": zod.enum(['source', 'destination']),
-  "term": zod.coerce.string().max(searchSwapTokensQueryTermMax).optional()
+  "term": zod.coerce.string().max(searchSwapTokensQueryTermMax).optional(),
+  "chain": zod.coerce.string().max(searchSwapTokensQueryChainMax).optional()
 })
 
 export const SearchSwapTokensResponse = zod.object({
@@ -41,6 +2302,17 @@ export const SearchSwapTokensResponse = zod.object({
   "price": zod.number().nullish()
 })),
   "total": zod.number().int()
+})
+
+
+/**
+ * @summary List live CEX-enabled destination networks for the private route
+ */
+export const GetSwapChainsResponse = zod.object({
+  "chains": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
 })
 
 
@@ -85,9 +2357,14 @@ export const GetPrivateQuotesResponse = zod.object({
 
 
 /**
+ * Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the order is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
  * @summary Create a private swap order from a selected quote
  */
-export const createPrivateOrderBodyQuoteIdMax = 128;
+export const CreatePrivateOrderHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Optional Privy access JWT as Bearer token. If supplied, disabled/unavailable rewards fail closed with 503 and inactive enrollment fails with 409; guest creation requires omitting this header.')
+})
+
+export const createPrivateOrderBodyQuoteIdMax = 4096;
 
 export const createPrivateOrderBodyAddressToMax = 200;
 
@@ -147,6 +2424,50 @@ export const GetPrivateOrderResponse = zod.object({
   "created": zod.string(),
   "expires": zod.string(),
   "outTransactionOutHash": zod.string().optional()
+})
+
+
+/**
+ * @summary Cached public incident information and conservative selected-route eligibility
+ */
+export const getNearServiceStatusQueryFromChainMax = 32;
+
+export const getNearServiceStatusQueryToChainMax = 32;
+
+
+
+export const GetNearServiceStatusQueryParams = zod.object({
+  "fromChain": zod.coerce.string().min(1).max(getNearServiceStatusQueryFromChainMax).optional(),
+  "toChain": zod.coerce.string().min(1).max(getNearServiceStatusQueryToChainMax).optional()
+})
+
+export const GetNearServiceStatusResponse = zod.object({
+  "sourceUrl": zod.string(),
+  "lastSuccessAt": zod.string().nullable(),
+  "freshUntil": zod.string().nullable(),
+  "state": zod.enum(['fresh', 'stale', 'unavailable', 'invalid']),
+  "activeIncidents": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "recentlyResolved": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
+  "reason": zod.string()
 })
 
 
@@ -231,8 +2552,13 @@ export const GetNearQuoteResponse = zod.object({
 
 
 /**
+ * Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the requestId is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
  * @summary Confirm the preview and generate real NEAR Intents deposit instructions
  */
+export const CreateNearOrderHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Optional Privy access JWT as Bearer token. If supplied, disabled/unavailable rewards fail closed with 503 and inactive enrollment fails with 409; guest creation requires omitting this header.')
+})
+
 export const createNearOrderBodyQuoteIdMax = 100;
 
 
@@ -243,6 +2569,34 @@ export const CreateNearOrderBody = zod.object({
 })
 
 export const CreateNearOrderResponse = zod.object({
+  "routeStatus": zod.object({
+  "sourceUrl": zod.string(),
+  "lastSuccessAt": zod.string().nullable(),
+  "freshUntil": zod.string().nullable(),
+  "state": zod.enum(['fresh', 'stale', 'unavailable', 'invalid']),
+  "activeIncidents": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "recentlyResolved": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
+  "reason": zod.string()
+}).optional(),
   "depositAddress": zod.string(),
   "requestId": zod.string().optional(),
   "depositMemo": zod.string().optional(),
@@ -275,6 +2629,81 @@ export const CreateNearOrderResponse = zod.object({
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),
   "updatedAt": zod.string().optional(),
   "estimatedSeconds": zod.number()
+}).describe('A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.')
+
+
+/**
+ * @summary Read public email rewards availability
+ */
+export const GetRewardsConfigResponse = zod.object({
+  "appId": zod.string().nullable(),
+  "enabled": zod.boolean()
+})
+
+
+/**
+ * @summary Read the authenticated account balance, tier, and paginated points history
+ */
+export const getRewardsMeQueryCursorMax = 200;
+
+export const getRewardsMeQueryLimitDefault = 25;
+export const getRewardsMeQueryLimitMax = 100;
+
+
+
+export const GetRewardsMeQueryParams = zod.object({
+  "cursor": zod.coerce.string().max(getRewardsMeQueryCursorMax).optional(),
+  "limit": zod.coerce.number().int().min(1).max(getRewardsMeQueryLimitMax).default(getRewardsMeQueryLimitDefault)
+})
+
+export const getRewardsMeResponseBalanceMin = 0;
+
+
+
+export const GetRewardsMeResponse = zod.object({
+  "enrolled": zod.boolean(),
+  "balance": zod.number().int().min(getRewardsMeResponseBalanceMin),
+  "tier": zod.object({
+  "id": zod.enum(['starter', 'plus', 'pro']),
+  "name": zod.string(),
+  "threshold": zod.union([zod.literal(0),zod.literal(500),zod.literal(2000)]),
+  "version": zod.literal(1)
+}),
+  "nextThreshold": zod.number().int().nullable(),
+  "ruleConfig": zod.object({
+  "version": zod.literal(1),
+  "pointsPerCompletedSwap": zod.literal(100),
+  "dailyCap": zod.literal(300),
+  "dailyCapPeriod": zod.literal("utc_day"),
+  "tiers": zod.array(zod.object({
+  "id": zod.enum(['starter', 'plus', 'pro']),
+  "name": zod.enum(['Starter', 'Plus', 'Pro']),
+  "threshold": zod.union([zod.literal(0),zod.literal(500),zod.literal(2000)])
+}))
+}),
+  "history": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "points": zod.number().int(),
+  "reason": zod.enum(['swap_completed', 'swap_capped', 'swap_reversed', 'adjustment']),
+  "route": zod.enum(['houdini', 'near']).optional(),
+  "orderReference": zod.string().optional(),
+  "createdAt": zod.coerce.date()
+})),
+  "nextCursor": zod.string().nullable()
+})
+
+
+/**
+ * No signup credit or financial redemption is offered. Award 100 points for a successful provider-verified terminal swap, capped at 300 points per UTC day. Version 1 tiers are Starter (0), Plus (500), and Pro (2000). Email is obtained only from Privy's verified linked account, stored only while enrolled, and deleted on withdrawal. Withdrawal needs a valid Privy access token but not a currently linked email. The app-scoped Privy DID, immutable order association, and append-only points ledger are retained indefinitely to preserve history and prevent duplicate awards; they never contain email.
+ * @summary Enroll the verified email account after explicit disclosure and consent
+ */
+export const EnrollRewardsBody = zod.object({
+  "consent": zod.boolean()
+})
+
+export const EnrollRewardsResponse = zod.object({
+  "enrolled": zod.boolean(),
+  "message": zod.string()
 })
 
 
@@ -286,6 +2715,34 @@ export const GetNearOrderReceiptParams = zod.object({
 })
 
 export const GetNearOrderReceiptResponse = zod.object({
+  "routeStatus": zod.object({
+  "sourceUrl": zod.string(),
+  "lastSuccessAt": zod.string().nullable(),
+  "freshUntil": zod.string().nullable(),
+  "state": zod.enum(['fresh', 'stale', 'unavailable', 'invalid']),
+  "activeIncidents": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "recentlyResolved": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
+  "reason": zod.string()
+}).optional(),
   "depositAddress": zod.string(),
   "requestId": zod.string().optional(),
   "depositMemo": zod.string().optional(),
@@ -318,7 +2775,7 @@ export const GetNearOrderReceiptResponse = zod.object({
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),
   "updatedAt": zod.string().optional(),
   "estimatedSeconds": zod.number()
-})
+}).describe('A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.')
 
 
 /**
@@ -337,6 +2794,34 @@ export const GetNearOrderStatusQueryParams = zod.object({
 })
 
 export const GetNearOrderStatusResponse = zod.object({
+  "routeStatus": zod.object({
+  "sourceUrl": zod.string(),
+  "lastSuccessAt": zod.string().nullable(),
+  "freshUntil": zod.string().nullable(),
+  "state": zod.enum(['fresh', 'stale', 'unavailable', 'invalid']),
+  "activeIncidents": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "recentlyResolved": zod.array(zod.object({
+  "id": zod.string(),
+  "scopeType": zod.string(),
+  "scopeValue": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "resolvedAt": zod.string().optional(),
+  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+})),
+  "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
+  "reason": zod.string()
+}).optional(),
   "depositAddress": zod.string(),
   "requestId": zod.string().optional(),
   "depositMemo": zod.string().optional(),
@@ -369,7 +2854,7 @@ export const GetNearOrderStatusResponse = zod.object({
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),
   "updatedAt": zod.string().optional(),
   "estimatedSeconds": zod.number()
-})
+}).describe('A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.')
 
 
 /**

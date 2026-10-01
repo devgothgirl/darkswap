@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import { aliases, renderPageHtml } from './seo-html.mjs';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -36,6 +37,29 @@ if (!basePath) {
 export default defineConfig({
   base: basePath,
   plugins: [
+    {
+      name: 'public-page-html',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const path = new URL(req.url || '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
+          if (aliases[path as keyof typeof aliases]) {
+            res.statusCode = 308;
+            res.setHeader('Location', aliases[path as keyof typeof aliases]);
+            res.end();
+            return;
+          }
+          next();
+        });
+      },
+      transformIndexHtml: {
+        order: 'post',
+        handler(html, ctx) {
+          if (!ctx.server) return html;
+          const pathname = new URL(ctx.originalUrl || '/', 'http://localhost').pathname;
+          return renderPageHtml(html, pathname);
+        },
+      },
+    },
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

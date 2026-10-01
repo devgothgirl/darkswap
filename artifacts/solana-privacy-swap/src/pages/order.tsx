@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, ArrowLeft, ArrowRight, Check, Clock3, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, Clock3, RefreshCw, ShieldCheck, Share2 } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import { getGetPrivateOrderQueryKey, useGetPrivateOrder } from '@workspace/api-client-react';
 import { CopyButton, errorText, Footer, Header, useRecentOrder } from '../components/swap-ui';
+import { ClosedNotice, DepositCard, InfoTips, OrderMeta, SwapPair, UpdatesSignup, WaitingStepper } from '../components/waiting';
 
 const readableTime = (value:string) => {
   const date = new Date(value);
@@ -15,6 +16,7 @@ export default function OrderPage() {
   const id = params.id || '';
   const recent = useRecentOrder();
   const [now,setNow] = useState(Date.now());
+  const [shareFeedback,setShareFeedback] = useState('');
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
   const result = useGetPrivateOrder(id,{query:{enabled:!!id,queryKey:getGetPrivateOrderQueryKey(id),refetchInterval:15_000,retry:1}});
   const order = result.data;
@@ -28,7 +30,26 @@ export default function OrderPage() {
   const awaiting = code === 0 || (code === undefined && /wait|pend|creat|new/.test(lowerStatus));
   const expired = code === 5 || (awaiting && !Number.isNaN(expiresAt) && expiresAt <= now);
   const remaining = order && awaiting && !Number.isNaN(expiresAt) ? Math.max(0,Math.ceil((expiresAt-now)/1000)) : null;
-  const shouldSend = !expired && !completed && !failed && awaiting;
+  const shouldSend = !expired && !completed && !failed && awaiting && !result.isError;
+  const stage = completed ? 3 : expired || code === 0 || (awaiting && code === undefined) ? 0 : code === 2 || code === 3 ? 2 : 1;
+  const shareOrder = async () => {
+    if (!order) return;
+    const currentStatus = completed ? 'Completed' : expired ? 'Deposit window closed' : failed ? 'Needs attention' : awaiting ? 'Awaiting deposit' : 'Processing';
+    const url = new URL(`/order/${encodeURIComponent(order.houdiniId)}`, window.location.origin).toString();
+    const text = `DarkSwap order update: ${currentStatus} as of ${new Date().toLocaleString()}. Check the latest status at this link. DarkSwap also lets you explore Solana-origin private routes; always review your own deposit instructions before sending.`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'DarkSwap order status', text, url });
+        setShareFeedback('Shared. The recipient can view this order’s details.');
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        setShareFeedback('Update and link copied. Share only with someone you trust.');
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setShareFeedback('Could not share. Check your browser’s sharing or clipboard permissions.');
+    }
+  };
   return <div className="app-shell">
     <Header/>
     <main className="order-layout page-enter">
@@ -44,6 +65,22 @@ export default function OrderPage() {
         </div>
       : <>
         <p className="hero-copy" style={{maxWidth:620,margin:0}}>{completed ? 'The route reports your transfer as completed. Keep this order ID for your records.' : expired ? 'The deposit window has closed. Do not send funds to this address.' : failed ? 'This route needs attention. Review the current status and recovery guidance below.' : awaiting ? 'Your order is created, but no assets have moved yet. Follow the deposit instructions precisely and keep this page open to track progress.' : 'Your deposit is being processed by the route provider. Do not send again; follow the live status below.'}</p>
+        <details style={{margin:'20px 0'}} data-testid="order-share-details">
+          <summary style={{cursor:'pointer',color:'#c7a7ff'}}>Share a status update</summary>
+          <p className="muted-note">The link reveals this order’s status and deposit details to anyone who has it. Share only with someone you trust. The status in your message is a snapshot; the link shows the latest available status.</p>
+          <button type="button" className="secondary-button" onClick={shareOrder} data-testid="button-share-order"><Share2 size={14}/> Share order update</button>
+          {shareFeedback && <p className="muted-note" role="status">{shareFeedback}</p>}
+        </details>
+        <div className="ws-wrap" data-testid="waiting-view">
+          <WaitingStepper stage={stage} halted={expired || failed} haltLabel={expired ? 'Deposit window closed' : status}/>
+          <OrderMeta items={[{label:'Order ID',value:order.houdiniId},{label:'Status',value:status},{label:'Created',value:readableTime(order.created)}]}/>
+          <SwapPair inAmount={formatAmount(order.inAmount)} inSymbol={order.inSymbol} outAmount={formatAmount(order.outAmount)} outSymbol={order.outSymbol} estimated/>
+          {shouldSend ? <DepositCard amount={String(order.inAmount)} symbol={order.inSymbol} assetKind="unknown" address={order.depositAddress} memo={order.depositTag || undefined} recipient={order.receiverAddress} recipientTag={order.receiverTag || undefined} deadlineText={readableTime(order.expires)} remainingText={remaining!==null ? `${Math.floor(remaining/60)}m ${remaining%60}s left` : undefined}/>
+            : <ClosedNotice title={completed ? 'Completed. Do not send more funds.' : expired ? 'Deposit window expired. Do not send funds.' : failed ? 'Route stopped. Do not send funds.' : 'Deposit instructions hidden.'}>{completed ? 'The provider reports this transfer as completed.' : expired || failed ? 'If you already sent a deposit, keep your transaction hash and order ID for a support inquiry. Recovery is not guaranteed.' : result.isError ? 'We could not refresh this order, so its current status is uncertain. Do not send funds until a fresh status loads.' : 'This order is already past the deposit stage or its status is uncertain. Never send twice to the same order; follow the live status below.'}</ClosedNotice>}
+          {shouldSend && <InfoTips assetKind="unknown" symbol={order.inSymbol} hasMemo={!!order.depositTag}/>}
+          <UpdatesSignup/>
+        </div>
+        <details className="ws-details"><summary data-testid="toggle-order-details">Full order record, status history and recovery</summary>
         <div className="order-grid">
           <section className="order-panel">
              <div style={{display:'flex',alignItems:'start',justifyContent:'space-between',gap:15,flexWrap:'wrap'}}><div><span className="section-label">Step 01 / Fund the order</span><h2 style={{marginBottom:0}}>Deposit instructions</h2></div><span className={`status-indicator ${expired || failed ? 'status-alert' : ''}`} data-testid="status-order"><span className="live-dot"/> {status}</span></div>
@@ -57,7 +94,7 @@ export default function OrderPage() {
             </div>
             <div className="detail-row"><span className="section-label">Solana deposit address</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-address">{order.depositAddress}</span><CopyButton value={order.depositAddress} name="deposit address"/></div></div>
             {order.depositTag && <div className="detail-row"><span className="section-label">Required deposit memo / tag</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-tag">{order.depositTag}</span><CopyButton value={order.depositTag} name="deposit memo"/></div><p className="quote-error" style={{marginBottom:0}}>Include this memo with your Solana transfer. Missing it can prevent your deposit from being matched.</p></div>}
-             <div className="detail-row"><span className="section-label">Deposit deadline</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-expiry">{readableTime(order.expires)}</span>{remaining!==null && <span style={{font:'12px Space Mono,monospace',whiteSpace:'nowrap',color:expired?'#ffae91':'#c7a7ff'}}>{expired?'Expired':`${Math.floor(remaining/60)}m ${remaining%60}s left`}</span>}</div></div>
+             <div className="detail-row"><span className="section-label">Deposit deadline</span><div className="detail-flex"><span className="detail-value" data-testid="text-deposit-expiry">{readableTime(order.expires)}</span>{remaining!==null && <span style={{font:'500 13px "Source Sans 3",sans-serif',whiteSpace:'nowrap',color:expired?'#ffae91':'#c7a7ff'}}>{expired?'Expired':`${Math.floor(remaining/60)}m ${remaining%60}s left`}</span>}</div></div>
             <div className="warning-box" style={{marginBottom:0}}>Send only the exact amount shown, on Solana, before the deadline. If your wallet deducts a fee from the amount you enter, adjust it so the received deposit is exact. An order is not a completed transfer.</div>
           </section>
           <aside style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -84,10 +121,12 @@ export default function OrderPage() {
              <section className="order-panel" style={{background:'#30233d'}}>
                <ShieldCheck size={22} color="#c7a7ff" style={{marginBottom:14}}/><h2>Need to recover?</h2>
               <p className="muted-note">If you sent the wrong amount, used a different network, omitted a required deposit memo, or the order is stuck, do not send another payment. Keep your order ID and your sending transaction hash for a support or recovery inquiry. Recovery is not guaranteed.</p>
+              <p className="muted-note" style={{marginTop:14}}>For support, email <a href="mailto:support@darkswap.app" style={{color:'#c7a7ff'}}>support@darkswap.app</a> or <a href="https://x.com/darkswapapp" target="_blank" rel="noopener noreferrer" style={{color:'#c7a7ff'}}>DM @darkswapapp on X</a>. Keep your order ID and transaction hash handy, but never share a seed phrase.</p>
               <p className="muted-note" style={{marginTop:14}}><Check size={12} style={{display:'inline',verticalAlign:'middle',marginRight:5}}/>This interface never asks you to connect a wallet or share a seed phrase.</p>
             </section>
           </aside>
         </div>
+        </details>
       </>}
     </main>
     <Footer/>

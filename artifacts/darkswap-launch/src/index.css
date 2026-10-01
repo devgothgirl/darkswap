@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+  --font-display: var(--app-font-display);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root, .dark {
+  --button-outline: rgba(200, 180, 255, 0.12);
+  --badge-outline: rgba(200, 180, 255, 0.08);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(190, 160, 255, 0.05);
+  --elevate-2: rgba(190, 160, 255, 0.1);
+
+  --background: 252 48% 3%;
+  --foreground: 248 40% 95%;
+  --border: 252 32% 15%;
+  --card: 251 42% 6%;
+  --card-foreground: 248 40% 95%;
+  --card-border: 252 32% 14%;
+  --sidebar: 251 42% 5%;
+  --sidebar-foreground: 248 40% 95%;
+  --sidebar-border: 252 32% 14%;
+  --sidebar-primary: 268 96% 67%;
+  --sidebar-primary-foreground: 252 60% 5%;
+  --sidebar-accent: 254 48% 14%;
+  --sidebar-accent-foreground: 248 40% 95%;
+  --sidebar-ring: 268 96% 67%;
+  --popover: 252 44% 7%;
+  --popover-foreground: 248 40% 95%;
+  --popover-border: 252 32% 18%;
+  --primary: 268 96% 67%;
+  --primary-foreground: 252 60% 5%;
+  --secondary: 252 38% 11%;
+  --secondary-foreground: 248 40% 92%;
+  --muted: 252 34% 10%;
+  --muted-foreground: 248 16% 66%;
+  --accent: 254 50% 15%;
+  --accent-foreground: 262 90% 86%;
+  --destructive: 350 82% 62%;
+  --destructive-foreground: 248 40% 97%;
+  --input: 252 30% 20%;
+  --ring: 268 96% 67%;
+  --chart-1: 268 96% 67%;
+  --chart-2: 232 80% 64%;
+  --chart-3: 190 70% 55%;
+  --chart-4: 316 72% 66%;
+  --chart-5: 44 90% 62%;
+
+  --app-font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --app-font-serif: 'Bricolage Grotesque', serif;
+  --app-font-display: 'Bricolage Grotesque', 'Geist', sans-serif;
+  --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --radius: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 hsl(252 60% 2% / 0.5);
+  --shadow: 0 2px 6px -1px hsl(252 60% 2% / 0.6);
+  --shadow-md: 0 6px 18px -6px hsl(252 60% 2% / 0.7);
+  --shadow-lg: 0 18px 40px -16px hsl(258 70% 8% / 0.85);
+  --shadow-xl: 0 24px 60px -20px hsl(258 70% 8% / 0.9);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(268 96% 74%);
+  --secondary-border: hsl(252 32% 20%);
+  --muted-border: hsl(252 32% 18%);
+  --accent-border: hsl(254 50% 24%);
+  --destructive-border: hsl(350 82% 52%);
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { color-scheme: dark; }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background-image:
+      radial-gradient(1200px 600px at 85% -10%, hsl(262 80% 30% / 0.22), transparent 60%),
+      radial-gradient(900px 500px at -10% 30%, hsl(240 70% 22% / 0.18), transparent 60%);
+    background-attachment: fixed;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  h1, h2, h3, .font-display { font-family: var(--app-font-display); letter-spacing: -0.025em; }
+  ::selection { background: hsl(268 96% 67% / 0.35); }
+  :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+}
+
+@layer utilities {
+  input[type='search']::-webkit-search-cancel-button { @apply hidden; }
+  .glass {
+    background: linear-gradient(180deg, hsl(252 40% 9% / 0.72), hsl(252 44% 5% / 0.72));
+    backdrop-filter: blur(14px);
+    border: 1px solid hsl(252 34% 18% / 0.9);
+  }
+  .edge-glow { box-shadow: inset 0 1px 0 hsl(268 90% 80% / 0.08); }
+  .grid-lines {
+    background-image:
+      linear-gradient(hsl(252 40% 30% / 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(252 40% 30% / 0.12) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .text-gradient {
+    background: linear-gradient(100deg, hsl(248 40% 96%) 30%, hsl(268 96% 76%) 80%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .eyebrow { font-family: var(--app-font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: hsl(var(--accent-foreground)); }
+  .lift { transition: transform .25s cubic-bezier(.2,.7,.2,1), border-color .25s; }
+  .lift:hover { transform: translateY(-2px); border-color: hsl(268 70% 45% / 0.6); }
+  .fade-up { animation: fadeUp .7s cubic-bezier(.2,.7,.2,1) both; }
+  .d1 { animation-delay: .08s } .d2 { animation-delay: .16s } .d3 { animation-delay: .24s } .d4 { animation-delay: .32s }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .scan { animation: scan 6s ease-in-out infinite; }
+  @keyframes scan { 0%,100% { opacity: .35; transform: scaleY(.9); } 50% { opacity: 1; transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .fade-up, .scan { animation: none; } .lift:hover { transform: none; } }
+
+  .toggle-elevate::before, .toggle-elevate-2::before { content: ''; pointer-events: none; position: absolute; inset: 0px; border-radius: inherit; z-index: -1; }
+  .toggle-elevate.toggle-elevated::before { background-color: var(--elevate-2); }
+  .border.toggle-elevate::before { inset: -1px; }
+  .hover-elevate:not(.no-default-hover-elevate), .active-elevate:not(.no-default-active-elevate), .hover-elevate-2:not(.no-default-hover-elevate), .active-elevate-2:not(.no-default-active-elevate) { position: relative; z-index: 0; }
+  .hover-elevate:not(.no-default-hover-elevate)::after, .active-elevate:not(.no-default-active-elevate)::after, .hover-elevate-2:not(.no-default-hover-elevate)::after, .active-elevate-2:not(.no-default-active-elevate)::after { content: ''; pointer-events: none; position: absolute; inset: 0px; border-radius: inherit; z-index: 999; }
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after, .active-elevate:active:not(.no-default-active-elevate)::after { background-color: var(--elevate-1); }
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after, .active-elevate-2:active:not(.no-default-active-elevate)::after { background-color: var(--elevate-2); }
+  .border.hover-elevate::after, .border.active-elevate::after, .border.hover-elevate-2::after, .border.active-elevate-2::after { inset: -1px; }
+}

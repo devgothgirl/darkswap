@@ -1,0 +1,31 @@
+{
+  "origin": "https://darkswap.app",
+  "indexable": [
+    "/",
+    "/swap",
+    "/near-swap",
+    "/near-trends",
+    "/near-discovery",
+    "/docs",
+    "/tokenomics",
+    "/rewards",
+    "/help"
+  ],
+  "nonIndexable": [
+    "/tokenomics/leaderboard",
+    "/near-order",
+    "/previews",
+    "/founder",
+    "/terminal-preview",
+    "/split-mixer-preview",
+    "/privacy-bundle-preview",
+    "/explore",
+    "/screener-beta",
+    "/public-swap",
+    "/privacy-terminal"
+  ],
+  "aliases": {
+    "/splitwise-preview": "/split-mixer-preview",
+    "/screener-preview": "/screener-beta"
+  }
+}
