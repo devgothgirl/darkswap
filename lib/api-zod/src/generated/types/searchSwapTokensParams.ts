@@ -13,4 +13,8 @@ side: SearchSwapTokensSide;
  * @maxLength 100
  */
 term?: string;
+/**
+ * @maxLength 80
+ */
+chain?: string;
 };

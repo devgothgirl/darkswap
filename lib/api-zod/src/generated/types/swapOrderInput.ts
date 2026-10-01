@@ -9,7 +9,7 @@
 export interface SwapOrderInput {
   /**
      * @minLength 1
-     * @maxLength 128
+     * @maxLength 4096
      */
   quoteId: string;
   /**

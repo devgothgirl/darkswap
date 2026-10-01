@@ -1,0 +1,12 @@
+.risk-disclaimer {
+  padding: 24px 5.2%;
+  background: #1c1527;
+  border-top: 1px solid #493a58;
+  color: #dfd1e9;
+}
+.risk-disclaimer-inner { max-width: 1280px; margin: 0 auto; }
+.risk-disclaimer strong { display: block; color: #e3caff; font: 700 16px/1.4 'Source Sans 3', sans-serif; margin-bottom: 8px; }
+.risk-disclaimer p { max-width: 1000px; margin: 0; font: 13px/1.7 'Space Grotesk', sans-serif; }
+.risk-disclaimer a { color: #d2b5ff; text-decoration: underline; text-underline-offset: 3px; }
+.risk-disclaimer a:focus-visible { outline: 2px solid #d2b5ff; outline-offset: 3px; }
+@media (max-width: 767px) { .risk-disclaimer { padding: 24px 20px; } }

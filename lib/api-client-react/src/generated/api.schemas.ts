@@ -5,6 +5,1464 @@
  * Solana discovery, Houdini and NEAR Intents private routes, and separate OKX public swaps
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * Base58 Solana address; server must additionally validate decoded 32-byte public key.
+ * @minLength 32
+ * @maxLength 44
+ * @pattern ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+ */
+export type LaunchSolanaAddress = string;
+
+export type LaunchApiErrorCode = typeof LaunchApiErrorCode[keyof typeof LaunchApiErrorCode];
+
+
+export const LaunchApiErrorCode = {
+  INVALID_INPUT: 'INVALID_INPUT',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  NOT_INDEXED: 'NOT_INDEXED',
+  RATE_LIMITED: 'RATE_LIMITED',
+  PROVIDER_FAILURE: 'PROVIDER_FAILURE',
+  STORAGE_UNAVAILABLE: 'STORAGE_UNAVAILABLE',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  EXECUTION_UNAVAILABLE: 'EXECUTION_UNAVAILABLE',
+} as const;
+
+export interface LaunchApiError {
+  /** @minLength 1 */
+  error: string;
+  code: LaunchApiErrorCode;
+  executionAvailable: false;
+}
+
+export type StonkfunSourceProvider = typeof StonkfunSourceProvider[keyof typeof StonkfunSourceProvider];
+
+
+export const StonkfunSourceProvider = {
+  stonkfun: 'stonkfun',
+} as const;
+
+export interface StonkfunSource {
+  provider: StonkfunSourceProvider;
+  fetchedAt: string;
+  /** @nullable */
+  generatedAt: string | null;
+  stale: boolean;
+  /** @minimum 0 */
+  cacheAgeSeconds: number;
+}
+
+export type StonkfunCoverageScope = typeof StonkfunCoverageScope[keyof typeof StonkfunCoverageScope];
+
+
+export const StonkfunCoverageScope = {
+  provider_page: 'provider_page',
+  indexed_catalog: 'indexed_catalog',
+} as const;
+
+export type StonkfunCoverageSearchScope = typeof StonkfunCoverageSearchScope[keyof typeof StonkfunCoverageSearchScope];
+
+
+export const StonkfunCoverageSearchScope = {
+  provider_catalog: 'provider_catalog',
+  none: 'none',
+} as const;
+
+/**
+ * Distinguishes server-side provider filters from local multiple-mint NEAR filtering
+ */
+export type StonkfunCoverageViewFilterScope = typeof StonkfunCoverageViewFilterScope[keyof typeof StonkfunCoverageViewFilterScope];
+
+
+export const StonkfunCoverageViewFilterScope = {
+  provider_catalog: 'provider_catalog',
+  current_page: 'current_page',
+  none: 'none',
+} as const;
+
+export type StonkfunCoverageRankingSignalsItem = typeof StonkfunCoverageRankingSignalsItem[keyof typeof StonkfunCoverageRankingSignalsItem];
+
+
+export const StonkfunCoverageRankingSignalsItem = {
+  provider_volume: 'provider_volume',
+  provider_newest: 'provider_newest',
+} as const;
+
+export interface StonkfunCoverage {
+  scope: StonkfunCoverageScope;
+  searchScope: StonkfunCoverageSearchScope;
+  /** Distinguishes server-side provider filters from local multiple-mint NEAR filtering */
+  viewFilterScope: StonkfunCoverageViewFilterScope;
+  creatorSearchAvailable: false;
+  holderMetricsAvailable: false;
+  transactionMetricsAvailable: false;
+  /** Documented new/aboutToGraduate/graduated categories are verified; precise progress algorithm is not. Never compute classification from current market cap. */
+  graduationStatusVerified: boolean;
+  rankingSignals: StonkfunCoverageRankingSignalsItem[];
+  warnings: string[];
+}
+
+export interface StonkfunPagination {
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  page: number;
+  /** @minimum 1 */
+  pageSize: number;
+  /**
+     * Provider total AFTER upstream filters but BEFORE any additional local view filtering
+     * @minimum 0
+     */
+  total: number;
+  /**
+     * Provider page count AFTER upstream filters but BEFORE any additional local view filtering
+     * @minimum 0
+     */
+  totalPages: number;
+  /**
+     * Count AFTER any additional local view filtering
+     * @minimum 0
+     */
+  returned: number;
+  /**
+     * Minimum of upstream totalPages and local safety cap 100 (at least 1)
+     * @minimum 1
+     * @maximum 100
+     */
+  maxAccessiblePage: number;
+}
+
+/**
+ * Only validated HTTP(S) links; unsafe or absent provider metadata becomes null.
+ */
+export interface StonkfunTokenLinks {
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  x: string | null;
+  /** @nullable */
+  telegram: string | null;
+  /** @nullable */
+  discord: string | null;
+  /** @nullable */
+  github: string | null;
+}
+
+export type StonkfunTokenQuoteGroup = typeof StonkfunTokenQuoteGroup[keyof typeof StonkfunTokenQuoteGroup];
+
+
+export const StonkfunTokenQuoteGroup = {
+  dark: 'dark',
+  near: 'near',
+  stablecoin: 'stablecoin',
+  other: 'other',
+} as const;
+
+/**
+ * @nullable
+ */
+export type StonkfunTokenQuote = {
+  mint: LaunchSolanaAddress;
+  /** @maxLength 64 */
+  symbol: string;
+  /** @maxLength 200 */
+  name: string;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  categoryLabel: string | null;
+  group: StonkfunTokenQuoteGroup;
+  /** Quote mint is matched against the current validated pair catalog; not an authenticity endorsement */
+  verified: boolean;
+} | null;
+
+/**
+ * Null means unavailable, not zero. Current public discovery lacks holder/transaction/buyer/growth evidence.
+ */
+export interface StonkfunTokenMetrics {
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  priceUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  marketCapUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  fdvUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  volume24hUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  liquidityUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  peakMarketCapUsd: number | null;
+  /**
+     * Raw provider value when present; units are not locally inferred
+     * @nullable
+     */
+  priceChange24h: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  holders: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  transactions: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  uniqueBuyers: number | null;
+  /** @nullable */
+  holderGrowth: number | null;
+}
+
+export type StonkfunTokenNetwork = typeof StonkfunTokenNetwork[keyof typeof StonkfunTokenNetwork];
+
+
+export const StonkfunTokenNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+/**
+ * Untrusted provider text is plain text only. Resolve relative image URLs against provider origin; reject non-HTTP(S) URLs.
+ */
+export interface StonkfunToken {
+  mint: LaunchSolanaAddress;
+  network: StonkfunTokenNetwork;
+  /** @nullable */
+  pool: string | null;
+  /** @maxLength 200 */
+  name: string;
+  /** @maxLength 64 */
+  symbol: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  description: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  links: StonkfunTokenLinks;
+  quote: StonkfunTokenQuote | null;
+  /** @nullable */
+  launchpad: string | null;
+  /** @nullable */
+  mode: string | null;
+  /** @nullable */
+  quoteOnlyFees: boolean | null;
+  /**
+     * Provider token transfer fee metadata, NOT a verified token launch fee.
+     * @minimum 0
+     * @maximum 10000
+     * @nullable
+     */
+  transferFeeBps: number | null;
+  metrics: StonkfunTokenMetrics;
+  /**
+     * Raw upstream status; documented categories new/aboutToGraduate/graduated. Unknown future values are preserved
+     * @nullable
+     */
+  status: string | null;
+  /**
+     * Raw upstream value; units/thresholds not independently documented
+     * @nullable
+     */
+  graduationProgress: number | null;
+  /** @nullable */
+  createdAt: string | null;
+  /**
+     * Provider timestamp; may precede createdAt. Neither is asserted to be immutable chain launch time
+     * @nullable
+     */
+  graduatedAt: string | null;
+  /**
+     * Null until verified attribution exists; never inferred from mint/pool
+     * @nullable
+     */
+  creatorWallet: string | null;
+  /** True only for a verified configured DARK mint+network match */
+  darkPair: boolean;
+  underReview: boolean;
+  metadataSuppressed: boolean;
+}
+
+export type StonkfunTokensResponseNetwork = typeof StonkfunTokensResponseNetwork[keyof typeof StonkfunTokensResponseNetwork];
+
+
+export const StonkfunTokensResponseNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type StonkfunTokensResponseView = typeof StonkfunTokensResponseView[keyof typeof StonkfunTokensResponseView];
+
+
+export const StonkfunTokensResponseView = {
+  trending: 'trending',
+  new: 'new',
+  dark: 'dark',
+  near: 'near',
+  graduating: 'graduating',
+  graduated: 'graduated',
+} as const;
+
+export type StonkfunTokensResponseSort = typeof StonkfunTokensResponseSort[keyof typeof StonkfunTokensResponseSort];
+
+
+export const StonkfunTokensResponseSort = {
+  newest: 'newest',
+  volume: 'volume',
+} as const;
+
+/**
+ * Effective upstream status filter
+ * @nullable
+ */
+export type StonkfunTokensResponseStatus = typeof StonkfunTokensResponseStatus[keyof typeof StonkfunTokensResponseStatus] | null;
+
+
+export const StonkfunTokensResponseStatus = {
+  new: 'new',
+  aboutToGraduate: 'aboutToGraduate',
+  graduated: 'graduated',
+} as const;
+
+export interface StonkfunTokensResponse {
+  tokens: StonkfunToken[];
+  pagination: StonkfunPagination;
+  network: StonkfunTokensResponseNetwork;
+  view: StonkfunTokensResponseView;
+  q: string;
+  sort: StonkfunTokensResponseSort;
+  /**
+     * Effective upstream exact quote mint filter
+     * @nullable
+     */
+  quoteMint: string | null;
+  /**
+     * Effective upstream status filter
+     * @nullable
+     */
+  status: StonkfunTokensResponseStatus;
+  source: StonkfunSource;
+  coverage: StonkfunCoverage;
+}
+
+export interface StonkfunTokenResponse {
+  token: StonkfunToken;
+  source: StonkfunSource;
+  coverage: StonkfunCoverage;
+}
+
+export type StonkfunPairNetwork = typeof StonkfunPairNetwork[keyof typeof StonkfunPairNetwork];
+
+
+export const StonkfunPairNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type StonkfunPairGroup = typeof StonkfunPairGroup[keyof typeof StonkfunPairGroup];
+
+
+export const StonkfunPairGroup = {
+  dark: 'dark',
+  near: 'near',
+  stablecoin: 'stablecoin',
+  other: 'other',
+} as const;
+
+export interface StonkfunPair {
+  mint: LaunchSolanaAddress;
+  network: StonkfunPairNetwork;
+  /** @maxLength 64 */
+  symbol: string;
+  /** @maxLength 200 */
+  name: string;
+  /**
+     * @minimum 0
+     * @maximum 255
+     * @nullable
+     */
+  decimals: number | null;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  categoryLabel: string | null;
+  /** @nullable */
+  tokenProgram: string | null;
+  /** Upstream discovery flag only */
+  launchable: boolean;
+  /**
+     * Upstream discovery flag only; absent is null
+     * @nullable
+     */
+  launchLabReady: boolean | null;
+  symbolAmbiguous: boolean;
+  group: StonkfunPairGroup;
+  /** Local preparation selector enablement */
+  enabled: boolean;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  priority: number;
+  /** @nullable */
+  evidenceUrl: string | null;
+  executionAvailable: false;
+  /** @minLength 1 */
+  unavailableReason: string;
+}
+
+export type StonkfunPairsResponseNetwork = typeof StonkfunPairsResponseNetwork[keyof typeof StonkfunPairsResponseNetwork];
+
+
+export const StonkfunPairsResponseNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type StonkfunPairsResponseSelectBy = typeof StonkfunPairsResponseSelectBy[keyof typeof StonkfunPairsResponseSelectBy];
+
+
+export const StonkfunPairsResponseSelectBy = {
+  mint: 'mint',
+} as const;
+
+export interface StonkfunPairsResponse {
+  pairs: StonkfunPair[];
+  network: StonkfunPairsResponseNetwork;
+  selectBy: StonkfunPairsResponseSelectBy;
+  /** @minimum 0 */
+  ambiguousSymbolCount: number;
+  source: StonkfunSource;
+}
+
+export type LaunchAuthChallengeInputNetwork = typeof LaunchAuthChallengeInputNetwork[keyof typeof LaunchAuthChallengeInputNetwork];
+
+
+export const LaunchAuthChallengeInputNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export interface LaunchAuthChallengeInput {
+  wallet: LaunchSolanaAddress;
+  network: LaunchAuthChallengeInputNetwork;
+}
+
+export interface LaunchAuthChallenge {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 4096
+     */
+  message: string;
+  expiresAt: string;
+}
+
+export interface LaunchAuthProofInput {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  id: string;
+  /**
+     * Canonical base64 encoding of a 64-byte Ed25519 signature.
+     * @minLength 88
+     * @maxLength 88
+     * @pattern ^[A-Za-z0-9+/]{86}==$
+     */
+  signature: string;
+}
+
+export interface LaunchAuthenticatedSession {
+  wallet: LaunchSolanaAddress;
+  /**
+     * @minLength 16
+     * @maxLength 256
+     */
+  csrfToken: string;
+  expiresAt: string;
+  isAdmin: boolean;
+}
+
+export interface LaunchAuthSession {
+  /** @nullable */
+  wallet: string | null;
+  /** @nullable */
+  csrfToken: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  /** Always false for anonymous state */
+  isAdmin: boolean;
+}
+
+/**
+ * Percentages must sum to exactly 100; enforced server-side in addition to schema bounds. Preparation-only, not verified upstream economics.
+ */
+export interface LaunchAllocations {
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  creator: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  developer: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  liquidity: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  community: number;
+}
+
+export type LaunchDraftInputNetwork = typeof LaunchDraftInputNetwork[keyof typeof LaunchDraftInputNetwork];
+
+
+export const LaunchDraftInputNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+/**
+ * Incomplete identity may be saved privately. Social URLs are empty strings or HTTP(S). No HTML execution, wallet owner overrides or readiness claims accepted.
+ */
+export interface LaunchDraftInput {
+  /** @maxLength 80 */
+  name: string;
+  /**
+     * @maxLength 16
+     * @pattern ^[A-Za-z0-9_-]*$
+     */
+  symbol: string;
+  /** @maxLength 2000 */
+  description: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  website: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  x: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  telegram: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  discord: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  github: string;
+  /**
+     * @maxLength 128
+     * @nullable
+     */
+  logoId: string | null;
+  /**
+     * @nullable
+     * @pattern ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+     */
+  pairMint: string | null;
+  network: LaunchDraftInputNetwork;
+  /**
+     * Positive decimal integer string; never JS floating-point token quantities
+     * @pattern ^[1-9][0-9]{0,77}$
+     */
+  supply: string;
+  allocations: LaunchAllocations;
+}
+
+export type LaunchIncentiveStateState = typeof LaunchIncentiveStateState[keyof typeof LaunchIncentiveStateState];
+
+
+export const LaunchIncentiveStateState = {
+  planned: 'planned',
+  unverified: 'unverified',
+  under_review: 'under_review',
+} as const;
+
+/**
+ * Launch-only planned evidence state, not swap account points, claimable rewards or an active earning formula. Under-review records cannot automatically qualify.
+ */
+export interface LaunchIncentiveState {
+  /** @nullable */
+  dark_pair: boolean | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  dark_points: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  referral_volume: number | null;
+  /** @nullable */
+  creator_score: number | null;
+  /** @nullable */
+  campaign_eligible: boolean | null;
+  /** @nullable */
+  builder_eligible: boolean | null;
+  state: LaunchIncentiveStateState;
+  under_review: boolean;
+}
+
+export type LaunchDraftNetwork = typeof LaunchDraftNetwork[keyof typeof LaunchDraftNetwork];
+
+
+export const LaunchDraftNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type LaunchDraftStatus = typeof LaunchDraftStatus[keyof typeof LaunchDraftStatus];
+
+
+export const LaunchDraftStatus = {
+  'preparation-ready': 'preparation-ready',
+} as const;
+
+export interface LaunchDraft {
+  /** @maxLength 80 */
+  name: string;
+  /**
+     * @maxLength 16
+     * @pattern ^[A-Za-z0-9_-]*$
+     */
+  symbol: string;
+  /** @maxLength 2000 */
+  description: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  website: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  x: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  telegram: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  discord: string;
+  /**
+     * @maxLength 500
+     * @pattern ^$|^https?:[/][/]
+     */
+  github: string;
+  /**
+     * @maxLength 128
+     * @nullable
+     */
+  logoId: string | null;
+  /**
+     * @nullable
+     * @pattern ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+     */
+  pairMint: string | null;
+  network: LaunchDraftNetwork;
+  /** @pattern ^[1-9][0-9]{0,77}$ */
+  supply: string;
+  allocations: LaunchAllocations;
+  id: string;
+  wallet: LaunchSolanaAddress;
+  status: LaunchDraftStatus;
+  executionAvailable: false;
+  /** @minLength 1 */
+  unavailableReason: string;
+  createdAt: string;
+  updatedAt: string;
+  incentives: LaunchIncentiveState;
+}
+
+export interface LaunchDraftList {
+  drafts: LaunchDraft[];
+}
+
+export type LaunchLogoUploadInputContentType = typeof LaunchLogoUploadInputContentType[keyof typeof LaunchLogoUploadInputContentType];
+
+
+export const LaunchLogoUploadInputContentType = {
+  'image/png': 'image/png',
+  'image/jpeg': 'image/jpeg',
+} as const;
+
+export interface LaunchLogoUploadInput {
+  /**
+     * Display filename only; must never determine storage path
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 1048576
+     */
+  size: number;
+  contentType: LaunchLogoUploadInputContentType;
+}
+
+export interface LaunchLogoUpload {
+  id: string;
+  /** Short-lived presigned private object PUT URL; do not persist in drafts or analytics */
+  uploadURL: string;
+}
+
+export interface LaunchLogo {
+  id: string;
+}
+
+export interface LaunchCreatorMetrics {
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  totalVolumeUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  darkVolumeUsd: number | null;
+  /**
+     * Distinct verified holders only
+     * @minimum 0
+     * @nullable
+     */
+  holders: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  feesUsd: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  referrals: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  darkPoints: number | null;
+}
+
+export interface LaunchCreatorResponse {
+  wallet: LaunchSolanaAddress;
+  drafts: LaunchDraft[];
+  /** Only verified creator attribution; currently empty without attribution evidence */
+  launches: StonkfunToken[];
+  metrics: LaunchCreatorMetrics;
+  incentives: LaunchIncentiveState;
+  warnings: string[];
+}
+
+export type LaunchPairOverrideNetwork = typeof LaunchPairOverrideNetwork[keyof typeof LaunchPairOverrideNetwork];
+
+
+export const LaunchPairOverrideNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type LaunchPairOverrideGroup = typeof LaunchPairOverrideGroup[keyof typeof LaunchPairOverrideGroup];
+
+
+export const LaunchPairOverrideGroup = {
+  other: 'other',
+  near: 'near',
+  stablecoin: 'stablecoin',
+} as const;
+
+/**
+ * No DARK-group override; DARK grouping is only configured DARK mint/network. Evidence is required for ecosystem/stablecoin grouping and does not establish native chain support.
+ */
+export interface LaunchPairOverride {
+  mint: LaunchSolanaAddress;
+  network: LaunchPairOverrideNetwork;
+  enabled: boolean;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  priority: number;
+  group: LaunchPairOverrideGroup;
+  /**
+     * @maxLength 1000
+     * @pattern ^https?:[/][/]
+     */
+  evidenceUrl: string;
+}
+
+export type LaunchFeaturedPairNetwork = typeof LaunchFeaturedPairNetwork[keyof typeof LaunchFeaturedPairNetwork];
+
+
+export const LaunchFeaturedPairNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+/**
+ * @nullable
+ */
+export type LaunchFeaturedPair = {
+  mint: LaunchSolanaAddress;
+  network: LaunchFeaturedPairNetwork;
+} | null;
+
+/**
+ * Local draft proposal, not provider-verified fees or a fee quote; no charging enabled.
+ * @nullable
+ */
+export type LaunchFeeProposal = {
+  /**
+     * @maxLength 80
+     * @nullable
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  amount: string | null;
+  /**
+     * @maxLength 64
+     * @nullable
+     */
+  currency: string | null;
+  /** @maxLength 2000 */
+  notes: string;
+} | null;
+
+/**
+ * Inactive proposal only; does not execute a campaign or promise eligibility/rewards.
+ * @nullable
+ */
+export type LaunchCampaignProposal = {
+  /** @maxLength 120 */
+  name: string;
+  /** @maxLength 2000 */
+  description: string;
+  /** @maxLength 2000 */
+  eligibilityNotes: string;
+} | null;
+
+/**
+ * Inactive draft formula only; no earning, issuance, payouts or claimable value.
+ * @nullable
+ */
+export type LaunchPointsProposal = {
+  /** @maxLength 120 */
+  name: string;
+  /** @maxLength 2000 */
+  description: string;
+  /** @maxLength 2000 */
+  formulaProposal: string;
+} | null;
+
+export type LaunchConfigInputDarkPairSymbol = typeof LaunchConfigInputDarkPairSymbol[keyof typeof LaunchConfigInputDarkPairSymbol];
+
+
+export const LaunchConfigInputDarkPairSymbol = {
+  DARK: 'DARK',
+} as const;
+
+export interface LaunchConfigInput {
+  darkPairingEnabled: boolean;
+  /**
+     * @nullable
+     * @pattern ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+     */
+  darkTokenAddress: string | null;
+  darkPairSymbol: LaunchConfigInputDarkPairSymbol;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  darkPairPriority: number;
+  nearPairingEnabled: boolean;
+  /** @maxItems 1000 */
+  pairOverrides: LaunchPairOverride[];
+  featuredPair: LaunchFeaturedPair | null;
+  /** @maxItems 100 */
+  featuredMints: LaunchSolanaAddress[];
+  paused: boolean;
+  /**
+     * Plain text only
+     * @maxLength 500
+     * @nullable
+     */
+  banner: string | null;
+  feeProposal: LaunchFeeProposal | null;
+  campaignProposal: LaunchCampaignProposal | null;
+  pointsProposal: LaunchPointsProposal | null;
+}
+
+export type LaunchConfigDarkPairSymbol = typeof LaunchConfigDarkPairSymbol[keyof typeof LaunchConfigDarkPairSymbol];
+
+
+export const LaunchConfigDarkPairSymbol = {
+  DARK: 'DARK',
+} as const;
+
+export type LaunchConfigNetwork = typeof LaunchConfigNetwork[keyof typeof LaunchConfigNetwork];
+
+
+export const LaunchConfigNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type LaunchConfigExecutionState = typeof LaunchConfigExecutionState[keyof typeof LaunchConfigExecutionState];
+
+
+export const LaunchConfigExecutionState = {
+  unavailable: 'unavailable',
+} as const;
+
+/**
+ * DARK only when verified DARK ecosystem discovery is live; otherwise trending
+ */
+export type LaunchConfigDefaultView = typeof LaunchConfigDefaultView[keyof typeof LaunchConfigDefaultView];
+
+
+export const LaunchConfigDefaultView = {
+  trending: 'trending',
+  dark: 'dark',
+} as const;
+
+export interface LaunchConfig {
+  darkPairingEnabled: boolean;
+  /**
+     * @nullable
+     * @pattern ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+     */
+  darkTokenAddress: string | null;
+  darkPairSymbol: LaunchConfigDarkPairSymbol;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  darkPairPriority: number;
+  nearPairingEnabled: boolean;
+  /** @maxItems 1000 */
+  pairOverrides: LaunchPairOverride[];
+  featuredPair: LaunchFeaturedPair | null;
+  /** @maxItems 100 */
+  featuredMints: LaunchSolanaAddress[];
+  paused: boolean;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  banner: string | null;
+  feeProposal: LaunchFeeProposal | null;
+  campaignProposal: LaunchCampaignProposal | null;
+  pointsProposal: LaunchPointsProposal | null;
+  network: LaunchConfigNetwork;
+  readonly executionAvailable: false;
+  readonly executionState: LaunchConfigExecutionState;
+  /** @minLength 1 */
+  unavailableReason: string;
+  /** Current validated upstream mint match plus configured enablement; not execution availability */
+  darkPairAvailable: boolean;
+  /** When unavailable use '$DARK pairing is being activated for the DarkSwap ecosystem.' */
+  darkPairMessage: string;
+  /** DARK only when verified DARK ecosystem discovery is live; otherwise trending */
+  defaultView: LaunchConfigDefaultView;
+  /**
+     * No verified launch fee contract exists
+     * @nullable
+     */
+  providerLaunchFee: null;
+  /**
+     * No verified launch execution destination exists
+     * @nullable
+     */
+  launchDestination: null;
+  updatedAt: string;
+}
+
+export type LaunchReviewInputTargetType = typeof LaunchReviewInputTargetType[keyof typeof LaunchReviewInputTargetType];
+
+
+export const LaunchReviewInputTargetType = {
+  token: 'token',
+  wallet: 'wallet',
+} as const;
+
+export type LaunchReviewInputNetwork = typeof LaunchReviewInputNetwork[keyof typeof LaunchReviewInputNetwork];
+
+
+export const LaunchReviewInputNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type LaunchReviewInputReason = typeof LaunchReviewInputReason[keyof typeof LaunchReviewInputReason];
+
+
+export const LaunchReviewInputReason = {
+  malicious_metadata: 'malicious_metadata',
+  self_referral: 'self_referral',
+  circular_activity: 'circular_activity',
+  transaction_spam: 'transaction_spam',
+  suspected_wallet_cluster: 'suspected_wallet_cluster',
+  other: 'other',
+} as const;
+
+export interface LaunchReviewInput {
+  targetType: LaunchReviewInputTargetType;
+  target: LaunchSolanaAddress;
+  network: LaunchReviewInputNetwork;
+  reason: LaunchReviewInputReason;
+  /**
+     * @minItems 1
+     * @maxItems 10
+     * @items.maxLength 1000
+     * @items.pattern ^https?:[/][/]
+     */
+  evidenceUrls: string[];
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  notes: string;
+  /** Only token-target reviews may suppress local metadata */
+  suppressMetadata: boolean;
+}
+
+export type LaunchReviewTargetType = typeof LaunchReviewTargetType[keyof typeof LaunchReviewTargetType];
+
+
+export const LaunchReviewTargetType = {
+  token: 'token',
+  wallet: 'wallet',
+} as const;
+
+export type LaunchReviewNetwork = typeof LaunchReviewNetwork[keyof typeof LaunchReviewNetwork];
+
+
+export const LaunchReviewNetwork = {
+  'mainnet-beta': 'mainnet-beta',
+} as const;
+
+export type LaunchReviewReason = typeof LaunchReviewReason[keyof typeof LaunchReviewReason];
+
+
+export const LaunchReviewReason = {
+  malicious_metadata: 'malicious_metadata',
+  self_referral: 'self_referral',
+  circular_activity: 'circular_activity',
+  transaction_spam: 'transaction_spam',
+  suspected_wallet_cluster: 'suspected_wallet_cluster',
+  other: 'other',
+} as const;
+
+export type LaunchReviewStatus = typeof LaunchReviewStatus[keyof typeof LaunchReviewStatus];
+
+
+export const LaunchReviewStatus = {
+  under_review: 'under_review',
+} as const;
+
+export interface LaunchReview {
+  targetType: LaunchReviewTargetType;
+  target: LaunchSolanaAddress;
+  network: LaunchReviewNetwork;
+  reason: LaunchReviewReason;
+  /**
+     * @minItems 1
+     * @maxItems 10
+     * @items.maxLength 1000
+     * @items.pattern ^https?:[/][/]
+     */
+  evidenceUrls: string[];
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  notes: string;
+  suppressMetadata: boolean;
+  id: string;
+  status: LaunchReviewStatus;
+  createdBy: LaunchSolanaAddress;
+  createdAt: string;
+}
+
+export type LaunchDetectorStatusName = typeof LaunchDetectorStatusName[keyof typeof LaunchDetectorStatusName];
+
+
+export const LaunchDetectorStatusName = {
+  self_referral: 'self_referral',
+  circular_activity: 'circular_activity',
+  transaction_spam: 'transaction_spam',
+  wallet_cluster: 'wallet_cluster',
+} as const;
+
+/**
+ * Missing transaction/referral/cluster evidence leaves detector inactive; aggregate discovery is insufficient.
+ */
+export interface LaunchDetectorStatus {
+  name: LaunchDetectorStatusName;
+  active: boolean;
+  /** @minLength 1 */
+  reason: string;
+}
+
+export interface LaunchReviewList {
+  reviews: LaunchReview[];
+  detectors: LaunchDetectorStatus[];
+}
+
+export type LaunchAuditRecordAction = typeof LaunchAuditRecordAction[keyof typeof LaunchAuditRecordAction];
+
+
+export const LaunchAuditRecordAction = {
+  config_updated: 'config_updated',
+  review_created: 'review_created',
+} as const;
+
+export interface LaunchAuditRecord {
+  id: string;
+  actorWallet: LaunchSolanaAddress;
+  action: LaunchAuditRecordAction;
+  /** @nullable */
+  targetId: string | null;
+  summary: string;
+  createdAt: string;
+}
+
+export interface LaunchAuditList {
+  records: LaunchAuditRecord[];
+}
+
+export interface LaunchSubmitInput {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  draftId: string;
+}
+
+export interface RewardsConfig {
+  /** @nullable */
+  appId: string | null;
+  enabled: boolean;
+}
+
+export type RewardsTierId = typeof RewardsTierId[keyof typeof RewardsTierId];
+
+
+export const RewardsTierId = {
+  starter: 'starter',
+  plus: 'plus',
+  pro: 'pro',
+} as const;
+
+export type RewardsTierThresholdProperty = typeof RewardsTierThresholdProperty[keyof typeof RewardsTierThresholdProperty];
+
+
+export const RewardsTierThresholdProperty = {
+  NUMBER_0: 0,
+  NUMBER_500: 500,
+  NUMBER_2000: 2000,
+} as const;
+
+export interface RewardsTier {
+  id: RewardsTierId;
+  name: string;
+  threshold: RewardsTierThresholdProperty;
+  version: 1;
+}
+
+export type RewardsTierThresholdId = typeof RewardsTierThresholdId[keyof typeof RewardsTierThresholdId];
+
+
+export const RewardsTierThresholdId = {
+  starter: 'starter',
+  plus: 'plus',
+  pro: 'pro',
+} as const;
+
+export type RewardsTierThresholdName = typeof RewardsTierThresholdName[keyof typeof RewardsTierThresholdName];
+
+
+export const RewardsTierThresholdName = {
+  Starter: 'Starter',
+  Plus: 'Plus',
+  Pro: 'Pro',
+} as const;
+
+export type RewardsTierThresholdThreshold = typeof RewardsTierThresholdThreshold[keyof typeof RewardsTierThresholdThreshold];
+
+
+export const RewardsTierThresholdThreshold = {
+  NUMBER_0: 0,
+  NUMBER_500: 500,
+  NUMBER_2000: 2000,
+} as const;
+
+export interface RewardsTierThreshold {
+  id: RewardsTierThresholdId;
+  name: RewardsTierThresholdName;
+  threshold: RewardsTierThresholdThreshold;
+}
+
+export interface RewardsRuleConfig {
+  version: 1;
+  pointsPerCompletedSwap: 100;
+  dailyCap: 300;
+  dailyCapPeriod: 'utc_day';
+  tiers: RewardsTierThreshold[];
+}
+
+export type RewardsLedgerEntryReason = typeof RewardsLedgerEntryReason[keyof typeof RewardsLedgerEntryReason];
+
+
+export const RewardsLedgerEntryReason = {
+  swap_completed: 'swap_completed',
+  swap_capped: 'swap_capped',
+  swap_reversed: 'swap_reversed',
+  adjustment: 'adjustment',
+} as const;
+
+export type RewardsLedgerEntryRoute = typeof RewardsLedgerEntryRoute[keyof typeof RewardsLedgerEntryRoute];
+
+
+export const RewardsLedgerEntryRoute = {
+  houdini: 'houdini',
+  near: 'near',
+} as const;
+
+export interface RewardsLedgerEntry {
+  id: string;
+  points: number;
+  reason: RewardsLedgerEntryReason;
+  route?: RewardsLedgerEntryRoute;
+  orderReference?: string;
+  createdAt: string;
+}
+
+export interface RewardsMe {
+  enrolled: boolean;
+  /** @minimum 0 */
+  balance: number;
+  tier: RewardsTier;
+  /** @nullable */
+  nextThreshold: number | null;
+  ruleConfig: RewardsRuleConfig;
+  history: RewardsLedgerEntry[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface RewardsEnrollInput {
+  consent: boolean;
+}
+
+export interface RewardsEnrollResponse {
+  enrolled: boolean;
+  message: string;
+}
+
+export interface NearTrendPool {
+  id: string;
+  address: string;
+  tokenSymbol: string;
+  tokenName: string;
+  tokenAddress: string;
+  /** @nullable */
+  tokenImage: string | null;
+  dex: string;
+  /** @nullable */
+  priceUsd: number | null;
+  /** @nullable */
+  priceChange24h: number | null;
+  /** @nullable */
+  volume24h: number | null;
+  /** @nullable */
+  liquidityUsd: number | null;
+  buys24h: number;
+  sells24h: number;
+  /** @nullable */
+  createdAt: string | null;
+  url: string;
+}
+
+export type NearTrendsResponseView = typeof NearTrendsResponseView[keyof typeof NearTrendsResponseView];
+
+
+export const NearTrendsResponseView = {
+  trending: 'trending',
+  new: 'new',
+} as const;
+
+export interface NearTrendsResponse {
+  view: NearTrendsResponseView;
+  updatedAt: string;
+  source: string;
+  pools: NearTrendPool[];
+}
+
+export interface NearPoolSearchResponse {
+  query: string;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  page: number;
+  /** True only when the raw provider data array is nonempty and page is below 10. This indicates another page may be requested, not that it is guaranteed to contain matches. Stop only when a raw provider page is empty or page 10 is reached. */
+  hasNextPage: boolean;
+  updatedAt: string;
+  source: string;
+  pools: NearTrendPool[];
+}
+
+export type MarketingDeliveryEventData = { [key: string]: unknown };
+
+export interface MarketingDeliveryEvent {
+  type: string;
+  data: MarketingDeliveryEventData;
+}
+
+export type MarketingWebhookHealthStatus = typeof MarketingWebhookHealthStatus[keyof typeof MarketingWebhookHealthStatus];
+
+
+export const MarketingWebhookHealthStatus = {
+  healthy: 'healthy',
+  not_ready: 'not_ready',
+  processing_failure: 'processing_failure',
+  backlog: 'backlog',
+  stale: 'stale',
+  unavailable: 'unavailable',
+} as const;
+
+export interface MarketingWebhookHealth {
+  status: MarketingWebhookHealthStatus;
+}
+
+export interface MarketingTokenInput {
+  /** @pattern ^[a-f0-9]{64}$ */
+  token: string;
+}
+
+export interface MarketingSubscriptionInput {
+  /** @maxLength 254 */
+  email: string;
+  consent: true;
+}
+
+export type SupportRequestInputIssue = typeof SupportRequestInputIssue[keyof typeof SupportRequestInputIssue];
+
+
+export const SupportRequestInputIssue = {
+  wrong_deposit: 'wrong_deposit',
+  delayed_swap: 'delayed_swap',
+  refund: 'refund',
+  order_status: 'order_status',
+  other: 'other',
+} as const;
+
+export type SupportRequestInputRoute = typeof SupportRequestInputRoute[keyof typeof SupportRequestInputRoute];
+
+
+export const SupportRequestInputRoute = {
+  private_route: 'private_route',
+  privacy_swap: 'privacy_swap',
+  unsure: 'unsure',
+} as const;
+
+export interface SupportRequestInput {
+  /** @maxLength 254 */
+  email: string;
+  issue: SupportRequestInputIssue;
+  route?: SupportRequestInputRoute;
+  /** @maxLength 180 */
+  orderReference?: string;
+  /** @maxLength 180 */
+  transactionHash?: string;
+  /**
+     * @minLength 20
+     * @maxLength 2000
+     */
+  message: string;
+  /** @maxLength 100 */
+  website?: string;
+}
+
+export type SupportRequestResponseStatus = typeof SupportRequestResponseStatus[keyof typeof SupportRequestResponseStatus];
+
+
+export const SupportRequestResponseStatus = {
+  pending: 'pending',
+  delivered: 'delivered',
+  unconfirmed: 'unconfirmed',
+  failed: 'failed',
+} as const;
+
+export interface SupportRequestResponse {
+  message: string;
+  status: SupportRequestResponseStatus;
+  token: string;
+}
+
+export type SupportRequestStatusStatus = typeof SupportRequestStatusStatus[keyof typeof SupportRequestStatusStatus];
+
+
+export const SupportRequestStatusStatus = {
+  pending: 'pending',
+  delivered: 'delivered',
+  failed: 'failed',
+  unconfirmed: 'unconfirmed',
+} as const;
+
+export interface SupportRequestStatus {
+  status: SupportRequestStatusStatus;
+  message: string;
+}
+
+export interface MarketingSubscriptionResponse {
+  message: string;
+}
+
 export interface BetaAccessError {
   error: string;
 }
@@ -120,6 +1578,67 @@ export interface SwapToken {
   price?: number | null;
 }
 
+export type SwapChainListChainsItem = {
+  id: string;
+  name: string;
+};
+
+export interface SwapChainList {
+  chains: SwapChainListChainsItem[];
+}
+
+export type NearServiceIncidentImpact = typeof NearServiceIncidentImpact[keyof typeof NearServiceIncidentImpact];
+
+
+export const NearServiceIncidentImpact = {
+  matching: 'matching',
+  unrelated: 'unrelated',
+  unverified: 'unverified',
+} as const;
+
+export interface NearServiceIncident {
+  id: string;
+  scopeType: string;
+  scopeValue: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+  resolvedAt?: string;
+  impact: NearServiceIncidentImpact;
+}
+
+export type NearServiceStatusState = typeof NearServiceStatusState[keyof typeof NearServiceStatusState];
+
+
+export const NearServiceStatusState = {
+  fresh: 'fresh',
+  stale: 'stale',
+  unavailable: 'unavailable',
+  invalid: 'invalid',
+} as const;
+
+export type NearServiceStatusEligibility = typeof NearServiceStatusEligibility[keyof typeof NearServiceStatusEligibility];
+
+
+export const NearServiceStatusEligibility = {
+  allowed: 'allowed',
+  paused: 'paused',
+  unverified: 'unverified',
+} as const;
+
+export interface NearServiceStatus {
+  sourceUrl: string;
+  /** @nullable */
+  lastSuccessAt: string | null;
+  /** @nullable */
+  freshUntil: string | null;
+  state: NearServiceStatusState;
+  activeIncidents: NearServiceIncident[];
+  recentlyResolved: NearServiceIncident[];
+  eligibility: NearServiceStatusEligibility;
+  reason: string;
+}
+
 export interface NearToken {
   id: string;
   symbol: string;
@@ -199,7 +1718,11 @@ export const NearOrderStatus = {
   FAILED: 'FAILED',
 } as const;
 
+/**
+ * A durable receipt. Optional routeStatus is a current incident observation, not persisted lifecycle truth or permission to fund.
+ */
 export interface NearOrder {
+  routeStatus?: NearServiceStatus;
   depositAddress: string;
   requestId?: string;
   depositMemo?: string;
@@ -256,7 +1779,7 @@ export interface QuoteList {
 export interface SwapOrderInput {
   /**
      * @minLength 1
-     * @maxLength 128
+     * @maxLength 4096
      */
   quoteId: string;
   /**
@@ -287,12 +1810,181 @@ export interface SwapOrder {
   outTransactionOutHash?: string;
 }
 
+/**
+ * Invalid or unsupported input, image, or query
+ */
+export type LaunchBadRequestResponse = LaunchApiError;
+
+/**
+ * Wallet ownership session absent, expired or invalid
+ */
+export type LaunchUnauthenticatedResponse = LaunchApiError;
+
+/**
+ * Invalid Origin/CSRF proof or independently unauthorized administrator
+ */
+export type LaunchForbiddenResponse = LaunchApiError;
+
+/**
+ * Missing/private-other-owner resource, NOT_INDEXED mint, or evidence-backed NOT_FOUND
+ */
+export type LaunchNotFoundResponse = LaunchApiError;
+
+/**
+ * Local or upstream rate limit; no silently substituted fabricated data
+ */
+export type LaunchRateLimitedResponse = LaunchApiError;
+
+/**
+ * Provider timeout, transport failure or invalid upstream schema
+ */
+export type LaunchProviderFailureResponse = LaunchApiError;
+
+/**
+ * Explicit unavailable dependency/capability; submit always returns EXECUTION_UNAVAILABLE
+ */
+export type LaunchUnavailableResponse = LaunchApiError;
+
+/**
+ * csrfToken returned by authenticated session; validated together with allowed Origin.
+ */
+export type LaunchCsrfParameter = string;
+
+export type GetStonkfunTokensParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+/**
+ * Forwarded upstream; omitted defaults to volume for trending, newest otherwise.
+ */
+sort?: GetStonkfunTokensSort;
+view?: GetStonkfunTokensView;
+/**
+ * Documented provider-wide token name/symbol/mint search. No verified creator lookup or pair-symbol search; use quoteMint for pair identity.
+ * @maxLength 120
+ */
+q?: string;
+/**
+ * Documented provider-wide exact quote mint filter; must not conflict with a verified ecosystem view.
+ */
+quoteMint?: LaunchSolanaAddress;
+/**
+ * Documented upstream status filter; view graduating/graduated binds the corresponding status.
+ */
+status?: GetStonkfunTokensStatus;
+};
+
+export type GetStonkfunTokensSort = typeof GetStonkfunTokensSort[keyof typeof GetStonkfunTokensSort];
+
+
+export const GetStonkfunTokensSort = {
+  newest: 'newest',
+  volume: 'volume',
+} as const;
+
+export type GetStonkfunTokensView = typeof GetStonkfunTokensView[keyof typeof GetStonkfunTokensView];
+
+
+export const GetStonkfunTokensView = {
+  trending: 'trending',
+  new: 'new',
+  dark: 'dark',
+  near: 'near',
+  graduating: 'graduating',
+  graduated: 'graduated',
+} as const;
+
+export type GetStonkfunTokensStatus = typeof GetStonkfunTokensStatus[keyof typeof GetStonkfunTokensStatus];
+
+
+export const GetStonkfunTokensStatus = {
+  new: 'new',
+  aboutToGraduate: 'aboutToGraduate',
+  graduated: 'graduated',
+} as const;
+
+export type GetLaunchAdminAuditParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type GetSupportRequestStatusParams = {
+token: string;
+};
+
+export type GetNearTrendsParams = {
+view?: GetNearTrendsView;
+};
+
+export type GetNearTrendsView = typeof GetNearTrendsView[keyof typeof GetNearTrendsView];
+
+
+export const GetNearTrendsView = {
+  trending: 'trending',
+  new: 'new',
+} as const;
+
+export type SearchNearPoolsParams = {
+/**
+ * @minLength 2
+ * @maxLength 100
+ */
+query: string;
+/**
+ * Provider page number. Page 1 is the default; requests are limited to pages 1 through 10.
+ * @minimum 1
+ * @maximum 10
+ */
+page?: number;
+};
+
+export type ShowMarketingConfirmationParams = {
+token?: string;
+};
+
+export type ShowMarketingUnsubscribeParams = {
+token?: string;
+};
+
+export type UnsubscribeMarketingParams = {
+/**
+ * Token from the List-Unsubscribe URL for one-click requests
+ */
+token?: string;
+};
+
+export type UnsubscribeMarketingBodyTwoListUnsubscribe = typeof UnsubscribeMarketingBodyTwoListUnsubscribe[keyof typeof UnsubscribeMarketingBodyTwoListUnsubscribe];
+
+
+export const UnsubscribeMarketingBodyTwoListUnsubscribe = {
+  'One-Click': 'One-Click',
+} as const;
+
+export type UnsubscribeMarketingBodyTwo = {
+  token?: string;
+  'List-Unsubscribe'?: UnsubscribeMarketingBodyTwoListUnsubscribe;
+};
+
 export type SearchSwapTokensParams = {
 side: SearchSwapTokensSide;
 /**
  * @maxLength 100
  */
 term?: string;
+/**
+ * @maxLength 80
+ */
+chain?: string;
 };
 
 export type SearchSwapTokensSide = typeof SearchSwapTokensSide[keyof typeof SearchSwapTokensSide];
@@ -322,6 +2014,19 @@ amount: number;
 timezone?: string;
 };
 
+export type GetNearServiceStatusParams = {
+/**
+ * @minLength 1
+ * @maxLength 32
+ */
+fromChain?: string;
+/**
+ * @minLength 1
+ * @maxLength 32
+ */
+toChain?: string;
+};
+
 export type GetNearTokensParams = {
 side: GetNearTokensSide;
 /**
@@ -337,6 +2042,18 @@ export const GetNearTokensSide = {
   source: 'source',
   destination: 'destination',
 } as const;
+
+export type GetRewardsMeParams = {
+/**
+ * @maxLength 200
+ */
+cursor?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
 
 export type GetNearOrderStatusParams = {
 /**

@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
+    "build": "pnpm run seo:generate && vite build --config vite.config.ts",
+    "seo:generate": "node scripts/generate-sitemap.mjs",
+    "seo:check": "node scripts/generate-sitemap.mjs --check",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
+    "@privy-io/react-auth": "^3.0.0",
+    "@stripe/stripe-js": "^8.0.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-aspect-ratio": "^1.1.3",

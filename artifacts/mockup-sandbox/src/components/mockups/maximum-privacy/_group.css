@@ -1,0 +1,151 @@
+/* Main-app fonts, self-hosted so this extraction makes no external font requests.
+   Source: the exact Source Sans 3 / Space Mono Google Fonts families in src/index.css. */
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/source-sans-3-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/source-sans-3-500.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/source-sans-3-600.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/source-sans-3-700.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/source-sans-3-800.ttf") format("truetype");
+}
+@font-face {
+  /* Private alias avoids activating the sandbox's remote Space Mono bundle. */
+  font-family: "Maximum Privacy Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/space-mono-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Maximum Privacy Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/__mockup/images/maximum-privacy/fonts/space-mono-700.ttf") format("truetype");
+}
+
+/* Effective :root / .dark values from the main app, including its final
+   identity refresh overrides. Scope them to the extracted root, not the canvas. */
+.maximum-privacy-current,
+.maximum-privacy-current.dark {
+  --background: 255 24% 8%;
+  --foreground: 260 30% 96%;
+  --border: 257 20% 30%;
+  --input: 257 20% 34%;
+  --ring: 263 84% 74%;
+  --card: 255 23% 13%;
+  --card-foreground: 260 30% 96%;
+  --card-border: 257 20% 30%;
+  --popover: 255 22% 17%;
+  --popover-foreground: 260 30% 96%;
+  --popover-border: 257 20% 34%;
+  --primary: 263 84% 74%;
+  --primary-foreground: 255 24% 8%;
+  --secondary: 256 19% 23%;
+  --secondary-foreground: 260 30% 96%;
+  --muted: 256 18% 20%;
+  --muted-foreground: 256 18% 76%;
+  --accent: 263 84% 74%;
+  --accent-foreground: 255 24% 8%;
+  --destructive: 10 77% 66%;
+  --destructive-foreground: 255 24% 8%;
+  --sidebar: 255 24% 8%;
+  --sidebar-foreground: 260 30% 96%;
+  --sidebar-border: 257 20% 30%;
+  --sidebar-primary: 263 84% 74%;
+  --sidebar-primary-foreground: 255 24% 8%;
+  --sidebar-accent: 256 19% 23%;
+  --sidebar-accent-foreground: 260 30% 96%;
+  --sidebar-ring: 263 84% 74%;
+  --chart-1: 263 84% 74%;
+  --chart-2: 280 65% 70%;
+  --chart-3: 247 48% 68%;
+  --chart-4: 10 77% 66%;
+  --chart-5: 39 82% 68%;
+  --app-font-sans: "Source Sans 3", sans-serif;
+  --app-font-serif: "Source Sans 3", sans-serif;
+  --app-font-mono: "Maximum Privacy Space Mono", monospace;
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+  --radius: .75rem;
+  --button-outline: rgba(206, 236, 201, .18);
+  --badge-outline: rgba(206, 236, 201, .12);
+  --elevate-1: rgba(206, 236, 201, .05);
+  --elevate-2: rgba(206, 236, 201, .10);
+}
+
+/* Both apps already use Tailwind v4 preflight. Restore the main app's body
+   inheritance and base rules only in a document containing this extraction. */
+html:has(.maximum-privacy-current) {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  font-family: "Source Sans 3", sans-serif;
+}
+body:has(.maximum-privacy-current) {
+  min-width: 320px;
+  margin: 0;
+  background: #141020;
+  color: hsl(260 30% 96%);
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+@layer base {
+  .maximum-privacy-current *,
+  .maximum-privacy-current *::before,
+  .maximum-privacy-current *::after {
+    border-color: hsl(var(--border));
+  }
+}
+.maximum-privacy-current button,
+.maximum-privacy-current input { font: inherit; }
+.maximum-privacy-current button { cursor: pointer; }
+.maximum-privacy-current button:disabled { cursor: not-allowed; }
+.maximum-privacy-current :is(button, a, input) { -webkit-tap-highlight-color: transparent; }
+.maximum-privacy-current :where(button, a, input):focus-visible {
+  outline: 2px solid #bc9aff !important;
+  outline-offset: 3px;
+}
+.maximum-privacy-current ::selection { background: #bc9aff; color: #171123; }
+/* The source references Space Grotesk here but never loads it. Preserve its
+   actual sans-serif fallback instead of inheriting the sandbox's extra font. */
+.maximum-privacy-current .risk-disclaimer p { font-family: sans-serif; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.maximum-privacy-current) { scroll-behavior: auto; }
+  .maximum-privacy-current *,
+  .maximum-privacy-current *::before,
+  .maximum-privacy-current *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

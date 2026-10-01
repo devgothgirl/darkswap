@@ -24,26 +24,82 @@ import type {
   DiscoverTokensParams,
   DiscoveryDetail,
   DiscoveryList,
+  GetLaunchAdminAuditParams,
   GetNearOrderStatusParams,
+  GetNearServiceStatusParams,
   GetNearTokensParams,
+  GetNearTrendsParams,
   GetOkxQuoteParams,
   GetPrivateQuotesParams,
+  GetRewardsMeParams,
+  GetStonkfunTokensParams,
+  GetSupportRequestStatusParams,
   HealthStatus,
+  LaunchAuditList,
+  LaunchAuthChallenge,
+  LaunchAuthChallengeInput,
+  LaunchAuthProofInput,
+  LaunchAuthSession,
+  LaunchAuthenticatedSession,
+  LaunchBadRequestResponse,
+  LaunchConfig,
+  LaunchConfigInput,
+  LaunchCreatorResponse,
+  LaunchDraft,
+  LaunchDraftInput,
+  LaunchDraftList,
+  LaunchForbiddenResponse,
+  LaunchLogo,
+  LaunchLogoUpload,
+  LaunchLogoUploadInput,
+  LaunchNotFoundResponse,
+  LaunchProviderFailureResponse,
+  LaunchRateLimitedResponse,
+  LaunchReview,
+  LaunchReviewInput,
+  LaunchReviewList,
+  LaunchSubmitInput,
+  LaunchUnauthenticatedResponse,
+  LaunchUnavailableResponse,
+  MarketingDeliveryEvent,
+  MarketingSubscriptionInput,
+  MarketingSubscriptionResponse,
+  MarketingTokenInput,
+  MarketingWebhookHealth,
   NearOrder,
   NearOrderInput,
+  NearPoolSearchResponse,
   NearQuote,
   NearQuoteInput,
+  NearServiceStatus,
   NearTokenList,
+  NearTrendsResponse,
   OkxQuote,
   OkxTokenList,
   OkxTransaction,
   OkxTransactionInput,
   QuoteList,
+  RewardsConfig,
+  RewardsEnrollInput,
+  RewardsEnrollResponse,
+  RewardsMe,
+  SearchNearPoolsParams,
   SearchOkxTokensParams,
   SearchSwapTokensParams,
+  ShowMarketingConfirmationParams,
+  ShowMarketingUnsubscribeParams,
+  StonkfunPairsResponse,
+  StonkfunTokenResponse,
+  StonkfunTokensResponse,
+  SupportRequestInput,
+  SupportRequestResponse,
+  SupportRequestStatus,
+  SwapChainList,
   SwapOrder,
   SwapOrderInput,
-  TokenList
+  TokenList,
+  UnsubscribeMarketingBodyTwo,
+  UnsubscribeMarketingParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -72,6 +128,2267 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetStonkfunTokensUrl = (params?: GetStonkfunTokensParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stonkfun/tokens?${stringifiedParams}` : `/api/stonkfun/tokens`
+}
+
+/**
+ * Uses documented provider-wide q (name/symbol/mint), quoteMint and status
+ * filters, with bounded page/pageSize. Matching case/prefix/fuzzy semantics
+ * are provider-defined and not independently established. No creator or
+ * quote-symbol search. When sort is omitted, trending uses upstream volume;
+ * other views use newest. Graduating maps to status=aboutToGraduate and
+ * graduated maps to status=graduated, trusting provider classification rather
+ * than recalculating progress from market cap. Explicit conflicting status
+ * or DARK quoteMint filters return 400. DARK requires the configured verified
+ * mint and uses provider quoteMint filtering; unavailable DARK returns an
+ * honest empty activation state. NEAR grouping may filter the current page
+ * locally when multiple evidence-backed mints exist and must disclose this.
+ * Provider q is catalog-wide, but local view filtering may still be page-only.
+ * @summary A bounded page of normalized StonkFun discovery tokens
+ */
+export const getStonkfunTokens = async (params?: GetStonkfunTokensParams, options?: Parameters<typeof customFetch>[1]): Promise<StonkfunTokensResponse> => {
+
+  return customFetch<StonkfunTokensResponse>(getGetStonkfunTokensUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStonkfunTokensQueryKey = (params?: GetStonkfunTokensParams,) => {
+    return [
+    `/api/stonkfun/tokens`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetStonkfunTokensQueryOptions = <TData = Awaited<ReturnType<typeof getStonkfunTokens>>, TError = ErrorType<LaunchBadRequestResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>(params?: GetStonkfunTokensParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunTokens>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStonkfunTokensQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStonkfunTokens>>> = ({ signal }) => getStonkfunTokens(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStonkfunTokens>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStonkfunTokensQueryResult = NonNullable<Awaited<ReturnType<typeof getStonkfunTokens>>>
+export type GetStonkfunTokensQueryError = ErrorType<LaunchBadRequestResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary A bounded page of normalized StonkFun discovery tokens
+ */
+
+export function useGetStonkfunTokens<TData = Awaited<ReturnType<typeof getStonkfunTokens>>, TError = ErrorType<LaunchBadRequestResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>(
+ params?: GetStonkfunTokensParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunTokens>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStonkfunTokensQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStonkfunPairsUrl = () => {
+
+
+
+
+  return `/api/stonkfun/pairs`
+}
+
+/**
+ * Always requests upstream launchable=true. Identity is network+mint and
+ * selectBy=mint. Upstream launchable and launchLabReady are discovery facts,
+ * not proof that this application's execution adapter is available. All
+ * executionAvailable values are false. Returns upstream pairs only; the
+ * locked DARK promotion card comes from /launch/config, not a fabricated pair.
+ * Preparation choices require launchable=true AND launchLabReady=true.
+ * False or absent launchLabReady is not readiness. Local order is verified
+ * DARK, verified NEAR, stablecoin, other, then priority.
+ * No native NEAR-chain compatibility is implied by a NEAR-symbol Solana mint.
+ * @summary Normalized upstream launchable pairs with local readiness
+ */
+export const getStonkfunPairs = async ( options?: Parameters<typeof customFetch>[1]): Promise<StonkfunPairsResponse> => {
+
+  return customFetch<StonkfunPairsResponse>(getGetStonkfunPairsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStonkfunPairsQueryKey = () => {
+    return [
+    `/api/stonkfun/pairs`
+    ] as const;
+    }
+
+
+export const getGetStonkfunPairsQueryOptions = <TData = Awaited<ReturnType<typeof getStonkfunPairs>>, TError = ErrorType<LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunPairs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStonkfunPairsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStonkfunPairs>>> = ({ signal }) => getStonkfunPairs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStonkfunPairs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStonkfunPairsQueryResult = NonNullable<Awaited<ReturnType<typeof getStonkfunPairs>>>
+export type GetStonkfunPairsQueryError = ErrorType<LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Normalized upstream launchable pairs with local readiness
+ */
+
+export function useGetStonkfunPairs<TData = Awaited<ReturnType<typeof getStonkfunPairs>>, TError = ErrorType<LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunPairs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStonkfunPairsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStonkfunTokenUrl = (mint: string,) => {
+
+
+
+
+  return `/api/stonkfun/tokens/${mint}`
+}
+
+/**
+ * Does not invent an upstream token-detail endpoint. An unindexed mint is
+ * NOT_INDEXED (404), not proof it does not exist. NOT_FOUND may be used only
+ * when a verified source establishes absence. Provider failure is distinct.
+ * @summary Resolve a verified mint from the bounded persistent discovery catalog
+ */
+export const getStonkfunToken = async (mint: string, options?: Parameters<typeof customFetch>[1]): Promise<StonkfunTokenResponse> => {
+
+  return customFetch<StonkfunTokenResponse>(getGetStonkfunTokenUrl(mint),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStonkfunTokenQueryKey = (mint: string,) => {
+    return [
+    `/api/stonkfun/tokens/${mint}`
+    ] as const;
+    }
+
+
+export const getGetStonkfunTokenQueryOptions = <TData = Awaited<ReturnType<typeof getStonkfunToken>>, TError = ErrorType<LaunchBadRequestResponse | LaunchNotFoundResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>(mint: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunToken>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStonkfunTokenQueryKey(mint);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStonkfunToken>>> = ({ signal }) => getStonkfunToken(mint, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: mint !== null && mint !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStonkfunToken>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStonkfunTokenQueryResult = NonNullable<Awaited<ReturnType<typeof getStonkfunToken>>>
+export type GetStonkfunTokenQueryError = ErrorType<LaunchBadRequestResponse | LaunchNotFoundResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Resolve a verified mint from the bounded persistent discovery catalog
+ */
+
+export function useGetStonkfunToken<TData = Awaited<ReturnType<typeof getStonkfunToken>>, TError = ErrorType<LaunchBadRequestResponse | LaunchNotFoundResponse | LaunchRateLimitedResponse | LaunchProviderFailureResponse | LaunchUnavailableResponse>>(
+ mint: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStonkfunToken>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStonkfunTokenQueryOptions(mint,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLaunchConfigUrl = () => {
+
+
+
+
+  return `/api/launch/config`
+}
+
+/**
+ * @summary Public preparation-only launch configuration and capability gates
+ */
+export const getLaunchConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchConfig> => {
+
+  return customFetch<LaunchConfig>(getGetLaunchConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchConfigQueryKey = () => {
+    return [
+    `/api/launch/config`
+    ] as const;
+    }
+
+
+export const getGetLaunchConfigQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchConfig>>, TError = ErrorType<LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchConfig>>> = ({ signal }) => getLaunchConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchConfig>>>
+export type GetLaunchConfigQueryError = ErrorType<LaunchUnavailableResponse>
+
+
+/**
+ * @summary Public preparation-only launch configuration and capability gates
+ */
+
+export function useGetLaunchConfig<TData = Awaited<ReturnType<typeof getLaunchConfig>>, TError = ErrorType<LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLaunchAuthChallengeUrl = () => {
+
+
+
+
+  return `/api/launch/auth/challenge`
+}
+
+/**
+ * Requires an allowed same-origin request and rate protection. The exact
+ * UTF-8 message binds the Solana wallet, mainnet-beta network, configured
+ * application domain, nonce and expiry. Signing is authentication only:
+ * no transaction, fee, spending approval or private key is requested.
+ * @summary Create an expiring single-use wallet ownership challenge
+ */
+export const createLaunchAuthChallenge = async (launchAuthChallengeInput: LaunchAuthChallengeInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchAuthChallenge> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchAuthChallenge>(getCreateLaunchAuthChallengeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchAuthChallengeInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLaunchAuthChallengeMutationKey = () => ['createLaunchAuthChallenge'] as const;
+
+export const getCreateLaunchAuthChallengeMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchAuthChallenge>>, TError,CreateLaunchAuthChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLaunchAuthChallenge>>, TError,CreateLaunchAuthChallengeMutationVariables, TContext> => {
+
+const mutationKey = getCreateLaunchAuthChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLaunchAuthChallenge>>, CreateLaunchAuthChallengeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLaunchAuthChallenge(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLaunchAuthChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof createLaunchAuthChallenge>>>
+    export type CreateLaunchAuthChallengeMutationBody = BodyType<LaunchAuthChallengeInput>
+    export type CreateLaunchAuthChallengeMutationError = ErrorType<LaunchBadRequestResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>
+    export type CreateLaunchAuthChallengeMutationVariables = {data: BodyType<LaunchAuthChallengeInput>}
+
+    /**
+ * @summary Create an expiring single-use wallet ownership challenge
+ */
+export const useCreateLaunchAuthChallenge = <TError = ErrorType<LaunchBadRequestResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchAuthChallenge>>, TError,CreateLaunchAuthChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLaunchAuthChallenge>>,
+        TError,
+        CreateLaunchAuthChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateLaunchAuthChallengeMutationOptions(options));
+    }
+
+export const getVerifyLaunchAuthUrl = () => {
+
+
+
+
+  return `/api/launch/auth/verify`
+}
+
+/**
+ * Accepts a base64-encoded 64-byte Ed25519 signature of the challenge
+ * message. Expired, consumed, wrong-wallet/domain/network proofs fail.
+ * Sets an HttpOnly, SameSite cookie (Secure in HTTPS). Returns a CSRF token
+ * for subsequent private mutations. Rotate session on authentication.
+ * isAdmin is independently server-authorized and defaults false.
+ * @summary Verify the wallet proof and establish an isolated secure session
+ */
+export const verifyLaunchAuth = async (launchAuthProofInput: LaunchAuthProofInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchAuthenticatedSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchAuthenticatedSession>(getVerifyLaunchAuthUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchAuthProofInput)
+  }
+);}
+
+
+
+
+
+export const getVerifyLaunchAuthMutationKey = () => ['verifyLaunchAuth'] as const;
+
+export const getVerifyLaunchAuthMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyLaunchAuth>>, TError,VerifyLaunchAuthMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyLaunchAuth>>, TError,VerifyLaunchAuthMutationVariables, TContext> => {
+
+const mutationKey = getVerifyLaunchAuthMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyLaunchAuth>>, VerifyLaunchAuthMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  verifyLaunchAuth(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyLaunchAuthMutationResult = NonNullable<Awaited<ReturnType<typeof verifyLaunchAuth>>>
+    export type VerifyLaunchAuthMutationBody = BodyType<LaunchAuthProofInput>
+    export type VerifyLaunchAuthMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>
+    export type VerifyLaunchAuthMutationVariables = {data: BodyType<LaunchAuthProofInput>}
+
+    /**
+ * @summary Verify the wallet proof and establish an isolated secure session
+ */
+export const useVerifyLaunchAuth = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyLaunchAuth>>, TError,VerifyLaunchAuthMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyLaunchAuth>>,
+        TError,
+        VerifyLaunchAuthMutationVariables,
+        TContext
+      > => {
+      return useMutation(getVerifyLaunchAuthMutationOptions(options));
+    }
+
+export const getGetLaunchAuthSessionUrl = () => {
+
+
+
+
+  return `/api/launch/auth/session`
+}
+
+/**
+ * Unauthenticated sessions return wallet, csrfToken and expiresAt null and isAdmin false. Private responses use Cache-Control no-store.
+ * @summary Read the current session without requiring a wallet connection
+ */
+export const getLaunchAuthSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchAuthSession> => {
+
+  return customFetch<LaunchAuthSession>(getGetLaunchAuthSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchAuthSessionQueryKey = () => {
+    return [
+    `/api/launch/auth/session`
+    ] as const;
+    }
+
+
+export const getGetLaunchAuthSessionQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchAuthSession>>, TError = ErrorType<LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAuthSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchAuthSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchAuthSession>>> = ({ signal }) => getLaunchAuthSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchAuthSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchAuthSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchAuthSession>>>
+export type GetLaunchAuthSessionQueryError = ErrorType<LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read the current session without requiring a wallet connection
+ */
+
+export function useGetLaunchAuthSession<TData = Awaited<ReturnType<typeof getLaunchAuthSession>>, TError = ErrorType<LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAuthSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchAuthSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLogoutLaunchAuthUrl = () => {
+
+
+
+
+  return `/api/launch/auth/logout`
+}
+
+/**
+ * @summary Revoke the session and clear its cookie
+ */
+export const logoutLaunchAuth = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getLogoutLaunchAuthUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutLaunchAuthMutationKey = () => ['logoutLaunchAuth'] as const;
+
+export const getLogoutLaunchAuthMutationOptions = <TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutLaunchAuth>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutLaunchAuth>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutLaunchAuthMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutLaunchAuth>>, void> = () => {
+
+
+          return  logoutLaunchAuth(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutLaunchAuthMutationResult = NonNullable<Awaited<ReturnType<typeof logoutLaunchAuth>>>
+
+    export type LogoutLaunchAuthMutationError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse>
+
+
+    /**
+ * @summary Revoke the session and clear its cookie
+ */
+export const useLogoutLaunchAuth = <TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutLaunchAuth>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutLaunchAuth>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutLaunchAuthMutationOptions(options));
+    }
+
+export const getGetLaunchDraftsUrl = () => {
+
+
+
+
+  return `/api/launch/drafts`
+}
+
+/**
+ * @summary List only the authenticated wallet's private saved drafts
+ */
+export const getLaunchDrafts = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchDraftList> => {
+
+  return customFetch<LaunchDraftList>(getGetLaunchDraftsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchDraftsQueryKey = () => {
+    return [
+    `/api/launch/drafts`
+    ] as const;
+    }
+
+
+export const getGetLaunchDraftsQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchDrafts>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchDrafts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchDraftsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchDrafts>>> = ({ signal }) => getLaunchDrafts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchDrafts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchDraftsQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchDrafts>>>
+export type GetLaunchDraftsQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary List only the authenticated wallet's private saved drafts
+ */
+
+export function useGetLaunchDrafts<TData = Awaited<ReturnType<typeof getLaunchDrafts>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchDrafts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchDraftsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLaunchDraftUrl = () => {
+
+
+
+
+  return `/api/launch/drafts`
+}
+
+/**
+ * @summary Persist a private preparation draft, not an upstream launch
+ */
+export const createLaunchDraft = async (launchDraftInput: LaunchDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchDraft> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchDraft>(getCreateLaunchDraftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchDraftInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLaunchDraftMutationKey = () => ['createLaunchDraft'] as const;
+
+export const getCreateLaunchDraftMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchDraft>>, TError,CreateLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLaunchDraft>>, TError,CreateLaunchDraftMutationVariables, TContext> => {
+
+const mutationKey = getCreateLaunchDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLaunchDraft>>, CreateLaunchDraftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLaunchDraft(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLaunchDraftMutationResult = NonNullable<Awaited<ReturnType<typeof createLaunchDraft>>>
+    export type CreateLaunchDraftMutationBody = BodyType<LaunchDraftInput>
+    export type CreateLaunchDraftMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>
+    export type CreateLaunchDraftMutationVariables = {data: BodyType<LaunchDraftInput>}
+
+    /**
+ * @summary Persist a private preparation draft, not an upstream launch
+ */
+export const useCreateLaunchDraft = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchDraft>>, TError,CreateLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLaunchDraft>>,
+        TError,
+        CreateLaunchDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateLaunchDraftMutationOptions(options));
+    }
+
+export const getGetLaunchDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/launch/drafts/${id}`
+}
+
+/**
+ * @summary Read an owned private draft
+ */
+export const getLaunchDraft = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<LaunchDraft> => {
+
+  return customFetch<LaunchDraft>(getGetLaunchDraftUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchDraftQueryKey = (id: string,) => {
+    return [
+    `/api/launch/drafts/${id}`
+    ] as const;
+    }
+
+
+export const getGetLaunchDraftQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchDraft>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchDraft>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchDraftQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchDraft>>> = ({ signal }) => getLaunchDraft(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchDraft>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchDraftQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchDraft>>>
+export type GetLaunchDraftQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read an owned private draft
+ */
+
+export function useGetLaunchDraft<TData = Awaited<ReturnType<typeof getLaunchDraft>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchDraft>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchDraftQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateLaunchDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/launch/drafts/${id}`
+}
+
+/**
+ * Any edit invalidates prior configuration review. Logo references must be validated assets owned by this wallet. A saved pair is not a readiness guarantee.
+ * @summary Replace an owned draft's editable configuration
+ */
+export const updateLaunchDraft = async (id: string,
+    launchDraftInput: LaunchDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchDraft> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchDraft>(getUpdateLaunchDraftUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchDraftInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateLaunchDraftMutationKey = () => ['updateLaunchDraft'] as const;
+
+export const getUpdateLaunchDraftMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLaunchDraft>>, TError,UpdateLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLaunchDraft>>, TError,UpdateLaunchDraftMutationVariables, TContext> => {
+
+const mutationKey = getUpdateLaunchDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLaunchDraft>>, UpdateLaunchDraftMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateLaunchDraft(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLaunchDraftMutationResult = NonNullable<Awaited<ReturnType<typeof updateLaunchDraft>>>
+    export type UpdateLaunchDraftMutationBody = BodyType<LaunchDraftInput>
+    export type UpdateLaunchDraftMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>
+    export type UpdateLaunchDraftMutationVariables = {id: string;data: BodyType<LaunchDraftInput>}
+
+    /**
+ * @summary Replace an owned draft's editable configuration
+ */
+export const useUpdateLaunchDraft = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLaunchDraft>>, TError,UpdateLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateLaunchDraft>>,
+        TError,
+        UpdateLaunchDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateLaunchDraftMutationOptions(options));
+    }
+
+export const getDeleteLaunchDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/launch/drafts/${id}`
+}
+
+/**
+ * @summary Delete an owned private draft
+ */
+export const deleteLaunchDraft = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteLaunchDraftUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteLaunchDraftMutationKey = () => ['deleteLaunchDraft'] as const;
+
+export const getDeleteLaunchDraftMutationOptions = <TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLaunchDraft>>, TError,DeleteLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteLaunchDraft>>, TError,DeleteLaunchDraftMutationVariables, TContext> => {
+
+const mutationKey = getDeleteLaunchDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteLaunchDraft>>, DeleteLaunchDraftMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteLaunchDraft(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteLaunchDraftMutationResult = NonNullable<Awaited<ReturnType<typeof deleteLaunchDraft>>>
+
+    export type DeleteLaunchDraftMutationError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>
+    export type DeleteLaunchDraftMutationVariables = {id: string}
+
+    /**
+ * @summary Delete an owned private draft
+ */
+export const useDeleteLaunchDraft = <TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLaunchDraft>>, TError,DeleteLaunchDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteLaunchDraft>>,
+        TError,
+        DeleteLaunchDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteLaunchDraftMutationOptions(options));
+    }
+
+export const getRequestLaunchLogoUploadUrl = () => {
+
+
+
+
+  return `/api/launch/logos/request-url`
+}
+
+/**
+ * No raw upload API. Request PNG/JPEG only, at most 1 MiB. Client PUTs the
+ * file bytes directly to uploadURL with the declared Content-Type, then
+ * calls complete. A reserved ID is not usable in a draft until byte
+ * validation and safe re-encoding succeed. Original objects remain private.
+ * @summary Reserve a private logo and obtain a short-lived presigned direct upload URL
+ */
+export const requestLaunchLogoUpload = async (launchLogoUploadInput: LaunchLogoUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchLogoUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchLogoUpload>(getRequestLaunchLogoUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchLogoUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestLaunchLogoUploadMutationKey = () => ['requestLaunchLogoUpload'] as const;
+
+export const getRequestLaunchLogoUploadMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestLaunchLogoUpload>>, TError,RequestLaunchLogoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestLaunchLogoUpload>>, TError,RequestLaunchLogoUploadMutationVariables, TContext> => {
+
+const mutationKey = getRequestLaunchLogoUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestLaunchLogoUpload>>, RequestLaunchLogoUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestLaunchLogoUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestLaunchLogoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestLaunchLogoUpload>>>
+    export type RequestLaunchLogoUploadMutationBody = BodyType<LaunchLogoUploadInput>
+    export type RequestLaunchLogoUploadMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>
+    export type RequestLaunchLogoUploadMutationVariables = {data: BodyType<LaunchLogoUploadInput>}
+
+    /**
+ * @summary Reserve a private logo and obtain a short-lived presigned direct upload URL
+ */
+export const useRequestLaunchLogoUpload = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchRateLimitedResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestLaunchLogoUpload>>, TError,RequestLaunchLogoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestLaunchLogoUpload>>,
+        TError,
+        RequestLaunchLogoUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestLaunchLogoUploadMutationOptions(options));
+    }
+
+export const getCompleteLaunchLogoUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/launch/logos/${id}/complete`
+}
+
+/**
+ * Owner-only. Validate actual length <=1048576, magic bytes and successful
+ * decoding, not filename or declared MIME alone. Reject SVG, invalid
+ * images and oversized dimensions/decompression bombs. Strip metadata,
+ * re-encode to a separate private object, and never serve raw uploaded bytes.
+ * Idempotent for an already validated owned ID.
+ * @summary Validate uploaded private bytes and record a safe re-encoded logo
+ */
+export const completeLaunchLogoUpload = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<LaunchLogo> => {
+
+  return customFetch<LaunchLogo>(getCompleteLaunchLogoUploadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteLaunchLogoUploadMutationKey = () => ['completeLaunchLogoUpload'] as const;
+
+export const getCompleteLaunchLogoUploadMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeLaunchLogoUpload>>, TError,CompleteLaunchLogoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeLaunchLogoUpload>>, TError,CompleteLaunchLogoUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteLaunchLogoUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeLaunchLogoUpload>>, CompleteLaunchLogoUploadMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  completeLaunchLogoUpload(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteLaunchLogoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeLaunchLogoUpload>>>
+
+    export type CompleteLaunchLogoUploadMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>
+    export type CompleteLaunchLogoUploadMutationVariables = {id: string}
+
+    /**
+ * @summary Validate uploaded private bytes and record a safe re-encoded logo
+ */
+export const useCompleteLaunchLogoUpload = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeLaunchLogoUpload>>, TError,CompleteLaunchLogoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeLaunchLogoUpload>>,
+        TError,
+        CompleteLaunchLogoUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteLaunchLogoUploadMutationOptions(options));
+    }
+
+export const getGetLaunchLogoUrl = (id: string,) => {
+
+
+
+
+  return `/api/launch/logos/${id}`
+}
+
+/**
+ * Sends private no-store cache policy and nosniff. Cross-wallet IDs return 404; unfinished uploads are never served.
+ * @summary Read only the authenticated owner's validated re-encoded logo
+ */
+export const getLaunchLogo = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetLaunchLogoUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchLogoQueryKey = (id: string,) => {
+    return [
+    `/api/launch/logos/${id}`
+    ] as const;
+    }
+
+
+export const getGetLaunchLogoQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchLogo>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchLogo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchLogoQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchLogo>>> = ({ signal }) => getLaunchLogo(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchLogo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchLogoQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchLogo>>>
+export type GetLaunchLogoQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read only the authenticated owner's validated re-encoded logo
+ */
+
+export function useGetLaunchLogo<TData = Awaited<ReturnType<typeof getLaunchLogo>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchNotFoundResponse | LaunchUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchLogo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchLogoQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLaunchCreatorUrl = () => {
+
+
+
+
+  return `/api/launch/creator`
+}
+
+/**
+ * No inferred ownership, summed/double-counted holder totals, reward issuance or linkage to swap reward ledgers. Missing evidence is null, never zero.
+ * @summary Private creator dashboard with verified attribution and nullable metrics
+ */
+export const getLaunchCreator = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchCreatorResponse> => {
+
+  return customFetch<LaunchCreatorResponse>(getGetLaunchCreatorUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchCreatorQueryKey = () => {
+    return [
+    `/api/launch/creator`
+    ] as const;
+    }
+
+
+export const getGetLaunchCreatorQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchCreator>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchCreator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchCreatorQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchCreator>>> = ({ signal }) => getLaunchCreator({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchCreator>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchCreatorQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchCreator>>>
+export type GetLaunchCreatorQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Private creator dashboard with verified attribution and nullable metrics
+ */
+
+export function useGetLaunchCreator<TData = Awaited<ReturnType<typeof getLaunchCreator>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchCreator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchCreatorQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLaunchAdminConfigUrl = () => {
+
+
+
+
+  return `/api/launch/admin/config`
+}
+
+/**
+ * @summary Read launch configuration as an independently authorized admin
+ */
+export const getLaunchAdminConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchConfig> => {
+
+  return customFetch<LaunchConfig>(getGetLaunchAdminConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchAdminConfigQueryKey = () => {
+    return [
+    `/api/launch/admin/config`
+    ] as const;
+    }
+
+
+export const getGetLaunchAdminConfigQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchAdminConfig>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchAdminConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchAdminConfig>>> = ({ signal }) => getLaunchAdminConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchAdminConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchAdminConfig>>>
+export type GetLaunchAdminConfigQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read launch configuration as an independently authorized admin
+ */
+
+export function useGetLaunchAdminConfig<TData = Awaited<ReturnType<typeof getLaunchAdminConfig>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchAdminConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateLaunchAdminConfigUrl = () => {
+
+
+
+
+  return `/api/launch/admin/config`
+}
+
+/**
+ * Pair overrides require mint/network evidence and cannot create upstream
+ * availability, change network support or bypass the unavailable adapter.
+ * Fee/campaign/points proposals do not charge fees, execute campaigns,
+ * issue claimable value or promise rewards. executionAvailable is immutable
+ * false and is forbidden in this request body.
+ * @summary Replace proposed local configuration and append an audit record
+ */
+export const updateLaunchAdminConfig = async (launchConfigInput: LaunchConfigInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchConfig>(getUpdateLaunchAdminConfigUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchConfigInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateLaunchAdminConfigMutationKey = () => ['updateLaunchAdminConfig'] as const;
+
+export const getUpdateLaunchAdminConfigMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLaunchAdminConfig>>, TError,UpdateLaunchAdminConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLaunchAdminConfig>>, TError,UpdateLaunchAdminConfigMutationVariables, TContext> => {
+
+const mutationKey = getUpdateLaunchAdminConfigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLaunchAdminConfig>>, UpdateLaunchAdminConfigMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateLaunchAdminConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLaunchAdminConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updateLaunchAdminConfig>>>
+    export type UpdateLaunchAdminConfigMutationBody = BodyType<LaunchConfigInput>
+    export type UpdateLaunchAdminConfigMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>
+    export type UpdateLaunchAdminConfigMutationVariables = {data: BodyType<LaunchConfigInput>}
+
+    /**
+ * @summary Replace proposed local configuration and append an audit record
+ */
+export const useUpdateLaunchAdminConfig = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLaunchAdminConfig>>, TError,UpdateLaunchAdminConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateLaunchAdminConfig>>,
+        TError,
+        UpdateLaunchAdminConfigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateLaunchAdminConfigMutationOptions(options));
+    }
+
+export const getGetLaunchAdminReviewsUrl = () => {
+
+
+
+
+  return `/api/launch/admin/reviews`
+}
+
+/**
+ * @summary Read evidence-backed metadata and wallet review flags
+ */
+export const getLaunchAdminReviews = async ( options?: Parameters<typeof customFetch>[1]): Promise<LaunchReviewList> => {
+
+  return customFetch<LaunchReviewList>(getGetLaunchAdminReviewsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchAdminReviewsQueryKey = () => {
+    return [
+    `/api/launch/admin/reviews`
+    ] as const;
+    }
+
+
+export const getGetLaunchAdminReviewsQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchAdminReviews>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchAdminReviewsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchAdminReviews>>> = ({ signal }) => getLaunchAdminReviews({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchAdminReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchAdminReviews>>>
+export type GetLaunchAdminReviewsQueryError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read evidence-backed metadata and wallet review flags
+ */
+
+export function useGetLaunchAdminReviews<TData = Awaited<ReturnType<typeof getLaunchAdminReviews>>, TError = ErrorType<LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchAdminReviewsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLaunchAdminReviewUrl = () => {
+
+
+
+
+  return `/api/launch/admin/reviews`
+}
+
+/**
+ * A review blocks automatic featured promotion and eligibility. Heuristics are not proof of identity. Metadata suppression is local, never an upstream edit.
+ * @summary Record an evidence-backed under_review flag and audit it
+ */
+export const createLaunchAdminReview = async (launchReviewInput: LaunchReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<LaunchReview> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LaunchReview>(getCreateLaunchAdminReviewUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchReviewInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLaunchAdminReviewMutationKey = () => ['createLaunchAdminReview'] as const;
+
+export const getCreateLaunchAdminReviewMutationOptions = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchAdminReview>>, TError,CreateLaunchAdminReviewMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLaunchAdminReview>>, TError,CreateLaunchAdminReviewMutationVariables, TContext> => {
+
+const mutationKey = getCreateLaunchAdminReviewMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLaunchAdminReview>>, CreateLaunchAdminReviewMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLaunchAdminReview(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLaunchAdminReviewMutationResult = NonNullable<Awaited<ReturnType<typeof createLaunchAdminReview>>>
+    export type CreateLaunchAdminReviewMutationBody = BodyType<LaunchReviewInput>
+    export type CreateLaunchAdminReviewMutationError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>
+    export type CreateLaunchAdminReviewMutationVariables = {data: BodyType<LaunchReviewInput>}
+
+    /**
+ * @summary Record an evidence-backed under_review flag and audit it
+ */
+export const useCreateLaunchAdminReview = <TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLaunchAdminReview>>, TError,CreateLaunchAdminReviewMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLaunchAdminReview>>,
+        TError,
+        CreateLaunchAdminReviewMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateLaunchAdminReviewMutationOptions(options));
+    }
+
+export const getGetLaunchAdminAuditUrl = (params?: GetLaunchAdminAuditParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/launch/admin/audit?${stringifiedParams}` : `/api/launch/admin/audit`
+}
+
+/**
+ * @summary Read bounded launch-only admin audit records
+ */
+export const getLaunchAdminAudit = async (params?: GetLaunchAdminAuditParams, options?: Parameters<typeof customFetch>[1]): Promise<LaunchAuditList> => {
+
+  return customFetch<LaunchAuditList>(getGetLaunchAdminAuditUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLaunchAdminAuditQueryKey = (params?: GetLaunchAdminAuditParams,) => {
+    return [
+    `/api/launch/admin/audit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetLaunchAdminAuditQueryOptions = <TData = Awaited<ReturnType<typeof getLaunchAdminAudit>>, TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>(params?: GetLaunchAdminAuditParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLaunchAdminAuditQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLaunchAdminAudit>>> = ({ signal }) => getLaunchAdminAudit(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLaunchAdminAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getLaunchAdminAudit>>>
+export type GetLaunchAdminAuditQueryError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>
+
+
+/**
+ * @summary Read bounded launch-only admin audit records
+ */
+
+export function useGetLaunchAdminAudit<TData = Awaited<ReturnType<typeof getLaunchAdminAudit>>, TError = ErrorType<LaunchBadRequestResponse | LaunchUnauthenticatedResponse | LaunchForbiddenResponse | LaunchUnavailableResponse>>(
+ params?: GetLaunchAdminAuditParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLaunchAdminAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLaunchAdminAuditQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitLaunchUrl = () => {
+
+
+
+
+  return `/api/launch/submit`
+}
+
+/**
+ * Every direct request returns 503 and executionAvailable=false, including
+ * alternative pairs, changed admin settings and paused/unpaused states.
+ * Never contacts a fabricated provider execution endpoint, charges fees,
+ * prompts a wallet transaction, returns a signature or creates a launch.
+ * @summary Fail closed; launch execution is unavailable in this release
+ */
+export const submitLaunch = async (launchSubmitInput: LaunchSubmitInput, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<unknown>(getSubmitLaunchUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(launchSubmitInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitLaunchMutationKey = () => ['submitLaunch'] as const;
+
+export const getSubmitLaunchMutationOptions = <TError = ErrorType<LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitLaunch>>, TError,SubmitLaunchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitLaunch>>, TError,SubmitLaunchMutationVariables, TContext> => {
+
+const mutationKey = getSubmitLaunchMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitLaunch>>, SubmitLaunchMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitLaunch(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitLaunchMutationResult = NonNullable<Awaited<ReturnType<typeof submitLaunch>>>
+    export type SubmitLaunchMutationBody = BodyType<LaunchSubmitInput>
+    export type SubmitLaunchMutationError = ErrorType<LaunchUnavailableResponse>
+    export type SubmitLaunchMutationVariables = {data: BodyType<LaunchSubmitInput>}
+
+    /**
+ * @summary Fail closed; launch execution is unavailable in this release
+ */
+export const useSubmitLaunch = <TError = ErrorType<LaunchUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitLaunch>>, TError,SubmitLaunchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitLaunch>>,
+        TError,
+        SubmitLaunchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitLaunchMutationOptions(options));
+    }
+
+export const getCreateSupportRequestUrl = () => {
+
+
+
+
+  return `/api/support/requests`
+}
+
+/**
+ * @summary Email a swap support report to the DarkSwap support inbox
+ */
+export const createSupportRequest = async (supportRequestInput: SupportRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportRequestResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportRequestResponse>(getCreateSupportRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportRequestInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportRequestMutationKey = () => ['createSupportRequest'] as const;
+
+export const getCreateSupportRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportRequest>>, TError,CreateSupportRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportRequest>>, TError,CreateSupportRequestMutationVariables, TContext> => {
+
+const mutationKey = getCreateSupportRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportRequest>>, CreateSupportRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSupportRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportRequest>>>
+    export type CreateSupportRequestMutationBody = BodyType<SupportRequestInput>
+    export type CreateSupportRequestMutationError = ErrorType<void>
+    export type CreateSupportRequestMutationVariables = {data: BodyType<SupportRequestInput>}
+
+    /**
+ * @summary Email a swap support report to the DarkSwap support inbox
+ */
+export const useCreateSupportRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportRequest>>, TError,CreateSupportRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportRequest>>,
+        TError,
+        CreateSupportRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSupportRequestMutationOptions(options));
+    }
+
+export const getGetSupportRequestStatusUrl = (params: GetSupportRequestStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/support/requests/status?${stringifiedParams}` : `/api/support/requests/status`
+}
+
+/**
+ * @summary Check delivery state of a support case using its private token
+ */
+export const getSupportRequestStatus = async (params: GetSupportRequestStatusParams, options?: Parameters<typeof customFetch>[1]): Promise<SupportRequestStatus> => {
+
+  return customFetch<SupportRequestStatus>(getGetSupportRequestStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportRequestStatusQueryKey = (params?: GetSupportRequestStatusParams,) => {
+    return [
+    `/api/support/requests/status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSupportRequestStatusQueryOptions = <TData = Awaited<ReturnType<typeof getSupportRequestStatus>>, TError = ErrorType<void>>(params: GetSupportRequestStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportRequestStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportRequestStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportRequestStatus>>> = ({ signal }) => getSupportRequestStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportRequestStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSupportRequestStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportRequestStatus>>>
+export type GetSupportRequestStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check delivery state of a support case using its private token
+ */
+
+export function useGetSupportRequestStatus<TData = Awaited<ReturnType<typeof getSupportRequestStatus>>, TError = ErrorType<void>>(
+ params: GetSupportRequestStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportRequestStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSupportRequestStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNearTrendsUrl = (params?: GetNearTrendsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/near/trends?${stringifiedParams}` : `/api/near/trends`
+}
+
+/**
+ * @summary Read-only NEAR liquidity pool trends from GeckoTerminal
+ */
+export const getNearTrends = async (params?: GetNearTrendsParams, options?: Parameters<typeof customFetch>[1]): Promise<NearTrendsResponse> => {
+
+  return customFetch<NearTrendsResponse>(getGetNearTrendsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNearTrendsQueryKey = (params?: GetNearTrendsParams,) => {
+    return [
+    `/api/near/trends`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetNearTrendsQueryOptions = <TData = Awaited<ReturnType<typeof getNearTrends>>, TError = ErrorType<void>>(params?: GetNearTrendsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearTrends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNearTrendsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNearTrends>>> = ({ signal }) => getNearTrends(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNearTrends>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNearTrendsQueryResult = NonNullable<Awaited<ReturnType<typeof getNearTrends>>>
+export type GetNearTrendsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read-only NEAR liquidity pool trends from GeckoTerminal
+ */
+
+export function useGetNearTrends<TData = Awaited<ReturnType<typeof getNearTrends>>, TError = ErrorType<void>>(
+ params?: GetNearTrendsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearTrends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNearTrendsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchNearPoolsUrl = (params: SearchNearPoolsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/near/pools/search?${stringifiedParams}` : `/api/near/pools/search`
+}
+
+/**
+ * @summary Search NEAR liquidity pools via GeckoTerminal (read-only)
+ */
+export const searchNearPools = async (params: SearchNearPoolsParams, options?: Parameters<typeof customFetch>[1]): Promise<NearPoolSearchResponse> => {
+
+  return customFetch<NearPoolSearchResponse>(getSearchNearPoolsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchNearPoolsQueryKey = (params?: SearchNearPoolsParams,) => {
+    return [
+    `/api/near/pools/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchNearPoolsQueryOptions = <TData = Awaited<ReturnType<typeof searchNearPools>>, TError = ErrorType<void>>(params: SearchNearPoolsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchNearPools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchNearPoolsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchNearPools>>> = ({ signal }) => searchNearPools(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchNearPools>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchNearPoolsQueryResult = NonNullable<Awaited<ReturnType<typeof searchNearPools>>>
+export type SearchNearPoolsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Search NEAR liquidity pools via GeckoTerminal (read-only)
+ */
+
+export function useSearchNearPools<TData = Awaited<ReturnType<typeof searchNearPools>>, TError = ErrorType<void>>(
+ params: SearchNearPoolsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchNearPools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchNearPoolsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 
@@ -150,6 +2467,600 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+export const getCheckMarketingWebhookHealthUrl = () => {
+
+
+
+
+  return `/api/marketing/health`
+}
+
+/**
+ * Separate from swap health; returns no contact or provider identifiers.
+ * @summary Check signed marketing webhook delivery before campaigns
+ */
+export const checkMarketingWebhookHealth = async ( options?: Parameters<typeof customFetch>[1]): Promise<MarketingWebhookHealth> => {
+
+  return customFetch<MarketingWebhookHealth>(getCheckMarketingWebhookHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCheckMarketingWebhookHealthQueryKey = () => {
+    return [
+    `/api/marketing/health`
+    ] as const;
+    }
+
+
+export const getCheckMarketingWebhookHealthQueryOptions = <TData = Awaited<ReturnType<typeof checkMarketingWebhookHealth>>, TError = ErrorType<MarketingWebhookHealth>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkMarketingWebhookHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCheckMarketingWebhookHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof checkMarketingWebhookHealth>>> = ({ signal }) => checkMarketingWebhookHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof checkMarketingWebhookHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CheckMarketingWebhookHealthQueryResult = NonNullable<Awaited<ReturnType<typeof checkMarketingWebhookHealth>>>
+export type CheckMarketingWebhookHealthQueryError = ErrorType<MarketingWebhookHealth>
+
+
+/**
+ * @summary Check signed marketing webhook delivery before campaigns
+ */
+
+export function useCheckMarketingWebhookHealth<TData = Awaited<ReturnType<typeof checkMarketingWebhookHealth>>, TError = ErrorType<MarketingWebhookHealth>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkMarketingWebhookHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCheckMarketingWebhookHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubscribeUpdatesUrl = () => {
+
+
+
+
+  return `/api/marketing/subscriptions`
+}
+
+/**
+ * Requests an email confirmation after explicit consent. Only confirmed, non-suppressed contacts can receive marketing. Never links to swap orders or wallets.
+ * @summary Opt in to optional product updates and potential discounts
+ */
+export const subscribeUpdates = async (marketingSubscriptionInput: MarketingSubscriptionInput, options?: Parameters<typeof customFetch>[1]): Promise<MarketingSubscriptionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MarketingSubscriptionResponse>(getSubscribeUpdatesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(marketingSubscriptionInput)
+  }
+);}
+
+
+
+
+
+export const getSubscribeUpdatesMutationKey = () => ['subscribeUpdates'] as const;
+
+export const getSubscribeUpdatesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeUpdates>>, TError,SubscribeUpdatesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof subscribeUpdates>>, TError,SubscribeUpdatesMutationVariables, TContext> => {
+
+const mutationKey = getSubscribeUpdatesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof subscribeUpdates>>, SubscribeUpdatesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  subscribeUpdates(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubscribeUpdatesMutationResult = NonNullable<Awaited<ReturnType<typeof subscribeUpdates>>>
+    export type SubscribeUpdatesMutationBody = BodyType<MarketingSubscriptionInput>
+    export type SubscribeUpdatesMutationError = ErrorType<void>
+    export type SubscribeUpdatesMutationVariables = {data: BodyType<MarketingSubscriptionInput>}
+
+    /**
+ * @summary Opt in to optional product updates and potential discounts
+ */
+export const useSubscribeUpdates = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeUpdates>>, TError,SubscribeUpdatesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof subscribeUpdates>>,
+        TError,
+        SubscribeUpdatesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubscribeUpdatesMutationOptions(options));
+    }
+
+export const getShowMarketingConfirmationUrl = (params?: ShowMarketingConfirmationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/marketing/confirm?${stringifiedParams}` : `/api/marketing/confirm`
+}
+
+/**
+ * @summary Show an explicit confirmation form without changing consent
+ */
+export const showMarketingConfirmation = async (params?: ShowMarketingConfirmationParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getShowMarketingConfirmationUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getShowMarketingConfirmationQueryKey = (params?: ShowMarketingConfirmationParams,) => {
+    return [
+    `/api/marketing/confirm`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getShowMarketingConfirmationQueryOptions = <TData = Awaited<ReturnType<typeof showMarketingConfirmation>>, TError = ErrorType<unknown>>(params?: ShowMarketingConfirmationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof showMarketingConfirmation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShowMarketingConfirmationQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof showMarketingConfirmation>>> = ({ signal }) => showMarketingConfirmation(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof showMarketingConfirmation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ShowMarketingConfirmationQueryResult = NonNullable<Awaited<ReturnType<typeof showMarketingConfirmation>>>
+export type ShowMarketingConfirmationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Show an explicit confirmation form without changing consent
+ */
+
+export function useShowMarketingConfirmation<TData = Awaited<ReturnType<typeof showMarketingConfirmation>>, TError = ErrorType<unknown>>(
+ params?: ShowMarketingConfirmationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof showMarketingConfirmation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getShowMarketingConfirmationQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getConfirmMarketingSubscriptionUrl = () => {
+
+
+
+
+  return `/api/marketing/confirm`
+}
+
+/**
+ * @summary Verify opt-in with a single-use token expiring after 24 hours
+ */
+export const confirmMarketingSubscription = async (marketingTokenInput: MarketingTokenInput, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<string>(getConfirmMarketingSubscriptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(marketingTokenInput)
+  }
+);}
+
+
+
+
+
+export const getConfirmMarketingSubscriptionMutationKey = () => ['confirmMarketingSubscription'] as const;
+
+export const getConfirmMarketingSubscriptionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmMarketingSubscription>>, TError,ConfirmMarketingSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmMarketingSubscription>>, TError,ConfirmMarketingSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getConfirmMarketingSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmMarketingSubscription>>, ConfirmMarketingSubscriptionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmMarketingSubscription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmMarketingSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof confirmMarketingSubscription>>>
+    export type ConfirmMarketingSubscriptionMutationBody = BodyType<MarketingTokenInput>
+    export type ConfirmMarketingSubscriptionMutationError = ErrorType<void>
+    export type ConfirmMarketingSubscriptionMutationVariables = {data: BodyType<MarketingTokenInput>}
+
+    /**
+ * @summary Verify opt-in with a single-use token expiring after 24 hours
+ */
+export const useConfirmMarketingSubscription = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmMarketingSubscription>>, TError,ConfirmMarketingSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmMarketingSubscription>>,
+        TError,
+        ConfirmMarketingSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfirmMarketingSubscriptionMutationOptions(options));
+    }
+
+export const getShowMarketingUnsubscribeUrl = (params?: ShowMarketingUnsubscribeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/marketing/unsubscribe?${stringifiedParams}` : `/api/marketing/unsubscribe`
+}
+
+/**
+ * @summary Show unsubscribe form without changing consent
+ */
+export const showMarketingUnsubscribe = async (params?: ShowMarketingUnsubscribeParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getShowMarketingUnsubscribeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getShowMarketingUnsubscribeQueryKey = (params?: ShowMarketingUnsubscribeParams,) => {
+    return [
+    `/api/marketing/unsubscribe`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getShowMarketingUnsubscribeQueryOptions = <TData = Awaited<ReturnType<typeof showMarketingUnsubscribe>>, TError = ErrorType<unknown>>(params?: ShowMarketingUnsubscribeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof showMarketingUnsubscribe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShowMarketingUnsubscribeQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof showMarketingUnsubscribe>>> = ({ signal }) => showMarketingUnsubscribe(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof showMarketingUnsubscribe>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ShowMarketingUnsubscribeQueryResult = NonNullable<Awaited<ReturnType<typeof showMarketingUnsubscribe>>>
+export type ShowMarketingUnsubscribeQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Show unsubscribe form without changing consent
+ */
+
+export function useShowMarketingUnsubscribe<TData = Awaited<ReturnType<typeof showMarketingUnsubscribe>>, TError = ErrorType<unknown>>(
+ params?: ShowMarketingUnsubscribeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof showMarketingUnsubscribe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getShowMarketingUnsubscribeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUnsubscribeMarketingUrl = (params?: UnsubscribeMarketingParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/marketing/unsubscribe?${stringifiedParams}` : `/api/marketing/unsubscribe`
+}
+
+/**
+ * @summary Permanently suppress marketing, including RFC 8058 one-click requests
+ */
+export const unsubscribeMarketing = async (unsubscribeMarketingBody: MarketingTokenInput | UnsubscribeMarketingBodyTwo,
+    params?: UnsubscribeMarketingParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getUnsubscribeMarketingUrl(params),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: JSON.stringify(unsubscribeMarketingBody)
+  }
+);}
+
+
+
+
+
+export const getUnsubscribeMarketingMutationKey = () => ['unsubscribeMarketing'] as const;
+
+export const getUnsubscribeMarketingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeMarketing>>, TError,UnsubscribeMarketingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsubscribeMarketing>>, TError,UnsubscribeMarketingMutationVariables, TContext> => {
+
+const mutationKey = getUnsubscribeMarketingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsubscribeMarketing>>, UnsubscribeMarketingMutationVariables> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  unsubscribeMarketing(data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsubscribeMarketingMutationResult = NonNullable<Awaited<ReturnType<typeof unsubscribeMarketing>>>
+    export type UnsubscribeMarketingMutationBody = BodyType<MarketingTokenInput | UnsubscribeMarketingBodyTwo>
+    export type UnsubscribeMarketingMutationError = ErrorType<void>
+    export type UnsubscribeMarketingMutationVariables = {data: BodyType<MarketingTokenInput | UnsubscribeMarketingBodyTwo>;params?: UnsubscribeMarketingParams}
+
+    /**
+ * @summary Permanently suppress marketing, including RFC 8058 one-click requests
+ */
+export const useUnsubscribeMarketing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeMarketing>>, TError,UnsubscribeMarketingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsubscribeMarketing>>,
+        TError,
+        UnsubscribeMarketingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnsubscribeMarketingMutationOptions(options));
+    }
+
+export const getReceiveMarketingDeliveryEventUrl = () => {
+
+
+
+
+  return `/api/marketing/webhook/resend`
+}
+
+/**
+ * Verifies Svix signature against the raw request body and rejects stale signatures. Never accepts unsigned suppression events.
+ * @summary Receive signed delivery activity, bounce and complaint events
+ */
+export const receiveMarketingDeliveryEvent = async (marketingDeliveryEvent: MarketingDeliveryEvent, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getReceiveMarketingDeliveryEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(marketingDeliveryEvent)
+  }
+);}
+
+
+
+
+
+export const getReceiveMarketingDeliveryEventMutationKey = () => ['receiveMarketingDeliveryEvent'] as const;
+
+export const getReceiveMarketingDeliveryEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>, TError,ReceiveMarketingDeliveryEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>, TError,ReceiveMarketingDeliveryEventMutationVariables, TContext> => {
+
+const mutationKey = getReceiveMarketingDeliveryEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>, ReceiveMarketingDeliveryEventMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveMarketingDeliveryEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveMarketingDeliveryEventMutationResult = NonNullable<Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>>
+    export type ReceiveMarketingDeliveryEventMutationBody = BodyType<MarketingDeliveryEvent>
+    export type ReceiveMarketingDeliveryEventMutationError = ErrorType<void>
+    export type ReceiveMarketingDeliveryEventMutationVariables = {data: BodyType<MarketingDeliveryEvent>}
+
+    /**
+ * @summary Receive signed delivery activity, bounce and complaint events
+ */
+export const useReceiveMarketingDeliveryEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>, TError,ReceiveMarketingDeliveryEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveMarketingDeliveryEvent>>,
+        TError,
+        ReceiveMarketingDeliveryEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReceiveMarketingDeliveryEventMutationOptions(options));
+    }
+
 export const getSearchSwapTokensUrl = (params: SearchSwapTokensParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -222,6 +3133,83 @@ export function useSearchSwapTokens<TData = Awaited<ReturnType<typeof searchSwap
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getSearchSwapTokensQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSwapChainsUrl = () => {
+
+
+
+
+  return `/api/swap/chains`
+}
+
+/**
+ * @summary List live CEX-enabled destination networks for the private route
+ */
+export const getSwapChains = async ( options?: Parameters<typeof customFetch>[1]): Promise<SwapChainList> => {
+
+  return customFetch<SwapChainList>(getGetSwapChainsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSwapChainsQueryKey = () => {
+    return [
+    `/api/swap/chains`
+    ] as const;
+    }
+
+
+export const getGetSwapChainsQueryOptions = <TData = Awaited<ReturnType<typeof getSwapChains>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSwapChains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSwapChainsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSwapChains>>> = ({ signal }) => getSwapChains({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSwapChains>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSwapChainsQueryResult = NonNullable<Awaited<ReturnType<typeof getSwapChains>>>
+export type GetSwapChainsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List live CEX-enabled destination networks for the private route
+ */
+
+export function useGetSwapChains<TData = Awaited<ReturnType<typeof getSwapChains>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSwapChains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSwapChainsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -327,6 +3315,7 @@ export const getCreatePrivateOrderUrl = () => {
 }
 
 /**
+ * Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the order is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
  * @summary Create a private swap order from a selected quote
  */
 export const createPrivateOrder = async (swapOrderInput: SwapOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<SwapOrder> => {
@@ -360,7 +3349,7 @@ return customFetch<SwapOrder>(getCreatePrivateOrderUrl(),
 
 export const getCreatePrivateOrderMutationKey = () => ['createPrivateOrder'] as const;
 
-export const getCreatePrivateOrderMutationOptions = <TError = ErrorType<unknown>,
+export const getCreatePrivateOrderMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPrivateOrder>>, TError,CreatePrivateOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createPrivateOrder>>, TError,CreatePrivateOrderMutationVariables, TContext> => {
 
@@ -389,13 +3378,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreatePrivateOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createPrivateOrder>>>
     export type CreatePrivateOrderMutationBody = BodyType<SwapOrderInput>
-    export type CreatePrivateOrderMutationError = ErrorType<unknown>
+    export type CreatePrivateOrderMutationError = ErrorType<void>
     export type CreatePrivateOrderMutationVariables = {data: BodyType<SwapOrderInput>}
 
     /**
  * @summary Create a private swap order from a selected quote
  */
-export const useCreatePrivateOrder = <TError = ErrorType<unknown>,
+export const useCreatePrivateOrder = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPrivateOrder>>, TError,CreatePrivateOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createPrivateOrder>>,
@@ -471,6 +3460,90 @@ export function useGetPrivateOrder<TData = Awaited<ReturnType<typeof getPrivateO
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPrivateOrderQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNearServiceStatusUrl = (params?: GetNearServiceStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/swap/near/service-status?${stringifiedParams}` : `/api/swap/near/service-status`
+}
+
+/**
+ * @summary Cached public incident information and conservative selected-route eligibility
+ */
+export const getNearServiceStatus = async (params?: GetNearServiceStatusParams, options?: Parameters<typeof customFetch>[1]): Promise<NearServiceStatus> => {
+
+  return customFetch<NearServiceStatus>(getGetNearServiceStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNearServiceStatusQueryKey = (params?: GetNearServiceStatusParams,) => {
+    return [
+    `/api/swap/near/service-status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetNearServiceStatusQueryOptions = <TData = Awaited<ReturnType<typeof getNearServiceStatus>>, TError = ErrorType<void>>(params?: GetNearServiceStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearServiceStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNearServiceStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNearServiceStatus>>> = ({ signal }) => getNearServiceStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNearServiceStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNearServiceStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getNearServiceStatus>>>
+export type GetNearServiceStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Cached public incident information and conservative selected-route eligibility
+ */
+
+export function useGetNearServiceStatus<TData = Awaited<ReturnType<typeof getNearServiceStatus>>, TError = ErrorType<void>>(
+ params?: GetNearServiceStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearServiceStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNearServiceStatusQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -664,6 +3737,7 @@ export const getCreateNearOrderUrl = () => {
 }
 
 /**
+ * Guest orders remain supported without Authorization. When a bearer is supplied, rewards verification and active enrollment are required before claiming or contacting the provider; the requestId is permanently associated at creation and cannot be linked later. If verification is unavailable or enrollment is inactive, no order is created; retry without Authorization only to deliberately continue as a guest.
  * @summary Confirm the preview and generate real NEAR Intents deposit instructions
  */
 export const createNearOrder = async (nearOrderInput: NearOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<NearOrder> => {
@@ -697,7 +3771,7 @@ return customFetch<NearOrder>(getCreateNearOrderUrl(),
 
 export const getCreateNearOrderMutationKey = () => ['createNearOrder'] as const;
 
-export const getCreateNearOrderMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateNearOrderMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNearOrder>>, TError,CreateNearOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createNearOrder>>, TError,CreateNearOrderMutationVariables, TContext> => {
 
@@ -726,13 +3800,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateNearOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createNearOrder>>>
     export type CreateNearOrderMutationBody = BodyType<NearOrderInput>
-    export type CreateNearOrderMutationError = ErrorType<unknown>
+    export type CreateNearOrderMutationError = ErrorType<void>
     export type CreateNearOrderMutationVariables = {data: BodyType<NearOrderInput>}
 
     /**
  * @summary Confirm the preview and generate real NEAR Intents deposit instructions
  */
-export const useCreateNearOrder = <TError = ErrorType<unknown>,
+export const useCreateNearOrder = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNearOrder>>, TError,CreateNearOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createNearOrder>>,
@@ -741,6 +3815,256 @@ export const useCreateNearOrder = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateNearOrderMutationOptions(options));
+    }
+
+export const getGetRewardsConfigUrl = () => {
+
+
+
+
+  return `/api/rewards/config`
+}
+
+/**
+ * @summary Read public email rewards availability
+ */
+export const getRewardsConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<RewardsConfig> => {
+
+  return customFetch<RewardsConfig>(getGetRewardsConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRewardsConfigQueryKey = () => {
+    return [
+    `/api/rewards/config`
+    ] as const;
+    }
+
+
+export const getGetRewardsConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRewardsConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardsConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRewardsConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRewardsConfig>>> = ({ signal }) => getRewardsConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRewardsConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRewardsConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getRewardsConfig>>>
+export type GetRewardsConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read public email rewards availability
+ */
+
+export function useGetRewardsConfig<TData = Awaited<ReturnType<typeof getRewardsConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardsConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRewardsConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRewardsMeUrl = (params?: GetRewardsMeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/rewards/me?${stringifiedParams}` : `/api/rewards/me`
+}
+
+/**
+ * @summary Read the authenticated account balance, tier, and paginated points history
+ */
+export const getRewardsMe = async (params?: GetRewardsMeParams, options?: Parameters<typeof customFetch>[1]): Promise<RewardsMe> => {
+
+  return customFetch<RewardsMe>(getGetRewardsMeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRewardsMeQueryKey = (params?: GetRewardsMeParams,) => {
+    return [
+    `/api/rewards/me`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetRewardsMeQueryOptions = <TData = Awaited<ReturnType<typeof getRewardsMe>>, TError = ErrorType<void>>(params?: GetRewardsMeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardsMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRewardsMeQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRewardsMe>>> = ({ signal }) => getRewardsMe(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRewardsMe>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRewardsMeQueryResult = NonNullable<Awaited<ReturnType<typeof getRewardsMe>>>
+export type GetRewardsMeQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read the authenticated account balance, tier, and paginated points history
+ */
+
+export function useGetRewardsMe<TData = Awaited<ReturnType<typeof getRewardsMe>>, TError = ErrorType<void>>(
+ params?: GetRewardsMeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardsMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRewardsMeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getEnrollRewardsUrl = () => {
+
+
+
+
+  return `/api/rewards/enroll`
+}
+
+/**
+ * No signup credit or financial redemption is offered. Award 100 points for a successful provider-verified terminal swap, capped at 300 points per UTC day. Version 1 tiers are Starter (0), Plus (500), and Pro (2000). Email is obtained only from Privy's verified linked account, stored only while enrolled, and deleted on withdrawal. Withdrawal needs a valid Privy access token but not a currently linked email. The app-scoped Privy DID, immutable order association, and append-only points ledger are retained indefinitely to preserve history and prevent duplicate awards; they never contain email.
+ * @summary Enroll the verified email account after explicit disclosure and consent
+ */
+export const enrollRewards = async (rewardsEnrollInput: RewardsEnrollInput, options?: Parameters<typeof customFetch>[1]): Promise<RewardsEnrollResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RewardsEnrollResponse>(getEnrollRewardsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rewardsEnrollInput)
+  }
+);}
+
+
+
+
+
+export const getEnrollRewardsMutationKey = () => ['enrollRewards'] as const;
+
+export const getEnrollRewardsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollRewards>>, TError,EnrollRewardsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof enrollRewards>>, TError,EnrollRewardsMutationVariables, TContext> => {
+
+const mutationKey = getEnrollRewardsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enrollRewards>>, EnrollRewardsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  enrollRewards(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnrollRewardsMutationResult = NonNullable<Awaited<ReturnType<typeof enrollRewards>>>
+    export type EnrollRewardsMutationBody = BodyType<RewardsEnrollInput>
+    export type EnrollRewardsMutationError = ErrorType<void>
+    export type EnrollRewardsMutationVariables = {data: BodyType<RewardsEnrollInput>}
+
+    /**
+ * @summary Enroll the verified email account after explicit disclosure and consent
+ */
+export const useEnrollRewards = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollRewards>>, TError,EnrollRewardsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof enrollRewards>>,
+        TError,
+        EnrollRewardsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getEnrollRewardsMutationOptions(options));
     }
 
 export const getGetNearOrderReceiptUrl = (requestId: string,) => {

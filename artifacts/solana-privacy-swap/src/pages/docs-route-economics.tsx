@@ -1,0 +1,53 @@
+import { Link } from 'wouter';
+
+export function RouteEconomicsDocs() {
+  return <>
+    <section id="near-zec" className="docs-section">
+      <span className="docs-section-num">ROUTE REFERENCE</span>
+      <h2>NEAR routing is not Zcash shielding.</h2>
+      <p>DarkSwap offers two separate provider-backed routes, not a combined NEAR → ZEC → Solana loop. The existing private route uses Houdini / HoudiniSwap. Privacy swap uses NEAR Intents 1Click with <code>confidentiality: basic</code>. Guest orders do not earn points. Eligible orders can be considered for optional points only when an enrolled account explicitly opts in before creation.</p>
+      <p>For Privacy swap, you specify the Solana input, destination asset, recipient, and Solana refund address. DarkSwap requests a dry, exact-input quote, then asks for deposit instructions only after you confirm. You send the deposit yourself. The provider coordinates execution and destination settlement; DarkSwap displays its reported status, rather than signing or broadcasting your transfer. A quote is an estimate, not proof of settlement.</p>
+      <p>“Basic” requests the provider’s confidential processing for an origin-chain to destination-chain swap. It does not put your funds into a Zcash shielded pool. Your Solana deposit is public, destination-chain transfers may be public, and amounts, timing, provider records, or other data may still associate activity. No anonymity or unlinkability guarantee applies.</p>
+      <div className="docs-capability-scroll" role="region" aria-label="Route capability comparison" tabIndex={0}>
+        <table className="docs-capability-table">
+          <caption>DarkSwap capabilities — checked September 28, 2026</caption>
+          <thead><tr><th scope="col">Capability</th><th scope="col">Existing private route</th><th scope="col">Privacy swap</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Provider</th><td>Houdini / HoudiniSwap</td><td>NEAR Intents 1Click</td></tr>
+            <tr><th scope="row">Funding</th><td>Manual Solana deposit after quote and order review</td><td>Manual Solana deposit after dry quote and order review</td></tr>
+            <tr><th scope="row">Destinations</th><td>Provider catalog, subject to an accepted live quote</td><td>App permits Solana, NEAR, Ethereum, Arbitrum, Base, Optimism, Polygon, and BNB Chain; each asset still needs a quote</td></tr>
+            <tr><th scope="row">Native ZEC</th><td>Read-only quote accepted; order instructions and settlement remain unverified.</td><td>Not enabled: native Zcash is outside the app’s chain allowlist; the live ZEC search returned no assets</td></tr>
+            <tr><th scope="row">Zcash shielding</th><td>No shielded transfer verified by this review</td><td>Not implemented; confidential handling is a different mechanism</td></tr>
+             <tr><th scope="row">Customer rewards</th><td>Optional email account points for eligible, explicitly linked new orders; no yield or cash payout</td><td>Optional email account points for eligible, explicitly linked new orders; no yield or cash payout</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Native ZEC and token representations are different.</h3>
+      <p>Native ZEC lives on the Zcash network. A token named ZEC on Solana or BNB Chain, or renZEC on Ethereum, is a separate representation—not native Zcash and not evidence of shielding. Check the network and exact asset identity; backing, redemption, liquidity, and bridge risks must be assessed separately. A matching ticker is not enough.</p>
+      <p>The original route’s live catalog listed native ZEC, ZEC representations on Solana and BNB Chain, and renZEC on Ethereum. On September 28, 2026, a read-only development check of <strong>1 SOL to native ZEC</strong> returned eight accepted quotes. The earlier minimum-verification failure came from the provider omitting its optional input USD field. DarkSwap now checks a freshly requested USD price for the exact source token when that field is absent; it still rejects unverifiable or below-$3 inputs. The observed input valuation was $118.58, not a promised current price. Native ZEC still requires valid order instructions, and settlement has not been verified.</p>
+      <div className="docs-caution"><strong>Verification limit:</strong> This review checked catalogs and a quote only. No order was created, no funds were sent, and no completed ZEC settlement or shielded transfer was demonstrated. The minimum-value blocker was not bypassed.</div>
+      <p>NEAR’s broader provider documentation lists Zcash with <strong>transparent addresses only</strong> (t1/t3), not shielded addresses. That provider-level support is not enabled in DarkSwap’s Privacy swap route. Transparent Zcash transfers do not provide Zcash shielding.</p>
+      <p>Provider sources: <a href="https://docs.near-intents.org/resources/chain-support" target="_blank" rel="noopener noreferrer">chain and address support</a> and <a href="https://docs.near-intents.org/integration/distribution-channels/1click-api/quickstart/confidential-swaps" target="_blank" rel="noopener noreferrer">confidential swap integration</a>. Catalogs, quotes, and provider policies can change.</p>
+    </section>
+    <section id="fees-rewards" className="docs-section">
+      <span className="docs-section-num">FEES &amp; INCENTIVES</span>
+      <h2>Swap costs are not customer earnings.</h2>
+      <ul className="docs-checklist">
+        <li><strong>Provider and network costs:</strong> The quote can reflect provider charges, execution costs, withdrawal costs, price impact, and liquidity conditions. Sending from your wallet can also require a network fee. A possible refund can carry a fee. The $3 input minimum is not a fee, and the 1% slippage tolerance is not a fixed charge.</li>
+        <li><strong>DarkSwap revenue:</strong> The current NEAR request does not set <code>appFees</code>. The ability to configure partner fees is not proof of collected revenue. This review did not verify any account-specific commission agreement, provider revenue share, or net receipts for either route.</li>
+         <li><strong>Optional account points:</strong> An eligible completed new order can add non-cash points only if you enroll and opt in on that order before creating it. Guest, earlier, and unlinked orders are not credited retroactively. No cashback, token payout, staking yield, or circular ZEC rewards loop is offered.</li>
+      </ul>
+      <p>NEAR’s published fee schedule distinguishes protocol fees, 1Click platform fees, optional integrator fees, and withdrawal costs. At review time, it listed a 0.0001% protocol fee and, for API-key requests without app fees, normally a 0.20% platform fee, reduced to 0.01% for qualifying stablecoin or same-asset multichain routes. These are provider-published components, <strong>not a verified all-in DarkSwap price</strong>; account-specific terms and actual quotes govern. Adding app fees would not mean DarkSwap keeps the whole fee.</p>
+       <h3>Optional email rewards and privacy</h3>
+       <p>Using <Link href="/rewards">email rewards</Link> is entirely optional. Signing in with a one-time email code does not enroll you. Enrollment requires separate, explicit consent; each new order also has an off-by-default association choice at final review. If selected, the order is permanently associated with your email rewards account at creation. The account link can reduce privacy; a private route does not erase a public Solana deposit or provider records. Marketing emails are a separate choice and are not required for rewards. You may sign out without affecting guest swaps.</p>
+       <p>Points are internal account ledger entries with <strong>no cash value</strong>. They are not money, cryptocurrency, a share of fees, a claim on swap proceeds, or a deposit. They cannot be sold, transferred, withdrawn, redeemed for cash, or currently exchanged for discounts. Tiers show progress only and do not guarantee any benefit. Eligibility and daily caps apply; reversals and adjustments may reduce points. View current account rules and activity on your rewards dashboard when available.</p>
+        <h3>$DARK holder incentives — separate and planned</h3>
+        <p>The proposed <Link href="/tokenomics">$DARK tokenomics</Link> model uses StonkFun-derived NEAR holder rewards, subject to verified provider rules. Rewards accrued by $DARK team allocations are planned to split <strong>50% for holder-streak bonuses and 50% for $DARK buyback + burn</strong>. That split is not a tax on all trading volume or a guaranteed holder return.</p>
+        <p>Additional ZEC bonuses are planned after a qualifying three-day holder streak, once the treasury pool is built and funded. Daily progression and compounding are planned, but the formula and rates are undecided. The current snapshot proposal requires more than 100,000 $DARK at checks every 12 hours; a nonqualifying snapshot resets the streak. No mint or treasury addresses are connected, and no payouts, buybacks, burns, or holder statistics are verified. A reward treasury is not automatically DEX liquidity, and NEAR-to-ZEC conversion does not prove shielding.</p>
+        <h3>Possible future swap rebate — proposed, not live</h3>
+      <p>If a rebate program is pursued, fund it only from a capped share of <strong>verified, received net revenue</strong> after provider shares, operating and payout costs, refunds, and reserves—not customer deposits, swap volume, or projected commissions. If verified net revenue is zero, the rebate budget is zero.</p>
+       <p>Any future cash rebate must first reconcile completed orders to verified net revenue, confirm applicable requirements, publish eligibility and payout terms, and prevent abuse. It is not part of the present points program. Linking an email to an order can undermine privacy; keep marketing consent separate and do not promise yield or guaranteed returns.</p>
+       <p>Provider sources, checked September 28, 2026: <a href="https://docs.near-intents.org/resources/fees" target="_blank" rel="noopener noreferrer">fee components</a> and <a href="https://docs.near-intents.org/integration/distribution-channels/1click-api/fee-config" target="_blank" rel="noopener noreferrer">optional partner fee configuration</a>. Provider fees and any future rebate remain separate from non-cash account points.</p>
+    </section>
+  </>;
+}

@@ -1,12 +1,44 @@
 import { useEffect } from 'react';
-import { ArrowRight, FileText, Layers3, ScanSearch, Split } from 'lucide-react';
+import { ArrowRight, FileText, Layers3, ScanSearch, Split, TrendingUp, Waves } from 'lucide-react';
 import { Link } from 'wouter';
 import { Footer, Header } from '../components/swap-ui';
+import { trackEvent } from '../lib/analytics';
 import './previews.css';
 
 const features = [
   {
+    number: '04',
+    id: 'near_trends',
+    icon: TrendingUp,
+    status: 'RESEARCH / THIRD-PARTY DATA',
+    title: 'NEAR trends',
+    copy: 'Explore public NEAR pool activity using third-party market data. Informational research only—not a live quote or trading route.',
+    href: '/near-trends',
+    action: 'Open NEAR trends',
+  },
+  {
+    number: '05',
+    id: 'near_discovery',
+    icon: Waves,
+    status: 'RESEARCH / THIRD-PARTY DATA',
+    title: 'Pool discovery',
+    copy: 'Search NEAR pools using third-party market data. A listing is not liquidity verification, an endorsement, or an executable trading route.',
+    href: '/near-discovery',
+    action: 'Open pool discovery',
+  },
+  {
+    number: '00',
+    id: 'terminal',
+    icon: ScanSearch,
+    status: 'READ-ONLY DEMO',
+    title: 'Cross-chain trading terminal with NEAR Intents',
+    copy: 'Preview our planned cross-chain trading experience with fictional tokens, mock market data and simulated buy or sell calculations. No wallet, deposits or transactions.',
+    href: '/terminal-preview',
+    action: 'Open terminal preview',
+  },
+  {
     number: '01',
+    id: 'screener',
     icon: ScanSearch,
     status: 'SEARCHABLE BETA',
     title: 'Screener Beta',
@@ -16,6 +48,7 @@ const features = [
   },
   {
     number: '02',
+    id: 'split_mixer',
     icon: Split,
     status: 'INTERACTIVE PREVIEW',
     title: 'Split Mixer for Solana',
@@ -25,6 +58,7 @@ const features = [
   },
   {
     number: '03',
+    id: 'privacy_bundle',
     icon: Layers3,
     status: 'CONCEPT PREVIEW',
     title: 'Privacy Bundle for Launchers',
@@ -37,17 +71,17 @@ const features = [
 export default function Previews() {
   useEffect(() => {
     const original = document.title;
-    document.title = 'Feature previews | DarkSwap';
+    document.title = 'Founder previews | DarkSwap';
     return () => { document.title = original; };
   }, []);
 
   return <div className="app-shell pv-page">
     <Header />
     <main className="pv-main">
-      <div className="pv-eyebrow">DARKSWAP / WHAT'S NEXT</div>
-      <h1>Ideas in <span>preview.</span></h1>
-      <p className="pv-intro">Explore what we're working on without confusing a draft with a live route. The existing private route and Privacy swap are the open Solana-origin transaction flows.</p>
-      <div className="pv-status"><FileText size={18} aria-hidden="true" /><span>Previews are for exploration. No wallet connection, payment, funding, or launch transaction is initiated here.</span></div>
+      <div className="pv-eyebrow">DARKSWAP / FOUNDER PREVIEWS</div>
+      <h1>Founder <span>previews.</span></h1>
+      <p className="pv-intro">Demos, drafts and research tools, kept apart from the product. Only the private route and Privacy swap are live swap flows. Nothing here is a launch.</p>
+      <div className="pv-status"><FileText size={18} aria-hidden="true" /><span>Founder previews are for exploration. The DARK holder program is a plan on the Tokenomics page, not a preview. No wallet connection, payment, funding, or launch transaction is initiated here.</span></div>
       <div className="pv-grid">
         {features.map(feature => {
           const Icon = feature.icon;
@@ -55,11 +89,11 @@ export default function Previews() {
             <div className="pv-card-top"><span>{feature.number} / {feature.status}</span><Icon size={25} aria-hidden="true" /></div>
             <h2>{feature.title}</h2>
             <p>{feature.copy}</p>
-            <Link href={feature.href} className="pv-card-link">{feature.action} <ArrowRight size={17} aria-hidden="true" /></Link>
+            <Link href={feature.href} className="pv-card-link" onClick={() => trackEvent('preview_opened', { feature: feature.id })}>{feature.action} <ArrowRight size={17} aria-hidden="true" /></Link>
           </article>;
         })}
       </div>
-      <p className="pv-footnote">Explore and public swaps remain closed beta. Research and planning previews do not indicate route or asset availability.</p>
+      <p className="pv-footnote">Research tools and planning previews do not indicate route or asset availability. Explore and public swaps remain closed beta.</p>
     </main>
     <Footer />
   </div>;

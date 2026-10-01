@@ -1,0 +1,106 @@
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { ArrowLeft, ArrowRight, Clock3, RefreshCw, ShieldAlert } from 'lucide-react';
+import { CopyButton, DEMO_ADDRESS, Footer, Header, Link, errorText, getGetNearOrderReceiptQueryKey, getGetNearOrderStatusQueryKey, navigate, useGetNearOrderReceipt, useGetNearOrderStatus } from './_demo';
+import './_group.css';
+
+const formatAmount = (value: string) => {
+  if (!/^\d+(?:\.\d+)?$/.test(value)) return value;
+  const [whole, fraction] = value.split('.');
+  return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${fraction ? `.${fraction}` : ''}`;
+};
+const dateText = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+};
+
+export default function CurrentTracking() {
+  const search = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  // Default to a fictional order so the actual tracking design is visible in the preview.
+  // User-supplied wallet addresses are never rendered or sent anywhere.
+  const address = search.has('lookup') ? '' : DEMO_ADDRESS;
+  const memo = '';
+  const requestId = '';
+  const validRequestId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId);
+  const [lookupAddress, setLookupAddress] = useState('');
+  const [lookupMemo, setLookupMemo] = useState('');
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
+  const receipt = useGetNearOrderReceipt(requestId, { query: { queryKey: getGetNearOrderReceiptQueryKey(requestId), enabled: !address && validRequestId, retry: 1, refetchInterval: 15_000 } });
+  useEffect(() => {
+    if (!receipt.data || address) return;
+    const params = new URLSearchParams({ address: receipt.data.depositAddress });
+    if (receipt.data.depositMemo) params.set('memo', receipt.data.depositMemo);
+    navigate(`/near-order?${params.toString()}`);
+  }, [receipt.data, address, requestId]);
+  const params = { depositAddress: address, ...(memo ? { depositMemo: memo } : {}) };
+  const validAddress = address.length >= 32 && address.length <= 120 && memo.length <= 120;
+  const result = useGetNearOrderStatus(params, { query: { queryKey: getGetNearOrderStatusQueryKey(params), enabled: validAddress, refetchInterval: 15_000, retry: 1 } });
+  const order = result.data;
+  const deadline = order ? new Date(order.deadline).getTime() : 0;
+  const deadlinePassed = !!order && (!Number.isFinite(deadline) || deadline <= now);
+  const remaining = order && !deadlinePassed ? Math.max(0, Math.ceil((deadline - now) / 1000)) : 0;
+  const status = order?.status;
+  const waiting = status === 'PENDING_DEPOSIT';
+  const partial = status === 'INCOMPLETE_DEPOSIT';
+  const processing = status === 'KNOWN_DEPOSIT_TX' || status === 'PROCESSING';
+  const success = status === 'SUCCESS';
+  const stopped = status === 'FAILED' || status === 'REFUNDED';
+  const canFund = waiting && !deadlinePassed;
+  const statusName: Record<string, string> = {
+    PENDING_DEPOSIT: 'Awaiting deposit', KNOWN_DEPOSIT_TX: 'Deposit detected', INCOMPLETE_DEPOSIT: 'Partial deposit',
+    PROCESSING: 'Processing route', SUCCESS: 'Completed', REFUNDED: 'Refunded', FAILED: 'Failed'
+  };
+  const submitLookup = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (lookupAddress.trim().length < 32 || lookupAddress.trim().length > 120 || lookupMemo.trim().length > 120) return;
+    // Never submit a visitor's input to a provider or display it as an order.
+    if (lookupAddress.trim() === DEMO_ADDRESS) navigate('/near-order');
+    else window.alert('Only the fictional demonstration order can be opened here. No provider was contacted.');
+  };
+  const recent = null as { address: string; memo: string; requestId?: string } | null;
+  return <div className="near-shell darkswap-nearfi"><div className="near-demo-banner" role="note">STATIC DESIGN DEMO — values and addresses are fictional; no provider, wallet, or funds are connected.</div><Header/>
+    <main className="near-main near-main--order">
+      <Link href="/near-swap" className="near-button near-button--text" data-testid="link-back-near-swap"><ArrowLeft size={15}/> Back to route</Link>
+      <div className="near-intro" style={{ marginTop: 30 }}><div className="near-kicker"><span className="near-symbol" aria-hidden="true">⋈</span> DARKSWAP / PRIVACY SWAP</div><h1>Follow the deposit.</h1><p>Check the live provider status before you decide to send. Order creation itself never moves funds.</p></div>
+       {!address && requestId ? <section className="near-order-card" style={{ maxWidth: 590, margin: '0 auto' }}>
+         <div className="near-kicker">RECOVER YOUR ORDER</div><h2>Checking the saved receipt.</h2>
+         {receipt.isLoading ? <p className="near-hint">Checking whether the provider issued deposit instructions. No funds have moved.</p>
+           : receipt.data ? <p className="near-hint">Order found. Opening its final details…</p>
+           : <><p className="near-error" role="alert" data-testid="status-near-receipt-error">{validRequestId && receipt.isError ? errorText(receipt.error) : 'This receipt ID is invalid.'} No deposit instructions are available. Do not send funds.</p><button className="near-button near-button--subtle" type="button" onClick={() => receipt.refetch()} disabled={!validRequestId || receipt.isFetching}><RefreshCw size={14}/> Check again</button><p className="near-hint">If this does not resolve, request a fresh quote. Do not use a deposit address you cannot verify here.</p></>}
+         <Link href="/near-order?lookup=1" className="near-button near-button--text" style={{ marginTop: 14 }}>Look up by deposit address</Link>
+       </section> : !address ? <section className="near-order-card" style={{ maxWidth: 590, margin: '0 auto' }}>
+        <div className="near-kicker">FIND AN ORDER</div><h2>Look up by deposit address</h2><p className="near-hint">Enter the Solana deposit address from your order. Include its memo if one was provided.</p>
+        <form onSubmit={submitLookup}>
+          <div className="near-field" style={{ marginTop: 23 }}><label className="near-label" htmlFor="near-lookup-address">Deposit address</label><input id="near-lookup-address" className="near-input" value={lookupAddress} onChange={e => setLookupAddress(e.target.value)} placeholder="Paste the deposit address" maxLength={120} autoComplete="off" data-testid="input-near-lookup-address"/></div>
+          <div className="near-field"><label className="near-label" htmlFor="near-lookup-memo">Deposit memo, if provided</label><input id="near-lookup-memo" className="near-input" value={lookupMemo} onChange={e => setLookupMemo(e.target.value)} placeholder="Optional memo" maxLength={120} autoComplete="off" data-testid="input-near-lookup-memo"/></div>
+          <button className="near-button near-button--wide" type="submit" disabled={lookupAddress.trim().length < 32 || lookupAddress.trim().length > 120} data-testid="button-lookup-near-order">Find order <ArrowRight size={16}/></button>
+        </form>
+         {recent && (recent.address || recent.requestId) && <button className="near-button near-button--subtle" type="button" style={{ marginTop: 18 }} onClick={() => { const next = recent.address ? new URLSearchParams({ address: recent.address }) : new URLSearchParams({ requestId: recent.requestId! }); if (recent.address && recent.memo) next.set('memo', recent.memo); navigate(`/near-order?${next.toString()}`); }} data-testid="button-open-recent-near-order">Open recent order <ArrowRight size={14}/></button>}
+      </section> : !validAddress ? <section className="near-order-card" style={{ maxWidth: 590, margin: '0 auto' }}><ShieldAlert size={25} color="#f3bb91"/><h2 style={{ marginTop: 15 }}>Check the deposit address</h2><p className="near-error" role="alert" data-testid="status-near-order-invalid">The address must be 32–120 characters and the memo no more than 120 characters. Nothing has been sent.</p><Link href="/near-order?lookup=1" className="near-button near-button--subtle" data-testid="link-retry-near-lookup">Look up another address</Link></section>
+      : result.isLoading ? <div className="near-order-grid" data-testid="status-near-order-loading"><div className="near-order-card"><div className="near-skeleton"/><div className="near-skeleton"/><div className="near-skeleton"/></div><div className="near-order-card"><div className="near-skeleton"/><div className="near-skeleton"/></div></div>
+      : result.isError || !order ? <section className="near-order-card" style={{ maxWidth: 590, margin: '0 auto' }}><ShieldAlert size={25} color="#f3bb91"/><h2 style={{ marginTop: 15 }}>We could not retrieve this order.</h2><p className="near-error" role="alert" data-testid="status-near-order-error">{result.isError ? errorText(result.error) : 'The provider returned no order for this address.'}</p><p className="near-hint">Check the deposit address and any required memo for typos. If the order was just created, wait a moment and retry. Do not send funds until the order details appear.</p><div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 19 }}><button type="button" className="near-button near-button--subtle" onClick={() => result.refetch()} data-testid="button-retry-near-order"><RefreshCw size={14}/> Try again</button><Link href="/near-order?lookup=1" className="near-button near-button--subtle" data-testid="link-edit-near-lookup">Use another address</Link></div></section>
+      : <div className="near-order-grid">
+        <section className="near-order-card">
+          <div className="near-kicker">01 / DEPOSIT DETAILS</div><h2>{canFund ? 'Your decision to fund' : 'Deposit record'}</h2>
+          {canFund ? <div className="near-notice">This order is awaiting a deposit. If you decide to proceed, manually send the exact amount on Solana before the deadline. No wallet is connected here.</div>
+            : <div className="near-notice near-notice--warn" role="status" data-testid="status-near-deposit-guidance">{success ? 'This order is complete. Do not send any more funds.' : stopped ? 'This order is closed. Do not send funds to this address. Keep your transaction details for a support inquiry if needed.' : partial ? 'A partial deposit was detected. Do not send another transfer without provider guidance. Keep your transaction hash and request help; recovery is not guaranteed.' : deadlinePassed ? 'The deposit deadline passed. Do not send funds to this address. If you already sent, keep your transaction hash for a support inquiry.' : processing ? 'A deposit was detected and the route is in progress. Do not send again.' : 'The current status is not an invitation to send funds. Check provider guidance before taking action.'}</div>}
+          <div className="near-order-amount"><small>{canFund ? 'SEND EXACTLY / SOLANA NETWORK' : 'QUOTED INPUT / SOLANA NETWORK'}</small><strong data-testid="text-near-deposit-amount">{formatAmount(order.amountIn)} <em>{order.from.symbol}</em></strong></div>
+           <div className="near-detail near-detail--stack"><span>Solana asset {order.from.contractAddress ? 'mint · SPL token transfer' : 'type · native SOL transfer'}</span><strong data-testid="text-near-source-mint">{order.from.contractAddress || 'Native SOL (not an SPL token)'}</strong></div>
+          <div className="near-detail near-detail--stack"><span>Solana deposit address</span><div className="near-copy-row"><strong data-testid="text-near-deposit-address">{order.depositAddress}</strong><CopyButton value={order.depositAddress} name="deposit address"/></div></div>
+          {order.depositMemo && <div className="near-detail near-detail--stack"><span>Deposit memo {canFund ? '— include with transfer' : ''}</span><div className="near-copy-row"><strong data-testid="text-near-deposit-memo">{order.depositMemo}</strong><CopyButton value={order.depositMemo} name="deposit memo"/></div></div>}
+          <div className="near-detail"><span>Deposit deadline</span><strong data-testid="text-near-deadline">{dateText(order.deadline)} {canFund && <small style={{ display: 'block', color: '#c6a8f6', marginTop: 5 }}>{Math.floor(remaining / 60)}m {remaining % 60}s left</small>}</strong></div>
+          {canFund && <p className="near-hint" style={{ marginTop: 15 }}>Solana only. If your wallet deducts a fee from the entered amount, ensure the amount received matches the exact quoted input. If a memo is shown, include it.</p>}
+        </section>
+        <div style={{ display: 'grid', gap: 18 }}>
+          <section className="near-order-card" aria-live="polite"><div className="near-kicker">02 / PROVIDER STATUS</div><h2>Route progress</h2><span className={`near-status ${partial || stopped || deadlinePassed && waiting ? 'near-status--warn' : ''}`} data-testid="status-near-order">{statusName[order.status] || order.status}</span>
+            <ol className="near-steps"><li><b>01</b><span>Order created · deposit instructions issued</span></li><li><b>02</b><span>{waiting ? 'Awaiting a Solana deposit' : partial ? 'Partial deposit reported' : 'Deposit stage updated by provider'}</span></li><li><b>03</b><span>{success ? 'Destination transfer reported complete' : stopped ? 'Route closed without a completed transfer' : processing ? 'Route processing' : 'Destination transfer not confirmed'}</span></li></ol>
+            <p className="near-hint">Checks automatically every 15 seconds. {order.updatedAt ? `Provider updated ${dateText(order.updatedAt)}.` : 'Provider update time unavailable.'} Estimated route time: ~{Math.ceil(order.estimatedSeconds / 60)} min.</p>
+            <button type="button" className="near-button near-button--subtle" style={{ marginTop: 17 }} disabled={result.isFetching} onClick={() => result.refetch()} data-testid="button-refresh-near-order"><RefreshCw size={14}/>{result.isFetching ? 'Checking…' : 'Check now'}</button>
+          </section>
+           <section className="near-order-card"><div className="near-kicker">03 / ORDER RECORD</div><h2>Keep these details</h2><div className="near-detail"><span>Estimated output</span><strong data-testid="text-near-order-output">{formatAmount(order.amountOut)} {order.to.symbol} · {order.to.chainName}</strong></div><div className="near-detail"><span>Minimum output</span><strong>{formatAmount(order.minAmountOut)} {order.to.symbol}</strong></div>{order.withdrawFee !== undefined && <div className="near-detail"><span>Withdrawal fee (included in output)</span><strong>{formatAmount(order.withdrawFee)} {order.to.symbol}</strong></div>}{order.refundFee !== undefined && <div className="near-detail"><span>Possible refund fee</span><strong>{formatAmount(order.refundFee)} {order.from.symbol}</strong></div>}<div className="near-detail near-detail--stack"><span>Recipient</span><strong data-testid="text-near-order-recipient">{order.recipient}</strong></div><div className="near-detail near-detail--stack"><span>Solana refund address</span><strong data-testid="text-near-order-refund">{order.refundTo}</strong></div><p className="near-hint" style={{ marginTop: 17 }}><Clock3 size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5 }}/>Origin deposits on Solana are public. Confidential mode is requested for this route, not a guarantee of anonymity or unlinkability.</p></section>
+        </div>
+      </div>}
+    </main><Footer/>
+  </div>;
+}

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { trackEvent, trackLandingClick } from "../lib/analytics";
+import { RiskDisclaimer } from "../components/risk-disclaimer";
+import { LoyaltyExplainer } from "../components/loyalty-explainer";
 import {
   ArrowDownLeft,
   ArrowRight,
@@ -18,6 +21,16 @@ import "./launch.css";
 
 const faqs = [
   {
+    question: "How will NEAR + ZEC loyalty rewards work?",
+    answer:
+      "We’re launching $DARK on StonkFun paired with $NEAR, using the 3% holder-rewards tax setting—not a 3% yield or APY. StonkFun’s $20-or-more holding rule applies to its platform rewards. The team holds $DARK, accrues platform dividends and uses those team rewards for two separate DarkSwap flywheels: 50% for $DARK buyback and burn, and 50% converted to ZEC for loyalty airdrops. ZEC eligibility is separate: more than 100,000 $DARK across consecutive snapshots, with rewards scaled by wallet weight. The proposed eligibility period is three days at 12-hour snapshots; the exact weighting formula remains to be finalized. The token and payouts are not live yet, and returns are not guaranteed.",
+  },
+  {
+    question: "What is planned for Phase 2?",
+    answer:
+      "Phase 2 introduces the planned DarkSwap flywheel launchpad: $DARK paired with a wider range of assets and new reward concepts. Supported pairings, launch mechanics and release timing will be announced as they are developed and validated. This is a roadmap direction, not a live token-creation or trading service.",
+  },
+  {
     question: "What does “private route” mean here?",
     answer:
       "Both live Solana-origin routes create deposit instructions before you manually send funds. Privacy swap requests confidential handling; Solana deposits remain public. Neither route guarantees anonymity.",
@@ -25,7 +38,7 @@ const faqs = [
   {
     question: "Do I connect a wallet to use it?",
     answer:
-      "No wallet connection is needed to request and create an order. After reviewing the quote, you send the exact deposit amount yourself from a Solana wallet to the deposit address shown in the order.",
+      "The live private swap routes do not need a wallet connection to request and create an order. After reviewing the quote, you send the exact deposit amount yourself from a Solana wallet. Our separate cross-chain trading terminal with NEAR Intents is planned to use embedded wallets for trading; the current terminal is a read-only preview.",
   },
   {
     question: "Which assets and destinations are supported?",
@@ -89,13 +102,13 @@ function RouteIllustration() {
         <circle className="route-node route-node-destination" cx="528" cy="164" r="43" fill="#211a30" stroke="#a493ff" strokeWidth="1.5" />
         <circle cx="528" cy="164" r="28" fill="none" stroke="#a493ff" strokeOpacity=".36" />
         <path d="M515 164h26m-10-10 10 10-10 10" fill="none" stroke="#ded4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <g fill="#e5d9f0" fontFamily="DM Sans, sans-serif" fontSize="13" letterSpacing="1">
+        <g fill="#e5d9f0" fontFamily="Source Sans 3, sans-serif" fontSize="13" letterSpacing="1">
           <text x="68" y="350">YOUR SOLANA WALLET</text>
           <text x="204" y="89">DEPOSIT</text>
           <text x="348" y="349">ROUTE IN PROGRESS</text>
           <text x="490" y="228">DESTINATION</text>
         </g>
-        <g fill="#d2afff" fontFamily="Space Mono, monospace" fontSize="11">
+        <g fill="#d2afff" fontFamily="Source Sans 3, sans-serif" fontSize="12">
           <text x="160" y="235">MANUAL SEND</text>
           <text x="396" y="223">PRIVATE ROUTE</text>
         </g>
@@ -135,24 +148,34 @@ function RouteIllustration() {
 export default function Launch() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
 
   return (
-    <div className="ds-launch">
+    <div className="ds-launch" onClickCapture={(event) => trackLandingClick(event.target)}>
       <div className="launch-ribbon"><span className="ribbon-dot" /> PRIVATE BETA IS LIVE</div>
       <header className="launch-header">
+        <div className="launch-header-inner">
         <Link href="/" className="launch-brand" aria-label="DarkSwap home"><img className="launch-brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="launch-brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
-        <button className="mobile-menu-toggle" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label={menuOpen ? "Close navigation" : "Open navigation"}>
+        <button className="mobile-menu-toggle" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-controls="launch-navigation" aria-expanded={menuOpen} aria-label={menuOpen ? "Close navigation" : "Open navigation"}>
           {menuOpen ? <X size={19} /> : <Menu size={19} />}
         </button>
-        <nav className={`launch-nav ${menuOpen ? "is-open" : ""}`} aria-label="Main navigation">
-          <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
-          <a href="#scope" onClick={() => setMenuOpen(false)}>Beta scope</a>
-          <a href="#questions" onClick={() => setMenuOpen(false)}>Questions</a>
+        <nav id="launch-navigation" className={`launch-nav ${menuOpen ? "is-open" : ""}`} aria-label="Main navigation">
+          <span className="launch-nav-label">Live routes</span>
+          <Link href="/swap" onClick={() => setMenuOpen(false)}>Private route</Link>
+          <Link href="/near-swap" onClick={() => setMenuOpen(false)}>Privacy swap</Link>
+          <span className="launch-nav-label">Learn</span>
+          <Link href="/tokenomics" onClick={() => setMenuOpen(false)} data-testid="link-launch-tokenomics">Tokenomics</Link>
           <Link href="/docs" onClick={() => setMenuOpen(false)}>Docs</Link>
-          <Link href="/previews" onClick={() => setMenuOpen(false)}>Previews</Link>
-          <Link className="header-cta" href="/near-swap">Privacy swap <ArrowUpRight size={15} /></Link>
+          <Link className="header-cta" href="/swap" onClick={() => setMenuOpen(false)}>Open private swap <ArrowUpRight size={15} /></Link>
         </nav>
+        </div>
       </header>
+      {menuOpen && <button className="launch-menu-backdrop" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}/>}
 
       <main id="top">
         <section className="launch-hero">
@@ -229,26 +252,29 @@ export default function Launch() {
               <h3>Privacy swap</h3>
               <p>Request a confidential Solana-origin quote, review recipient and refund addresses, then decide whether to deposit manually. No anonymity guarantee.</p>
               <Link href="/near-swap" className="scope-link">Open Privacy swap <ArrowUpRight size={15} /></Link>
+              <p className="scope-alternative">Looking to trade a NEAR memecoin? <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer">Visit NearFi's external trading bot ↗</a>. Privacy swap does not offer limit orders or pair discovery.</p>
             </article>
             <article className="scope-card scope-closed">
-              <div className="scope-card-top"><span className="scope-status closed"><i /> CLOSED BETA</span><span className="scope-code">03</span></div>
+              <div className="scope-card-top"><span className="scope-status closed"><i /> PLANNED REWARDS</span><span className="scope-code">03</span></div>
               <div className="closed-art closed-art-grid" aria-hidden="true"><span /><span /><span /><span /><span /><span /><span /><span /><span /></div>
-              <h3>Token research</h3>
-              <p>Explore remains closed. Search a dated catalog of Solana xStock and PreStock entries in Screener Beta, without live market requests.</p>
-              <Link href="/screener-beta" className="scope-preview-link">Open Screener Beta <ArrowUpRight size={15} /></Link>
-              <span className="scope-lock"><LockKeyhole size={13} /> LIVE RESEARCH NOT AVAILABLE YET</span>
+              <h3>NEAR + ZEC loyalty</h3>
+              <p>Planned $DARK holder incentive. Maintain more than 100,000 $DARK across a three-day snapshot streak to qualify for wallet-weighted ZEC rewards. Payouts are not active; the formula is not final.</p>
+              <Link href="/tokenomics" className="scope-preview-link">Read the tokenomics plan <ArrowUpRight size={15} /></Link>
+              <span className="scope-lock"><LockKeyhole size={13} /> PLANNED · PAYOUTS NOT LIVE</span>
             </article>
             <article className="scope-card scope-closed">
-              <div className="scope-card-top"><span className="scope-status closed"><i /> CLOSED BETA</span><span className="scope-code">04</span></div>
-              <div className="closed-art public-art" aria-hidden="true"><span className="public-line line-one" /><span className="public-line line-two" /><span className="public-node node-one" /><span className="public-node node-two" /><span className="public-node node-three" /></div>
-              <h3>OKX public swap</h3>
-              <p>A separate, on-chain same-chain swap. It is not private and is not a bridge. Closed beta.</p>
-              <span className="scope-lock"><LockKeyhole size={13} /> NOT AVAILABLE YET</span>
+              <div className="scope-card-top"><span className="scope-status closed"><i /> IN DEVELOPMENT</span><span className="scope-code">04</span></div>
+              <div className="closed-art terminal-scope-art" aria-hidden="true"><span>⋈</span></div>
+              <h3>Cross-chain trading terminal with NEAR Intents</h3>
+              <p>A planned wallet-based trading experience, separate from the private swap routes. The read-only demo is in Founder previews, linked from the footer. Live terminal trading is not enabled; no anonymity guarantee applies.</p>
+              <span className="scope-lock"><LockKeyhole size={13} /> PRIVY WALLET TRADING + DEX COMING</span>
             </article>
           </div>
           <p className="scope-footnote"><Check size={14} /> No implied support beyond the route and assets shown in the live quote.</p>
-          <p className="scope-footnote"><Link href="/previews" className="scope-preview-link">Also in preview: Split Mixer for Solana and Privacy Bundle for Launchers <ArrowUpRight size={15} /></Link></p>
+          <p className="scope-footnote">Demos and research tools are separate from live routes. Find Founder previews in the footer.</p>
         </section>
+
+        <LoyaltyExplainer />
 
         <section className="trust-section">
           <div className="trust-visual">
@@ -258,7 +284,7 @@ export default function Launch() {
           <div className="trust-copy">
             <span className="overline"><span className="overline-square" /> PRIVACY, PRECISELY</span>
             <h2>Designed for<br /><em>less linkage.</em></h2>
-             <p>DarkSwap does not ask to connect to your wallet. You review the available order and make a separate, manual deposit if you choose.</p>
+             <p>Our private swap routes do not ask to connect to your wallet. You review the available order and make a separate, manual deposit if you choose. The planned cross-chain trading terminal with NEAR Intents is a separate wallet-based experience.</p>
             <div className="trust-note"><span className="note-bar" /><p>Privacy depends on the route and its providers. DarkSwap does not promise absolute anonymity, hide every on-chain detail, or make a route risk-free.</p></div>
             <a href="#questions" className="text-link">Read the practical details <ArrowRight size={15} /></a>
           </div>
@@ -274,7 +300,10 @@ export default function Launch() {
             {faqs.map((faq, index) => (
               <div className={`faq-item ${openFaq === index ? "faq-open" : ""}`} key={faq.question}>
                 <h3>
-                  <button type="button" aria-expanded={openFaq === index} aria-controls={`faq-answer-${index}`} onClick={() => setOpenFaq(openFaq === index ? null : index)}>
+                  <button type="button" aria-expanded={openFaq === index} aria-controls={`faq-answer-${index}`} onClick={() => {
+                    if (openFaq !== index) trackEvent("faq_opened", { topic: ["loyalty_rewards", "privacy", "wallets", "assets", "execution"][index] });
+                    setOpenFaq(openFaq === index ? null : index);
+                  }}>
                     <span className="faq-num">0{index + 1}</span><span>{faq.question}</span><ChevronDown size={17} />
                   </button>
                 </h3>
@@ -295,8 +324,8 @@ export default function Launch() {
         <div className="launch-banner-wrap" id="brand-banner">
           <img
             className="launch-banner"
-            src={`${import.meta.env.BASE_URL}brand/x-banner.png`}
-            alt="DarkSwap — Private swaps on Solana"
+            src={`${import.meta.env.BASE_URL}brand/x-banner-near.png`}
+            alt="DarkSwap — Privacy Swaps for Solana or NEAR. Start on Solana."
             loading="lazy"
             decoding="async"
             width="1500"
@@ -305,10 +334,17 @@ export default function Launch() {
         </div>
       </main>
 
+      <RiskDisclaimer />
       <footer className="launch-footer">
          <Link href="/" className="launch-brand footer-brand"><img className="launch-brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="launch-brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
          <span className="footer-caption">SOLANA ORIGIN · MANUAL DEPOSIT · PRIVATE BETA</span>
-         <Link href="/docs" className="footer-route">Read docs <ArrowUpRight size={14} /></Link>
+          <div className="footer-links">
+            <Link href="/tokenomics" className="footer-route">Tokenomics <ArrowUpRight size={14} /></Link>
+            <Link href="/founder" className="footer-route" data-testid="link-launch-founder">Founder previews <ArrowUpRight size={14} /></Link>
+            <Link href="/rewards" className="footer-route">Account points <ArrowUpRight size={14} /></Link>
+            <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer" className="footer-route">NEAR memecoins: NearFi (external) <ArrowUpRight size={14} /></a>
+            <Link href="/docs" className="footer-route">Read docs <ArrowUpRight size={14} /></Link>
+          </div>
       </footer>
     </div>
   );

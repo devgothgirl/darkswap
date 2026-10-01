@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /launch/create
+Disallow: /launch/creator
+Disallow: /launch/admin
+Disallow: /launch/api/
+Disallow: /create
+Disallow: /creator
+Disallow: /admin
+Disallow: /api/launch/

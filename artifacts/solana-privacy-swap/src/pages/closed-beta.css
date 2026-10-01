@@ -18,14 +18,14 @@
 .closed-beta-label {
   margin: 25px 0 12px;
   color: #c7a7ff;
-  font: 700 12px 'Space Mono', monospace;
+  font: 700 12px 'Source Sans 3', sans-serif;
   letter-spacing: .14em;
 }
 .closed-beta-page h1 {
   margin: 0;
   color: #f7efff;
-  font: 800 clamp(43px, 7vw, 78px)/1.02 'Manrope', 'DM Sans', sans-serif;
-  letter-spacing: -.065em;
+  font: 700 clamp(40px, 6.5vw, 72px)/1.12 'Source Sans 3', sans-serif;
+  letter-spacing: -.01em;
 }
 .closed-beta-page h1 span { color: #c7a7ff; }
 .closed-beta-copy {

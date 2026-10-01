@@ -1,14 +1,18 @@
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { rewardsAccountsTable } from "./rewards";
 
 export const nearOrdersTable = pgTable("near_orders", {
   id: uuid("id").primaryKey(),
   quoteId: uuid("quote_id").notNull(),
   state: text("state").notNull(),
+  providerRequest: jsonb("provider_request"),
   depositAddress: text("deposit_address"),
   providerResponse: jsonb("provider_response"),
   orderDetails: jsonb("order_details"),
+  rewardsAccountDid: text("rewards_account_did").references(() => rewardsAccountsTable.privyDid),
+  rewardsCheckedAt: timestamp("rewards_checked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
