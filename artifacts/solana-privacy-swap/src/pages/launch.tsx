@@ -171,6 +171,7 @@ export default function Launch() {
           <span className="launch-nav-label">Learn</span>
           <Link href="/tokenomics" onClick={() => setMenuOpen(false)} data-testid="link-launch-tokenomics">Tokenomics</Link>
           <Link href="/docs" onClick={() => setMenuOpen(false)}>Docs</Link>
+          <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} data-testid="link-launch-nearfi">NearFi ↗</a>
           <Link className="header-cta" href="/swap" onClick={() => setMenuOpen(false)}>Open private swap <ArrowUpRight size={15} /></Link>
         </nav>
         </div>
@@ -252,7 +253,7 @@ export default function Launch() {
               <h3>Privacy swap</h3>
               <p>Request a confidential Solana-origin quote, review recipient and refund addresses, then decide whether to deposit manually. No anonymity guarantee.</p>
               <Link href="/near-swap" className="scope-link">Open Privacy swap <ArrowUpRight size={15} /></Link>
-              <p className="scope-alternative">Looking to trade a NEAR memecoin? <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer">Visit NearFi's external trading bot ↗</a>. Privacy swap does not offer limit orders or pair discovery.</p>
+              <p className="scope-alternative">Looking to trade a NEAR memecoin? <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">Visit NearFi's external trading bot ↗</a>. Privacy swap does not offer limit orders or pair discovery.</p>
             </article>
             <article className="scope-card scope-closed">
               <div className="scope-card-top"><span className="scope-status closed"><i /> PLANNED REWARDS</span><span className="scope-code">03</span></div>
@@ -337,12 +338,12 @@ export default function Launch() {
       <RiskDisclaimer />
       <footer className="launch-footer">
          <Link href="/" className="launch-brand footer-brand"><img className="launch-brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="launch-brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
-         <span className="footer-caption">SOLANA ORIGIN · MANUAL DEPOSIT · PRIVATE BETA</span>
+         <span className="footer-caption">SOLANA ORIGIN · MANUAL DEPOSIT · PRIVATE BETA · <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" className="nearly-link" data-testid="link-launch-nearly">Nearly ↗</a></span>
           <div className="footer-links">
             <Link href="/tokenomics" className="footer-route">Tokenomics <ArrowUpRight size={14} /></Link>
             <Link href="/founder" className="footer-route" data-testid="link-launch-founder">Founder previews <ArrowUpRight size={14} /></Link>
             <Link href="/rewards" className="footer-route">Account points <ArrowUpRight size={14} /></Link>
-            <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer" className="footer-route">NEAR memecoins: NearFi (external) <ArrowUpRight size={14} /></a>
+            <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer" className="footer-route">NEAR memecoins: NearFi (external) <ArrowUpRight size={14} /></a>
             <Link href="/docs" className="footer-route">Read docs <ArrowUpRight size={14} /></Link>
           </div>
       </footer>

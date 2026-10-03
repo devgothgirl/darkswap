@@ -66,6 +66,7 @@ export function Header() {
           <Link href="/near-swap" className={location==='/near-swap'||location==='/near-order'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-near"><span className="nav-near-glyph" aria-hidden="true">⋈</span> Privacy swap</Link>
           <Link href="/tokenomics" className={location==='/tokenomics'||location.startsWith('/tokenomics/')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-tokenomics">Tokenomics</Link>
           <Link href="/docs" className={location==='/docs'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-docs">Docs</Link>
+          <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} data-testid="link-nav-nearfi">NearFi ↗</a>
           <button type="button" className="site-nav-track" onClick={() => { setMenuOpen(false); setLookupOpen(true); }}>Track order <ArrowRight size={15}/></button>
       </nav>
       <div className="top-right">
@@ -97,7 +98,7 @@ export function Footer() {
     <span>DARKSWAP / PRIVATE BETA</span>
     <span>Live: <Link href="/swap" style={{color:'#d2b5ff'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d2b5ff'}}>Privacy swap</Link>. Founder demos and the DARK holder program are not live.</span>
     <span><Link href="/rewards" style={{color:'#d2b5ff'}} data-testid="link-footer-account-points">Account points</Link> · <Link href="/founder" style={{color:'#d2b5ff'}} data-testid="link-footer-founder">Founder preview</Link> · <Link href="/help" style={{color:'#d2b5ff'}} data-testid="link-footer-help">Help &amp; support</Link></span>
-    <span className="footer-external">NEAR memecoin trades: <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a></span>
+    <span className="footer-external">NEAR memecoin trades: <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a> · <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" data-testid="link-footer-nearly">Nearly ↗</a></span>
   </footer></>;
 }
 

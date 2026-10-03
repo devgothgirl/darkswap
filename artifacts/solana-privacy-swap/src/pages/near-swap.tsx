@@ -146,7 +146,7 @@ export default function NearSwapPage() {
     <main className="near-main">
       <div className="near-intro"><div className="near-kicker"><span className="near-symbol" aria-hidden="true">⋈</span> DARKSWAP / PRIVACY SWAP</div><h1>Review the route.<br/>Then decide.</h1><p>A wallet-free way to prepare a Solana-origin swap. Request a confidential-mode route, inspect its terms, and decide whether to fund it yourself.</p></div>
       <aside className="near-trading-alternative">
-        Looking for limit orders or newly listed pairs? Privacy swap is a manual-deposit route, not a trading bot. For NEAR memecoin trades, <a href="https://nearfi.trade/#bot" target="_blank" rel="noopener noreferrer">visit NearFi's external Telegram bot ↗</a>. Its bot wallet is custodial; check its current features before depositing.
+        Looking for limit orders or newly listed pairs? Privacy swap is a manual-deposit route, not a trading bot. For NEAR memecoin trades, <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">visit NearFi's external Telegram bot ↗</a>. Its bot wallet is custodial; check its current features before depositing.
       </aside>
       <NearServiceNotice safety={routeSafety}/>
       <section className="near-panel" aria-label="Privacy swap form">
