@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.
+ */
 export type NearServiceIncidentImpact = typeof NearServiceIncidentImpact[keyof typeof NearServiceIncidentImpact];
 
 

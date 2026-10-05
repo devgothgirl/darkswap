@@ -1,15 +1,15 @@
-.terminal-economics { margin-top:32px; padding:28px; border:1px solid #594568; background:#201729; color:#f7efff; font-family:'Source Sans 3',sans-serif; }
-.terminal-economics .te-label { color:#d2b5ff; font-size:12px; font-weight:700; letter-spacing:.06em; }
+.terminal-economics { margin-top:32px; padding:28px; border:1px solid #332f3c; background:#110e15; color:#e2d0fb; font-family:'Source Sans 3',sans-serif; }
+.terminal-economics .te-label { color:#d5bbf9; font-size:12px; font-weight:700; letter-spacing:.06em; }
 .terminal-economics h2 { font-size:clamp(25px,3vw,34px); font-weight:700; line-height:1.2; margin:12px 0; letter-spacing:normal; }
 .terminal-economics h3 { font-size:20px; font-weight:700; margin:0 0 12px; letter-spacing:normal; }
-.terminal-economics p,.terminal-economics li { color:#d3c6df; font-size:16px; line-height:1.65; }
-.terminal-economics strong { color:#f7efff; }
+.terminal-economics p,.terminal-economics li { color:#cebaeb; font-size:16px; line-height:1.65; }
+.terminal-economics strong { color:#e2d0fb; }
 .terminal-economics .te-grid { display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:28px; }
-.terminal-economics article { border-top:1px solid #594568; padding-top:22px; min-width:0; }
-.terminal-economics details { border-top:1px solid #594568; padding-top:20px; margin-top:18px; }
-.terminal-economics summary { cursor:pointer; color:#d2b5ff; font-weight:700; padding:6px 0; }
-.terminal-economics summary:focus-visible { outline:2px solid #d2adff; outline-offset:4px; }
+.terminal-economics article { border-top:1px solid #332f3c; padding-top:22px; min-width:0; }
+.terminal-economics details { border-top:1px solid #332f3c; padding-top:20px; margin-top:18px; }
+.terminal-economics summary { cursor:pointer; color:#d5bbf9; font-weight:700; padding:6px 0; }
+.terminal-economics summary:focus-visible { outline:2px solid #d0b3f9; outline-offset:4px; }
 .terminal-economics ul { padding-left:22px; }
-.terminal-economics a { color:#d2b5ff; text-decoration:underline; overflow-wrap:anywhere; }
+.terminal-economics a { color:#d5bbf9; text-decoration:underline; overflow-wrap:anywhere; }
 .terminal-economics { scroll-margin-top:90px; }
 @media(max-width:700px) { .terminal-economics { padding:20px; } .terminal-economics .te-grid { grid-template-columns:1fr; gap:16px; } }

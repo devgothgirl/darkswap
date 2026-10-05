@@ -495,24 +495,38 @@ test("NEAR incident safety blocks before claiming, preserves recovery/tracking, 
     assert.fail(`Unexpected provider call: ${url.pathname}`);
   }, () => { feedCalls++; return feedResponse(); });
 
-  async function unclaimedPreview() {
+  async function unclaimedPreview(toNear = false) {
     const seeded = await seedNearOrder();
     await db.delete(nearOrdersTable).where(eq(nearOrdersTable.id, seeded.requestId));
-    await db.update(nearSwapPreviewsTable).set({ claimedRequestId: null })
+    await db.update(nearSwapPreviewsTable).set({
+      claimedRequestId: null,
+      ...(toNear ? {
+        input: { ...nearInput, to: "NEAR", recipient: "incident-test.near" },
+        toAsset: { ...nearTo, id: "nep141:wrap.near", symbol: "NEAR", chain: "near", chainName: "NEAR" },
+      } : {}),
+    })
       .where(eq(nearSwapPreviewsTable.quoteId, seeded.quoteId));
     return seeded;
   }
   try {
     for (const reply of [
       () => Response.json(activeFeed("sol")),
+      () => Response.json(activeFeed("near", "chain_all")),
       () => Response.json(activeFeed("hot", "bridge")),
       () => Response.json(activeFeed("solana")),
+      () => Response.json({
+        ...emptyFeed, activeIncidentCount: 2,
+        activeIncidents: [
+          { ...activeFeed("stellar").activeIncidents[0], id: "external-chain" },
+          { ...activeFeed("unknown-network").activeIncidents[0], id: "unknown-chain" },
+        ],
+      }),
       () => Response.json({}),
       () => new Response("", { status: 503 }),
     ]) {
       clock += 60_000;
       feedResponse = reply;
-      const seeded = await unclaimedPreview();
+      const seeded = await unclaimedPreview(true);
       const response = await postNearOrder(seeded.requestId, seeded.quoteId);
       assert.equal(response.status, 503);
       const [preview] = await db.select().from(nearSwapPreviewsTable).where(eq(nearSwapPreviewsTable.quoteId, seeded.quoteId));
@@ -521,6 +535,28 @@ test("NEAR incident safety blocks before claiming, preserves recovery/tracking, 
       assert.equal(order.length, 0);
       assert.equal(intercept.calls.length, 0, "blocked creation never calls trading provider");
     }
+
+    // The original SOL → NEAR failure: a catalog-recognized but unselectable
+    // endpoint incident must not stop a mock order. All provider calls are intercepted.
+    for (const chain of ["stellar", "plasma", "btc"]) {
+      clock += 60_000;
+      feedResponse = () => Response.json(activeFeed(chain));
+      const seeded = await unclaimedPreview(true);
+      const response = await postNearOrder(seeded.requestId, seeded.quoteId);
+      assert.equal(response.status, 200, chain);
+      const body = await response.json() as Record<string, any>;
+      assert.equal(body.to.chain, "near");
+      assert.equal(body.routeStatus.eligibility, "allowed");
+      assert.equal(body.routeStatus.activeIncidents[0].scopeValue, chain);
+      assert.equal(body.routeStatus.activeIncidents[0].impact, "unrelated");
+      const [saved] = await db.select().from(nearOrdersTable).where(eq(nearOrdersTable.id, seeded.requestId));
+      assert.equal(saved.state, "ready");
+      // This harness reuses one synthetic deposit address; isolate these
+      // external-chain scenarios from the later ETH receipt/tracking lookup.
+      await db.delete(nearOrdersTable).where(eq(nearOrdersTable.id, seeded.requestId));
+    }
+    const externalOrderPosts = intercept.calls.filter(call => call.method === "POST").length;
+    assert.equal(externalOrderPosts, 3);
 
     // A clean preflight changes to an incident during the live quote request.
     clock += 60_000;
@@ -546,7 +582,7 @@ test("NEAR incident safety blocks before claiming, preserves recovery/tracking, 
     const status = await nativeFetch(`${baseUrl}/swap/near/status?depositAddress=${nearDepositAddress}&depositMemo=recovery-memo`);
     assert.equal(status.status, 200);
     assert.equal((await status.json() as Record<string, any>).routeStatus.eligibility, "paused");
-    assert.equal(intercept.calls.filter(call => call.method === "POST").length, 1, "replay never replaces issued order");
+    assert.equal(intercept.calls.filter(call => call.method === "POST").length, externalOrderPosts + 1, "replay never replaces issued order");
 
     const uncertain = await seedNearOrder();
     recoveryCreatedAt = uncertain.createdAt;
@@ -554,7 +590,7 @@ test("NEAR incident safety blocks before claiming, preserves recovery/tracking, 
     const recovered = await postNearOrder(uncertain.requestId, uncertain.quoteId);
     assert.equal(recovered.status, 200, "uncertain receipt reconciliation remains accessible during incidents");
     assert.equal((await recovered.json() as Record<string, any>).routeStatus.eligibility, "paused");
-    assert.equal(intercept.calls.filter(call => call.method === "POST").length, 1, "recovery only performs reads");
+    assert.equal(intercept.calls.filter(call => call.method === "POST").length, externalOrderPosts + 1, "recovery only performs reads");
 
     // Explicit fresh checks clear the incident and unrelated supported networks
     // alone do not block a newly reviewed Solana -> Ethereum order.

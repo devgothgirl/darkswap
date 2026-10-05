@@ -1,9 +1,11 @@
+import fs from 'fs';
 import path from 'path';
 import { createRequire } from 'module';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import { aliases, renderPageHtml } from './seo-html.mjs';
+import { aliases, externalRedirects, isKnownRoute, renderPageHtml } from './seo-html.mjs';
+import { getResearchHtml } from './near-research-snapshot.mjs';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -11,6 +13,27 @@ const require = createRequire(import.meta.url);
 const browserBuffer = require.resolve('buffer/', {
   paths: [path.dirname(require.resolve('@solana/web3.js'))],
 });
+
+
+// Shielded pool (TESTNET) proving keys: served and emitted straight from the
+// reviewed package so no second copy of the 13 MB of keys is committed.
+const POOL_KEYS_DIR = path.resolve(import.meta.dirname, '../../packages/darkswap-pool/keys-dev');
+const POOL_KEY_FILES = ['transaction2.wasm', 'transaction2.zkey'];
+const poolKeys = {
+  name: 'pool-proving-keys',
+  configureServer(server: import('vite').ViteDevServer) {
+    server.middlewares.use((req, res, next) => {
+      const name = new URL(req.url || '/', 'http://localhost').pathname.split('/pool-keys/')[1];
+      if (!name || !POOL_KEY_FILES.includes(name)) return next();
+      res.setHeader('Content-Type', name.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream');
+      fs.createReadStream(path.join(POOL_KEYS_DIR, name)).pipe(res);
+    });
+  },
+  generateBundle(this: import('vite').Rollup.PluginContext) {
+    for (const name of POOL_KEY_FILES)
+      this.emitFile({ type: 'asset', fileName: `pool-keys/${name}`, source: fs.readFileSync(path.join(POOL_KEYS_DIR, name)) });
+  },
+};
 
 const rawPort = process.env.PORT;
 
@@ -42,10 +65,24 @@ export default defineConfig({
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           const path = new URL(req.url || '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
-          if (aliases[path as keyof typeof aliases]) {
+          if (Object.hasOwn(aliases, path)) {
             res.statusCode = 308;
             res.setHeader('Location', aliases[path as keyof typeof aliases]);
             res.end();
+            return;
+          }
+          if (Object.hasOwn(externalRedirects, path)) {
+            res.statusCode = 302;
+            res.setHeader('Location', externalRedirects[path]);
+            res.end();
+            return;
+          }
+          // Apply the same 404 policy to HTML navigation in development;
+          // leave Vite's modules, assets and API requests alone.
+          if (req.headers.accept?.includes('text/html') && !isKnownRoute(path)) {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.end(renderPageHtml(fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8'), path));
             return;
           }
           next();
@@ -53,13 +90,18 @@ export default defineConfig({
       },
       transformIndexHtml: {
         order: 'post',
-        handler(html, ctx) {
+        async handler(html, ctx) {
           if (!ctx.server) return html;
           const pathname = new URL(ctx.originalUrl || '/', 'http://localhost').pathname;
-          return renderPageHtml(html, pathname);
+          const path = pathname.replace(/\/+$/, '') || '/';
+          const publicGuides = ['/docs', '/docs/confidential-routing', '/docs/whitepaper', '/help'].includes(path) || path === '/pool' || path.startsWith('/pool/')
+            ? (await ctx.server.ssrLoadModule('/src/seo-public-guides.tsx')).renderPublicGuides()
+            : {};
+          return renderPageHtml(html, pathname, publicGuides, await getResearchHtml(path));
         },
       },
     },
+    poolKeys,
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

@@ -16,13 +16,12 @@ run = "pnpm --filter @workspace/darkswap-launch run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/darkswap-launch", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/darkswap-launch/dist/public"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.run]
+args = [ "node", "artifacts/darkswap-launch/serve.mjs", "--production" ]
 
 [services.env]
 PORT = "25546"
 BASE_PATH = "/launch/"
+[services.production.health.startup]
+path = "/launch/healthz"

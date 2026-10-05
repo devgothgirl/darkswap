@@ -5,8 +5,8 @@ import "./BoldIntent.css";
 
 // Independent, purpose-first adaptation of Current.tsx. All actions stay local.
 const faqs = [
-  { question: "What does “maximum privacy” mean?", answer: "It describes DarkSwap’s design goal, not a verified ranking or an absolute result. The live routes use a deposit-based flow without a wallet connection to the app. Privacy depends on the chosen route and its providers. Solana deposits remain public, and destination transfers may also be public." },
-  { question: "Do I connect a wallet to use it?", answer: "No wallet connection is required for the live private swap routes. You review the quote and create an order first. If you decide to proceed, you send the exact deposit amount yourself from a Solana wallet. DarkSwap does not automatically send your funds." },
+  { question: "What does “maximum privacy” mean?", answer: "It describes DarkSwap’s design goal, not a verified ranking or an absolute result. The live routes use a deposit-based flow where creating an order moves no funds. Privacy depends on the chosen route and its providers. Solana deposits remain public, and destination transfers may also be public." },
+  { question: "Do I connect a wallet to use it?", answer: "No. You review the quote and create an order first — creating an order moves no funds. If you decide to proceed, you send the exact deposit amount yourself from a Solana wallet. DarkSwap does not automatically send your funds." },
   { question: "Which assets and destinations are supported?", answer: "Availability depends on the live quote for your selected amount and destination. Support is not universal. Before creating an order, review the quoted assets, recipient, fees, limits and estimated time. This preview does not request quotes or create orders." },
   { question: "Is execution instant or guaranteed?", answer: "No. Private execution can take longer than a direct swap, and routes can be unavailable. Execution, timing and privacy are not guaranteed. Check the deposit instructions carefully before sending; crypto transfers carry risk." },
   { question: "Are DARK holder rewards live?", answer: "No. NEAR + ZEC loyalty rewards are planned, not active payouts or yield. The proposal starts eligibility after a three-day holder streak. Rewards accrued by team allocations would be split 50% toward holder-streak bonuses and 50% toward buyback + burn. The daily formula and rates are not finalized. Eligibility, funding and implementation remain subject to the Tokenomics plan." },
@@ -17,7 +17,7 @@ const localPanels = {
     title: "Know the route before you send.",
     paragraphs: [
       "Local Docs overview · No external navigation or live service calls in this exploration.",
-      "Both live Solana-origin routes prepare deposit instructions after you review a quote and create an order. You then manually send the exact amount. No wallet connection. No automatic send.",
+      "Both live Solana-origin routes prepare deposit instructions after you review a quote and create an order. You then manually send the exact amount. Creating an order moves no funds; there is no automatic send.",
       "Solana deposits remain public; destination transfers may be public. Privacy depends on the route and providers. Check assets, fees, limits, recipient and refund details before making a deposit.",
     ],
   },
@@ -102,13 +102,13 @@ export function BoldIntent() {
             <p className="bi-qualifier"><strong>Our design goal, not an absolute guarantee.</strong> Privacy varies by route. Solana deposits remain public; destination transfers may be public.</p></div>
           <div className="bi-actions"><a className="bi-button" href="#bi-routes">Explore the live routes <ArrowRight size={20} /></a><small>Local route overview · No funds move in this preview</small></div>
         </div>
-        <div className="bi-principles"><span><Check /> No wallet connection</span><span><Check /> No automatic send</span><span><Check /> Manual deposit</span></div>
+        <div className="bi-principles"><span><Check /> Orders move no funds</span><span><Check /> No automatic send</span><span><Check /> Manual deposit</span></div>
       </section>
       <section className="bi-process" id="bi-process">
         <div className="bi-wrap">
           <div className="bi-section-head"><div><span className="bi-label">01 / INTENT INTO PRACTICE</span><h2>Nothing moves<br />until you do.</h2></div><p>DarkSwap prepares the order. You review the details and decide whether to make the deposit. That separation is built into the flow.</p></div>
           <div className="bi-process-track">
-            <article><span className="bi-label">01 / REQUEST</span><h3>Choose a route.</h3><p>Select a Solana asset, a supported destination and a receiving address. No wallet connection to the app.</p></article>
+            <article><span className="bi-label">01 / REQUEST</span><h3>Choose a route.</h3><p>Select a Solana asset, a supported destination and a receiving address. Nothing moves at this step.</p></article>
             <article><span className="bi-label">02 / REVIEW</span><h3>Check the details.</h3><p>Review the quote, fees, limits, recipient and estimated time before creating an order.</p></article>
             <article><span className="bi-label">03 / DEPOSIT</span><h3>Send it yourself.</h3><p>Send the exact Solana deposit amount manually. Then track the order while the route completes.</p></article>
           </div>
@@ -118,7 +118,7 @@ export function BoldIntent() {
       <section className="bi-section bi-wrap" id="bi-routes">
         <div className="bi-section-head"><div><span className="bi-label">02 / LIVE IN PRIVATE BETA</span><h2>Two routes.<br />The same deliberate start.</h2></div><p>Both begin on Solana. Both let you review before you deposit. Assets and destinations depend on the available quote.</p></div>
         <div className="bi-route-list">
-          <article className="bi-route"><img src="/__mockup/images/maximum-privacy/atom.png" alt="" /><div><h3>Private route</h3><span className="bi-label">EXISTING ROUTE / LIVE</span></div><p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. No wallet connection.</p><button aria-label="Explore Private route locally" onClick={() => chooseRoute("Private route")} aria-expanded={selectedRoute === "Private route"}><ArrowUpRight size={21} /></button></article>
+          <article className="bi-route"><img src="/__mockup/images/maximum-privacy/atom.png" alt="" /><div><h3>Private route</h3><span className="bi-label">EXISTING ROUTE / LIVE</span></div><p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. Creating an order moves no funds.</p><button aria-label="Explore Private route locally" onClick={() => chooseRoute("Private route")} aria-expanded={selectedRoute === "Private route"}><ArrowUpRight size={21} /></button></article>
           <article className="bi-route"><img src="/__mockup/images/maximum-privacy/shield.png" alt="" /><div><h3>Privacy swap</h3><span className="bi-label">CONFIDENTIAL HANDLING / LIVE</span></div><p>Request confidential handling. Review the quote, recipient and refund addresses, then choose whether to deposit.</p><button aria-label="Explore Privacy swap locally" onClick={() => chooseRoute("Privacy swap")} aria-expanded={selectedRoute === "Privacy swap"}><ArrowUpRight size={21} /></button></article>
         </div>
         <p className="bi-preview-note">Exploration only. The routes are live in the product; this local overview cannot request quotes, create orders or receive funds.</p>

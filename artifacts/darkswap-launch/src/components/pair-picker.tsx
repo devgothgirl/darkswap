@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Lock, Search, Check, AlertTriangle, Star } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from '@workspace/darkswap-design-system/components/ui/input';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
 import type { LaunchConfig, StonkfunPair, StonkfunPairGroup } from '@workspace/api-client-react';
 import { TokenAvatar, Pill } from './bits';
 import { shortAddr, DARK_ACTIVATION_COPY } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@workspace/darkswap-design-system/lib/utils';
 
 export const pairSelectable = (p: StonkfunPair) => p.enabled && p.launchable && p.launchLabReady === true;
 

@@ -102,7 +102,7 @@ export function Exchange() {
             <p className="ds-help">No rate, minimum output, fee, or availability has been verified. Actual route terms must be checked before funding.</p>
           </div>}
           <div className="ds-split">
-            <div className="ds-privacy"><LockKeyhole size={16}/><span>Manual funding · no wallet transaction here</span></div>
+            <div className="ds-privacy"><LockKeyhole size={16}/><span>Manual funding · you send from your own wallet</span></div>
             {!quoteRequested
               ? <button type="button" className="ds-primary" onClick={request}>Preview route <ArrowRight size={15}/></button>
               : <button type="button" className="ds-primary" onClick={() => setReview(true)}>Review details <ArrowRight size={15}/></button>}

@@ -29,6 +29,8 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
+      // The pool client proves only in browsers; the server never loads snarkjs.
+      "snarkjs",
       "sharp",
       "better-sqlite3",
       "sqlite3",

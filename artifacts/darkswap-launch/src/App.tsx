@@ -1,9 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, hydrate } from '@tanstack/react-query';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@workspace/darkswap-design-system/components/ui/toaster';
+import { TooltipProvider } from '@workspace/darkswap-design-system/components/ui/tooltip';
 import { Shell } from '@/components/layout';
 import { WalletProvider } from '@/lib/wallet';
 import { BASE_PATH } from '@/lib/api';
@@ -17,6 +17,10 @@ import Admin from '@/pages/admin';
 import { Docs, Terms, Privacy, Risk } from '@/pages/legal';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } } });
+if (typeof document !== 'undefined') {
+  const state = document.getElementById('launch-public-state')?.textContent;
+  if (state) hydrate(queryClient, JSON.parse(state));
+}
 
 function ScrollTop() {
   const [loc] = useLocation();
@@ -49,11 +53,11 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
-function App() {
+function App({ client = queryClient, ssrPath }: { client?: QueryClient; ssrPath?: string }) {
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={client}>
       <TooltipProvider>
-        <WouterRouter base={BASE_PATH}>
+        <WouterRouter base={BASE_PATH} ssrPath={ssrPath}>
           <WalletProvider>
             <ScrollTop />
             <Shell>

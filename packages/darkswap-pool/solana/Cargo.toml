@@ -1,0 +1,28 @@
+[workspace]
+members = ["pool", "pool-probe", "test-logspam", "verifier-parity"]
+exclude = ["vendor/ark-ff", "vendor/groth16-solana"]
+resolver = "2"
+
+[workspace.dependencies]
+solana-account-info = "3.1.1"
+solana-cpi = "3.1.0"
+solana-instruction = "=3.3.0"
+solana-msg = "3.0.0"
+solana-program-entrypoint = "3.1.1"
+solana-program-error = "3.0.0"
+solana-program-log = "1.2.0"
+solana-pubkey = { version = "=4.1.0", features = ["curve25519"] }
+solana-sdk-ids = "3.1.0"
+solana-sha256-hasher = { version = "3.1.0", features = ["sha2"] }
+solana-system-interface = { version = "=3.1.0", features = ["wincode"] }
+solana-sysvar = "=3.1.1"
+
+[patch.crates-io]
+# Source-identical upstream crates with only dependency-manifest substitutions.
+ark-ff = { path = "vendor/ark-ff" }
+groth16-solana = { path = "vendor/groth16-solana" }
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

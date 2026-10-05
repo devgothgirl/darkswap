@@ -1,0 +1,19 @@
+[package]
+name = "darkswap-pool-probe"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Phase 1 probe: runs the DarkSwap proof check and Poseidon inside a real Solana program to measure compute units"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+solana-account-info.workspace = true
+solana-cpi.workspace = true
+solana-msg.workspace = true
+solana-program-entrypoint.workspace = true
+solana-program-error.workspace = true
+solana-program-log.workspace = true
+solana-pubkey.workspace = true
+darkswap-verifier-parity = { path = "../verifier-parity" }

@@ -4,6 +4,7 @@ import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { db, nearOrdersTable, nearSwapPreviewsTable } from "@workspace/db";
 import type { NearQuoteInput, NearQuoteToken } from "@workspace/db";
 import { withProviderCapacity } from "../lib/provider-capacity";
+import { InvalidPartnerFeeConfigError, partnerFeeFromEnv, type PartnerFee } from "../lib/near-partner-fee";
 import { inputValueUsd, MINIMUM_SWAP_USD } from "../lib/swap-minimum";
 import { getNearServiceStatus } from "../lib/near-service-status";
 import {
@@ -173,7 +174,28 @@ function formatUnits(value: unknown, decimals: number): string {
   return fraction ? `${integer}.${fraction}` : integer;
 }
 
+let partnerFeeConfig: PartnerFee | null | undefined;
+
+// Partner revenue share (NEAR Intents appFees); see lib/near-partner-fee.ts
+// for the shared fail-closed parsing rules. Changing NEAR_PARTNER_FEE_BPS or
+// NEAR_PARTNER_PAYOUT_ADDRESS also requires updating the docs fee copy;
+// near-partner-fee-docs.test.ts (pnpm run test:docs-fee) fails until the docs
+// match these values.
+function partnerFee(): PartnerFee | null {
+  if (partnerFeeConfig !== undefined) return partnerFeeConfig;
+  try {
+    partnerFeeConfig = partnerFeeFromEnv();
+  } catch (error) {
+    if (error instanceof InvalidPartnerFeeConfigError) {
+      throw new NearError("Privacy swap is temporarily unavailable. Try again later.", 503);
+    }
+    throw error;
+  }
+  return partnerFeeConfig;
+}
+
 function quoteBody(preview: Preview, dry: boolean) {
+  const partner = partnerFee();
   return {
     dry, swapType: "EXACT_INPUT", slippageTolerance: 100,
     originAsset: preview.from.id, depositType: "ORIGIN_CHAIN",
@@ -182,14 +204,56 @@ function quoteBody(preview: Preview, dry: boolean) {
     refundTo: preview.input.refundTo, refundType: "ORIGIN_CHAIN",
     confidentiality: "basic",
     deadline: new Date(Date.now() + 30 * 60_000).toISOString(),
+    ...(partner ? { appFees: [{ recipient: partner.recipient, fee: partner.feeBps }] } : {}),
   };
 }
 
-function checkedQuote(result: unknown, preview: Preview, requestBody: ReturnType<typeof quoteBody>): Record<string, unknown> {
+// The provider normalizes appFees in its echo: it appends its own platform-fee
+// entry (at most 25 bps) and may either repeat our entry verbatim or split it
+// 50/50 under the documented partner schedule. Validate against the fee that
+// was actually sent — never against current configuration — so legacy orders
+// saved before partner fees existed (whose echoes carry only the provider's
+// own entry) remain recoverable.
+export function partnerFeeEchoMatches(sent: unknown, echoed: unknown): boolean {
+  if (sent === undefined) {
+    return echoed === undefined ||
+      (Array.isArray(echoed) && echoed.every((entry) => isRecord(entry)));
+  }
+  if (!Array.isArray(sent) || sent.length !== 1 || !isRecord(sent[0]) ||
+      typeof sent[0].fee !== "number" || !Number.isInteger(sent[0].fee) ||
+      (sent[0].fee as number) < 1 || !Array.isArray(echoed)) return false;
+  const payout = sent[0].recipient;
+  const sentFee = sent[0].fee as number;
+  let ours = 0;
+  let total = 0;
+  for (const entry of echoed) {
+    if (!isRecord(entry) || typeof entry.fee !== "number" ||
+        !Number.isInteger(entry.fee) || entry.fee < 0) return false;
+    if (entry.recipient === payout) ours += entry.fee;
+    else if (entry.fee > 25) return false;
+    total += entry.fee;
+  }
+  const split = Math.ceil(sentFee / 2);
+  return (ours === sentFee || ours === split) && total <= sentFee + 25;
+}
+
+// The partner fee disclosed to the user for a provider request: the configured
+// total whenever the echo accounts for it, undefined when the feature is off
+// or the echo carries no fee to our address (legacy or foreign orders).
+export function echoedPartnerFeeBps(request: unknown): number | undefined {
+  const partner = partnerFee();
+  if (!partner || !isRecord(request)) return undefined;
+  return partnerFeeEchoMatches([{ recipient: partner.recipient, fee: partner.feeBps }], request.appFees)
+    ? partner.feeBps
+    : undefined;
+}
+
+export function checkedQuote(result: unknown, preview: Preview, requestBody: ReturnType<typeof quoteBody>): Record<string, unknown> {
   if (!result || typeof result !== "object") throw new Error("Missing NEAR quote");
   const { quote, quoteRequest } = result as ProviderQuote;
   if (!quote || !quoteRequest ||
-      Object.entries(requestBody).some(([key, value]) => quoteRequest[key] !== value) ||
+      Object.entries(requestBody).some(([key, value]) =>
+        key === "appFees" ? !partnerFeeEchoMatches(value, quoteRequest[key]) : quoteRequest[key] !== value) ||
       quote.amountIn !== preview.units) throw new Error("NEAR quote did not match selected confidential route");
   formatUnits(quote.amountOut, preview.to.decimals);
   formatUnits(quote.minAmountOut, preview.to.decimals);
@@ -199,7 +263,7 @@ function checkedQuote(result: unknown, preview: Preview, requestBody: ReturnType
 
 function orderResponse(
   quote: Record<string, unknown>, from: Token, to: Token, recipient: string, refundTo: string,
-  status: string, updatedAt?: string, requestId?: string,
+  status: string, updatedAt?: string, requestId?: string, appFeeBps?: number,
 ) {
   if (typeof quote.depositAddress !== "string" || !solanaAddress(quote.depositAddress) ||
       typeof quote.deadline !== "string" || !Number.isFinite(Date.parse(quote.deadline)) ||
@@ -214,6 +278,7 @@ function orderResponse(
     minAmountOut: formatUnits(quote.minAmountOut, to.decimals),
     ...(quote.withdrawFee !== undefined ? { withdrawFee: formatUnits(quote.withdrawFee, to.decimals) } : {}),
     ...(quote.refundFee !== undefined ? { refundFee: formatUnits(quote.refundFee, from.decimals) } : {}),
+    ...(appFeeBps !== undefined ? { appFeeBps } : {}),
     recipient, refundTo, status, ...(updatedAt ? { updatedAt } : {}),
     ...(requestId ? { requestId } : {}),
     estimatedSeconds: quote.timeEstimate,
@@ -249,11 +314,16 @@ function matchesNearRequest(
   value: unknown,
   preview: Preview,
   createdAt: Date,
+  sentAppFees?: unknown,
 ): value is ReturnType<typeof quoteBody> {
   if (!isRecord(value)) return false;
   const expected = quoteBody(preview, false);
   if (Object.entries(expected).some(([key, expectedValue]) =>
-    key !== "deadline" && value[key] !== expectedValue)) return false;
+    key !== "deadline" && key !== "appFees" && value[key] !== expectedValue)) return false;
+  // Fees are validated against the persisted request this order was created
+  // with, not the current configuration: legacy orders predate partner fees,
+  // and the provider normalizes appFees in its echoes.
+  if (!partnerFeeEchoMatches(sentAppFees, value.appFees)) return false;
   const deadline = typeof value.deadline === "string" ? Date.parse(value.deadline) : NaN;
   return Number.isFinite(deadline) &&
     deadline > createdAt.getTime() &&
@@ -346,7 +416,7 @@ export async function reconcileNearProviderResponse(
   if (!isRecord(quote) ||
       quote.depositAddress !== historyItem.depositAddress ||
       (quote.depositMemo ?? null) !== (historyItem.depositMemo ?? null) ||
-      !matchesNearRequest(quoteResponse.quoteRequest, preview, receipt.createdAt)) {
+      !matchesNearRequest(quoteResponse.quoteRequest, preview, receipt.createdAt, requestBody.appFees)) {
     throw new Error("NEAR order history did not match the saved request");
   }
   return {
@@ -377,6 +447,7 @@ async function finalizeNearOrder(
     order = CreateNearOrderResponse.parse(orderResponse(
       quote, preview.from, preview.to, preview.input.recipient, preview.input.refundTo, status,
       updatedAt, requestId,
+      echoedPartnerFeeBps((providerResponse as ProviderQuote).quoteRequest),
     ));
   } catch (error) {
     await db.update(nearOrdersTable).set({ state: "review_needed" })
@@ -424,7 +495,8 @@ async function recoverNearOrderReceipt(
     ? receipt.providerRequest
     : isRecord(receipt.providerResponse) ? receipt.providerResponse.quoteRequest : undefined;
   if (!requestBody) return undefined;
-  if (!matchesNearRequest(requestBody, preview, receipt.createdAt)) {
+  const sentAppFees = isRecord(requestBody) ? requestBody.appFees : undefined;
+  if (!matchesNearRequest(requestBody, preview, receipt.createdAt, sentAppFees)) {
     if (receipt.providerResponse) {
       await db.update(nearOrdersTable).set({ state: "review_needed" })
         .where(and(
@@ -574,6 +646,7 @@ router.post("/swap/near/quote", configured, limited(8, "near-quote"), async (req
       minAmountOut: formatUnits(quote.minAmountOut, to.decimals),
       ...(quote.withdrawFee !== undefined ? { withdrawFee: formatUnits(quote.withdrawFee, to.decimals) } : {}),
       ...(quote.refundFee !== undefined ? { refundFee: formatUnits(quote.refundFee, from.decimals) } : {}),
+      ...(partnerFee() ? { appFeeBps: partnerFee()!.feeBps } : {}),
       recipient: input.recipient, refundTo: input.refundTo,
       validUntil: new Date(preview.expires).toISOString(), estimatedSeconds: quote.timeEstimate,
     }));
@@ -759,6 +832,7 @@ router.get("/swap/near/status", configured, limited(60, "near-status"), async (r
       quote, from, to, request.recipient, request.refundTo, result.status as string,
       typeof result.updatedAt === "string" ? result.updatedAt : undefined,
       saved?.success ? saved.data.requestId : undefined,
+      echoedPartnerFeeBps(request),
     )))));
   } catch (error) { fail(req, res, error); }
 });

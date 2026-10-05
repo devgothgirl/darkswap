@@ -3,26 +3,26 @@ import { rewardsProposalDate, rewardsSources } from './rewards-proposal';
 import './terminal-economics.css';
 
 const sections = [
-  { title: 'Team accrual split: 50% / 50%', paragraphs: [
-    'Proposal: rewards accrued by DARK team allocations (NEAR from applicable StonkFun token fee distributions) are split. 50% funds streak bonuses, planned as additional ZEC. 50% funds DARK buyback and burn.',
-    'This is 50% of the team’s accrued rewards. It is not all trading volume and not a 50% token tax. It replaces the earlier proposal that sent 50% to terminal funding; that allocation no longer applies.',
+  { title: 'Received creator-fee proceeds: 50% / 50%', paragraphs: [
+    'Creator-fee proceeds actually received in wNEAR are split. 50% goes to holder rewards: wNEAR has been distributed, and ZEC payouts to holders remain planned. 50% is converted to ZEC and compounded in the creator wallet.',
+    'This is not team-held DARK dividends, inaccessible unclaimed pool fees, all trading volume or a 50% token tax. The dev wallet is distinct from the pool-fee creator and cannot claim that unclaimed amount. The earlier terminal-funding allocation no longer applies.',
   ] },
-  { title: 'Daily progression after eligibility', paragraphs: [
-    'A three-day snapshot streak (more than 100,000 DARK at 12-hour snapshots; at or below resets) unlocks eligibility. Daily progression with compounding is planned afterwards.',
-    'The exact rate and formula are not set. No multiplier, APY or return is implied.',
+  { title: 'Holder eligibility', paragraphs: [
+    'Hold the 100,000 DARK minimum in every snapshot of the period. One snapshot is taken at a random moment in each 10-minute window; your share is weighted by the lowest balance you held.',
+    'Completed airdrops paid wNEAR direct to eligible holders, with no claim needed and verified on-chain. The DARK Rewards console at rewards.darkswap.app is the record of what was paid, to how many wallets and when; past distributions do not guarantee future payouts. No multiplier, APY or return is implied.',
   ] },
-  { title: 'Unresolved items', paragraphs: [
-    'The token is unlaunched. Mint address, supply, authorities and any venue-specific 3% tax details are unresolved. The $20-or-more holdings threshold is the existing factual figure for proposed NEAR mechanics and is unverified with the provider.',
+  { title: 'Known listing, unverified fee configuration', paragraphs: [
+    'StonkFun reports DARK graduated with a NEAR pairing and market activity. The reported creator fee is 1%, paid only in wNEAR, not DARK; its configuration and claim authority remain unverified.',
+    'Supply, mint/freeze authorities, transfer-tax details and independent liquidity verification remain unresolved. Treasury balances are unavailable, not zero; no verified balance source is connected.',
   ] },
 ];
 
 const gates = [
   'Owner approval and legal review, including provider geographic restrictions.',
-  'Provider confirmation of the holdings threshold, price source and whether DARK team allocations qualify for distributions.',
-  'Published mint, supply, authority inspection and venue-specific tax details.',
-  'A funded, publicly addressed treasury, with NEAR and ZEC balances connected to a real data source.',
-  'A tested route for NEAR to ZEC conversion and for buyback and burn.',
-  'A set daily progression formula, published before any streak is counted.',
+  'Verification of the reported 1% wNEAR creator-fee configuration, claim authority and actual received proceeds.',
+  'Verified supply, mint/freeze authorities, transfer-tax details and pool liquidity for the official Solana mint.',
+  'Verified treasury funding, with wNEAR and ZEC balances connected to a real data source.',
+  'A verified wNEAR-to-ZEC conversion route for the compounded half.',
 ];
 
 export function TerminalEconomics() {
@@ -34,9 +34,9 @@ export function TerminalEconomics() {
   }, []);
   return <section className="terminal-economics" id="rewards-proposal" aria-labelledby="terminal-economics-title">
     <span className="te-label">TOKEN DESIGN / PROPOSAL ONLY</span>
-    <h2 id="terminal-economics-title">Proposed DARK team accrual allocation.</h2>
+    <h2 id="terminal-economics-title">Proposed DARK creator-fee allocation.</h2>
     <p>No token is minted, fee activated, or reward paid by this preview. This is separate from DarkSwap’s non-cash email account points.</p>
-    <p><strong>Research checked {rewardsProposalDate}.</strong> Provider documentation describes general mechanics, not verified DARK entitlements.</p>
+    <p><strong>Research checked {rewardsProposalDate}.</strong> The official listing shows provider-reported graduation and market activity; general provider documentation does not verify DARK fee configuration or claim authority.</p>
     <div className="te-grid">
       {sections.map(section => <article key={section.title}>
         <h3>{section.title}</h3>
@@ -48,12 +48,12 @@ export function TerminalEconomics() {
       </article>
     </div>
     <details open>
-      <summary>Evidence required before launch. Nothing is activated.</summary>
+      <summary>Evidence required before incentive activation</summary>
       <ul>{gates.map(gate => <li key={gate}>{gate}</li>)}</ul>
     </details>
     <details>
       <summary>Sources and verification limits</summary>
-      <p>Public documentation can change. Exact eligibility oracle and DARK-specific routes remain unverified. No live funds were sent.</p>
+      <p>Public documentation can change. The listing does not verify fee receipts, claim authority or incentive eligibility. The ZEC conversion and compounding route remains unverified; this preview sends no funds.</p>
       <ul>{rewardsSources.map(source => <li key={source.href}><a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a></li>)}</ul>
     </details>
   </section>;

@@ -17,7 +17,7 @@ test("literal supported endpoints only; unknown scopes/statuses are conservative
     { entries: [incident("eth", "chain_all")], allowed: "paused" },
     { entries: [incident("bsc"), incident("pol")], allowed: "allowed" },
     ...["bridge", "token", "global", "future_scope"].map(scope => ({ entries: [incident("hot", scope)], allowed: "unverified" })),
-    ...["SOL", "solana", "plasma"].map(chain => ({ entries: [incident(chain)], allowed: "unverified" })),
+    ...["SOL", "solana", "not-a-provider-chain"].map(chain => ({ entries: [incident(chain)], allowed: "unverified" })),
     { entries: [incident("sol", "chain", "monitoring")], allowed: "unverified" },
   ];
   for (const scenario of cases) {
@@ -35,6 +35,53 @@ test("literal supported endpoints only; unknown scopes/statuses are conservative
   assert.equal(result.eligibility, "allowed");
   assert.equal(result.recentlyResolved[0].status, "resolved");
   assert.equal(result.recentlyResolved[0].impact, "matching");
+});
+
+test("recognized incident networks are independent of selectable routes; Stellar no longer blocks SOL to NEAR", async () => {
+  const external = [
+    "abs", "adi", "aleo", "aptos", "avax", "bch", "bera", "btc", "cardano",
+    "dash", "doge", "fogo", "gnosis", "hood", "hypercore", "ltc", "monad",
+    "movement", "plasma", "scroll", "starknet", "stellar", "sui", "ton",
+    "tron", "xlayer", "xrp", "zec",
+  ];
+  for (const chain of external) {
+    for (const scope of ["chain", "chain_all"]) {
+      // Public entries intentionally have no direction or dependency fields.
+      const entry = incident(chain, scope);
+      const get = createNearServiceStatusAdapter({ fetcher: async () => Response.json(feed([entry])) });
+      const result = await get("sol", "near");
+      assert.equal(result.state, "fresh");
+      assert.equal(result.eligibility, "allowed", `${scope}:${chain}`);
+      assert.deepEqual(result.activeIncidents, [{ ...entry, impact: "unrelated" }], "keep incident visible");
+      assert.equal((await get("sol", chain)).eligibility, "unverified", "recognition adds no destination");
+      assert.equal((await get(chain, "near")).eligibility, "unverified");
+      assert.equal((await get("sol")).eligibility, "unverified");
+    }
+  }
+});
+
+test("matching endpoints, mixed unknown incidents, identifiers, scopes and statuses retain holds", async () => {
+  const scenarios = [
+    ...["sol", "near"].flatMap(chain => ["chain", "chain_all"].map(scope => ({
+      entries: [incident("stellar"), incident(chain, scope)], eligibility: "paused", impacts: ["unrelated", "matching"],
+    }))),
+    ...["unknown-network", "*", "Stellar", " stellar", "stellar ", "xlm"].map(chain => ({
+      entries: [incident("stellar"), incident(chain)], eligibility: "unverified", impacts: ["unrelated", "unverified"],
+    })),
+    ...["bridge", "token", "token_chain", "address", "intents", "global", "future_scope"].map(scope => ({
+      entries: [incident("stellar"), incident("near", scope)], eligibility: "unverified", impacts: ["unrelated", "unverified"],
+    })),
+    ...["acknowledged", "resolved", "monitoring", "future_status"].map(status => ({
+      entries: [incident("stellar", "chain", status)], eligibility: "unverified", impacts: ["unverified"],
+    })),
+    { entries: [incident("stellar"), incident("unknown"), incident("near")], eligibility: "paused", impacts: ["unrelated", "unverified", "matching"] },
+  ];
+  for (const scenario of scenarios) {
+    const get = createNearServiceStatusAdapter({ fetcher: async () => Response.json(feed(scenario.entries)) });
+    const result = await get("sol", "near");
+    assert.equal(result.eligibility, scenario.eligibility, JSON.stringify(scenario.entries));
+    assert.deepEqual(result.activeIncidents.map(item => item.impact), scenario.impacts);
+  }
 });
 
 test("strict required schema, count, dates, identifiers and bounded JSON body", async () => {

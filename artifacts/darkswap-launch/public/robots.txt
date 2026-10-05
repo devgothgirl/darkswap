@@ -7,3 +7,4 @@ Disallow: /create
 Disallow: /creator
 Disallow: /admin
 Disallow: /api/launch/
+Sitemap: https://darkswap.app/launch/sitemap.xml

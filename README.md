@@ -207,8 +207,11 @@ DATABASE_URL=postgresql://127.0.0.1:1/unused_unit_test pnpm --dir scripts exec t
   ../artifacts/api-server/src/routes/near.test.ts \
   ../artifacts/api-server/src/routes/near-trends.test.ts \
   ../artifacts/api-server/src/routes/rewards-order-auth.test.ts \
-  ../artifacts/api-server/src/lib/marketing.test.ts
+  ../artifacts/api-server/src/lib/marketing.test.ts \
+  ../artifacts/api-server/src/lib/pool/relayer.test.ts
 ```
+
+`relayer.test.ts` covers the relayer's fee arithmetic — the operator's margin, each chain's quote, and the check that refuses an underpaying proof — with every chain read stubbed, so it needs no chain, cluster or database.
 
 The database harnesses below require Bash and PostgreSQL binaries **`initdb`, `pg_ctl`, and `psql` on `PATH`**, under a non-root user. Each unsets inherited `DATABASE_URL`, creates a temporary loopback-only cluster and test schema, uses mocks/synthetic callbacks, and stops/removes the cluster on exit. See the separate handoff report for results:
 

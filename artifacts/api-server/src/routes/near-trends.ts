@@ -2,6 +2,58 @@ import { Router, type IRouter } from "express";
 import { GetNearTrendsQueryParams, GetNearTrendsResponse, SearchNearPoolsQueryParams, SearchNearPoolsResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+// Public upstream-proxy endpoints: throttle per IP and globally (same policy as
+// discovery/okx/stonkfun) so a flood of unique queries cannot exhaust the
+// provider's rate budget for all users. Scoped to only this router's two paths
+// so fall-through requests to other routers are never throttled here.
+const buckets = new Map<string, { count: number; until: number }>();
+let globalBucket = { count: 0, until: 0 };
+
+// Cap concurrent in-flight upstream fetches. The slot is held for the entire
+// upstream operation (fetch + body parse), never released on client disconnect,
+// so abandoned requests still count against the cap until they finish or time
+// out (10s). Prevents socket/memory exhaustion from floods of distinct queries.
+let activeUpstream = 0;
+const MAX_CONCURRENT_UPSTREAM = 32;
+
+class MarketCapacityError extends Error {
+  constructor() { super("Market data capacity reached."); this.name = "MarketCapacityError"; }
+}
+
+function acquireUpstream(): void {
+  if (activeUpstream >= MAX_CONCURRENT_UPSTREAM) throw new MarketCapacityError();
+  activeUpstream++;
+}
+
+router.use(["/near/trends", "/near/pools/search"], (req, res, next) => {
+  const now = Date.now();
+  if (globalBucket.until <= now) globalBucket = { count: 0, until: now + 60_000 };
+  if (++globalBucket.count > 600) {
+    res.status(429).set("Retry-After", "10")
+      .json({ error: "Market data capacity reached. Please try again shortly." });
+    return;
+  }
+  for (const [key, bucket] of buckets) if (bucket.until <= now) buckets.delete(key);
+  const key = req.ip || req.socket.remoteAddress || "unknown";
+  let bucket = buckets.get(key);
+  if (!bucket) {
+    if (buckets.size >= 2000) {
+      res.status(429).set("Retry-After", "60")
+        .json({ error: "Too many market data requests. Please try again shortly." });
+      return;
+    }
+    bucket = { count: 0, until: now + 60_000 };
+    buckets.set(key, bucket);
+  }
+  if (++bucket.count > 30) {
+    res.status(429).set("Retry-After", String(Math.max(1, Math.ceil((bucket.until - now) / 1000))))
+      .json({ error: "Please wait before requesting market data again." });
+    return;
+  }
+  next();
+});
+
 type View = "trending" | "new";
 type Trends = ReturnType<typeof GetNearTrendsResponse.parse>;
 type SearchResults = ReturnType<typeof SearchNearPoolsResponse.parse>;
@@ -85,15 +137,20 @@ async function load(view: View): Promise<Trends> {
   const existing = pending.get(view);
   if (existing) return existing;
   const task = (async () => {
-    const path = view === "new" ? "new_pools" : "trending_pools";
-    const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/near/${path}?include=base_token,quote_token,dex`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) throw new Error(`Market provider HTTP ${response.status}`);
-    const result = parseNearPools(await response.json(), view, new Date().toISOString());
-    cache.set(view, { value: result, expires: Date.now() + 90_000 });
-    return result;
+    acquireUpstream();
+    try {
+      const path = view === "new" ? "new_pools" : "trending_pools";
+      const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/near/${path}?include=base_token,quote_token,dex`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new Error(`Market provider HTTP ${response.status}`);
+      const result = parseNearPools(await response.json(), view, new Date().toISOString());
+      cache.set(view, { value: result, expires: Date.now() + 90_000 });
+      return result;
+    } finally {
+      activeUpstream--;
+    }
   })();
   pending.set(view, task);
   try { return await task; }
@@ -107,24 +164,29 @@ async function searchPools(query: string, page: number): Promise<SearchResults> 
   const existing = searchPending.get(cacheKey);
   if (existing) return existing;
   const task = (async () => {
-    const params = new URLSearchParams({
-      query, page: String(page), network: "near", include: "base_token,quote_token,dex",
-    });
-    const response = await fetch(`https://api.geckoterminal.com/api/v2/search/pools?${params}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) throw new Error(`Market provider HTTP ${response.status}`);
-    const payload: unknown = await response.json();
-    const parsedPools = parsePoolRows(payload);
-    const result = SearchNearPoolsResponse.parse({
-      query, page, hasNextPage: parsedPools.hasRawRows && page < 10,
-      updatedAt: new Date().toISOString(), source: "GeckoTerminal", pools: parsedPools.pools,
-    });
-    // Bound the number of distinct search pages retained in memory.
-    if (searchCache.size >= 100) searchCache.delete(searchCache.keys().next().value!);
-    searchCache.set(cacheKey, { value: result, expires: Date.now() + 90_000 });
-    return result;
+    acquireUpstream();
+    try {
+      const params = new URLSearchParams({
+        query, page: String(page), network: "near", include: "base_token,quote_token,dex",
+      });
+      const response = await fetch(`https://api.geckoterminal.com/api/v2/search/pools?${params}`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new Error(`Market provider HTTP ${response.status}`);
+      const payload: unknown = await response.json();
+      const parsedPools = parsePoolRows(payload);
+      const result = SearchNearPoolsResponse.parse({
+        query, page, hasNextPage: parsedPools.hasRawRows && page < 10,
+        updatedAt: new Date().toISOString(), source: "GeckoTerminal", pools: parsedPools.pools,
+      });
+      // Bound the number of distinct search pages retained in memory.
+      if (searchCache.size >= 100) searchCache.delete(searchCache.keys().next().value!);
+      searchCache.set(cacheKey, { value: result, expires: Date.now() + 90_000 });
+      return result;
+    } finally {
+      activeUpstream--;
+    }
   })();
   searchPending.set(cacheKey, task);
   try { return await task; }
@@ -140,7 +202,12 @@ router.get("/near/trends", async (req, res): Promise<void> => {
   try {
     const trends = await load(parsed.data.view ?? "trending");
     res.set("Cache-Control", "public, max-age=60").json(trends);
-  } catch {
+  } catch (error) {
+    if (error instanceof MarketCapacityError) {
+      res.status(429).set("Retry-After", "10")
+        .json({ error: "Market data capacity reached. Please try again shortly." });
+      return;
+    }
     req.log.error("NEAR market data unavailable");
     res.status(503).json({ error: "NEAR market data is temporarily unavailable. Please try again." });
   }
@@ -166,7 +233,12 @@ router.get("/near/pools/search", async (req, res): Promise<void> => {
   try {
     res.set("Cache-Control", "public, max-age=60")
       .json(await searchPools(query.toLocaleLowerCase(), parsed.data.page));
-  } catch {
+  } catch (error) {
+    if (error instanceof MarketCapacityError) {
+      res.status(429).set("Retry-After", "10")
+        .json({ error: "Market data capacity reached. Please try again shortly." });
+      return;
+    }
     req.log.error("NEAR pool search unavailable");
     res.status(503).json({ error: "NEAR pool search is temporarily unavailable. Please try again." });
   }

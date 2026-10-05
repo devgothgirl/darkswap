@@ -63,7 +63,7 @@ function RouteIllustration() {
     <div className="launch-visual" aria-label="Illustration of a manually deposited Solana route">
       <div className="visual-cap">
         <span><i /> ROUTE MODEL / 01</span>
-        <span>NOT A WALLET CONNECTION</span>
+        <span>YOU MAKE THE SEND</span>
       </div>
       <div className="route-stage" data-active={activePoint ?? ""}>
       <svg className="route-art" viewBox="0 0 640 430" role="img" aria-labelledby="route-title route-desc">
@@ -179,7 +179,7 @@ export function Current() {
             <div className="overline"><span className="overline-square" /> SOLANA ORIGIN: NEAR POWERED</div>
             <h1>Move value.<br /><em>Leave less</em><br />behind.</h1>
             <p className="hero-lede">A deposit-based route for Solana holders who want more separation between the wallet they send from and where assets arrive.</p>
-            <div className="hero-qualifier"><LockKeyhole size={15} /><span>No wallet connection. No automatic send.<br /><b>You review, then deposit manually.</b></span></div>
+            <div className="hero-qualifier"><LockKeyhole size={15} /><span>No automatic send. Creating an order moves no funds.<br /><b>You review, then deposit manually.</b></span></div>
             <Link className="hero-cta" href="/near-swap">Open Privacy swap <ArrowRight size={17} /></Link>
             <p className="cta-note">Or <Link href="/swap">use the existing private route</Link> · Quote availability varies</p>
           </div>
@@ -191,7 +191,7 @@ export function Current() {
           <div className="manifesto-side"><span className="manifesto-kicker">THE IDEA</span><span className="manifesto-mark">DS / 01</span></div>
           <div className="manifesto-copy">
             <p>Some routes deserve <i>a little distance.</i></p>
-            <span>DarkSwap gives you a clear place to request a supported Solana-origin private swap or bridge—without connecting a wallet to the app.</span>
+            <span>DarkSwap gives you a clear place to request a supported Solana-origin private swap or bridge—creating an order moves no funds, and any deposit is one you make yourself.</span>
           </div>
           <div className="manifesto-stamp"><Shield size={22} strokeWidth={1.35} /><span>LESS<br />LINKED</span></div>
         </section>
@@ -207,7 +207,7 @@ export function Current() {
               <div className="step-icon"><ArrowDownLeft size={22} /></div>
               <h3>Choose a route</h3>
               <p>Select a Solana asset, a destination supported by the live quote, and enter the receiving address.</p>
-              <span className="step-foot">NO WALLET CONNECTED</span>
+              <span className="step-foot">NOTHING MOVES YET</span>
             </article>
             <div className="step-connector"><span /></div>
             <article className="step-card">
@@ -239,7 +239,7 @@ export function Current() {
               <div className="scope-card-top"><span className="scope-status"><i /> LIVE IN PRIVATE BETA</span><span className="scope-code">01</span></div>
               <div className="scope-emblem"><img src="/__mockup/images/maximum-privacy/atom.png" alt="" /></div>
               <h3>Existing private route</h3>
-              <p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. No wallet connection to DarkSwap.</p>
+              <p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. Creating an order moves no funds.</p>
               <Link href="/swap" className="scope-link">Open existing route <ArrowUpRight size={15} /></Link>
             </article>
             <article className="scope-card scope-live">
@@ -280,7 +280,7 @@ export function Current() {
           <div className="trust-copy">
             <span className="overline"><span className="overline-square" /> PRIVACY, PRECISELY</span>
             <h2>Designed for<br /><em>less linkage.</em></h2>
-             <p>Our private swap routes do not ask to connect to your wallet. You review the available order and make a separate, manual deposit if you choose. The planned cross-chain trading terminal with NEAR Intents is a separate wallet-based experience.</p>
+             <p>Our private swap routes never take control of your wallet. You review the available order and make a separate, manual deposit if you choose. The planned cross-chain trading terminal with NEAR Intents is a separate wallet-based experience.</p>
             <div className="trust-note"><span className="note-bar" /><p>Privacy depends on the route and its providers. DarkSwap does not promise absolute anonymity, hide every on-chain detail, or make a route risk-free.</p></div>
             <a href="#questions" className="text-link">Read the practical details <ArrowRight size={15} /></a>
           </div>
@@ -315,7 +315,7 @@ export function Current() {
           <p>Check the supported options first. Creating an order does not move your funds; deposit instructions come after order creation.</p>
            <Link className="hero-cta closing-button" href="/near-swap">Open Privacy swap <ArrowRight size={17} /></Link>
           <p className="cta-note">Prefer the original flow? <Link href="/swap">Open the existing route</Link></p>
-          <span className="closing-note"><LockKeyhole size={13} /> No wallet connection required</span>
+          <span className="closing-note"><LockKeyhole size={13} /> Creating an order moves no funds</span>
         </section>
         <div className="launch-banner-wrap" id="brand-banner">
           <img

@@ -1,0 +1,44 @@
+.privacy-route-diagram {
+  margin: 28px 0 34px;
+  border: 1px solid #3d374c;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0c0a11;
+}
+
+.privacy-route-diagram picture,
+.privacy-route-diagram img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.privacy-route-diagram figcaption {
+  padding: 16px 20px;
+  border-top: 1px solid #292532;
+  color: #d1bdec;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.privacy-route-diagram-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-top: 12px;
+}
+
+.privacy-route-diagram-downloads a {
+  color: #d6bdfa;
+  text-underline-offset: 4px;
+  padding: 6px 0;
+}
+
+.privacy-route-diagram-downloads a:hover {
+  color: #ffffff;
+}
+
+.privacy-route-diagram-downloads a:focus-visible {
+  outline: 2px solid #d6bdfa;
+  outline-offset: 4px;
+}

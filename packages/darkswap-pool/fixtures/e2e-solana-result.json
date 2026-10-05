@@ -1,0 +1,85 @@
+{
+  "programId": "E53cjqAz5NavCZM8uDR44GXrGTRhbLCBQT5gqK8QFcH6",
+  "steps": [
+    {
+      "name": "initialize: refused for a stranger, done by the upgrade authority; fee capped at 1%",
+      "feeBps": 50
+    },
+    {
+      "name": "list SOL and a 6-decimal test token; a stranger cannot list"
+    },
+    {
+      "name": "shield 1 SOL, 0.5 SOL, 500 tokens; a 1-lamport deposit is refused; wallet finds all three notes",
+      "notes": [
+        "1000000000",
+        "500000000",
+        "500000000"
+      ]
+    },
+    {
+      "name": "attack: a deposit whose logs are cut off is still synced and found (sync reads instruction data)"
+    },
+    {
+      "name": "alice sends 1.2 SOL privately to bob; relayer submits; asset hidden",
+      "proveMs": 4313,
+      "units": 166834,
+      "txBytes": 972
+    },
+    {
+      "name": "bob finds 1.2 SOL; alice finds 0.3 SOL change; spent notes drop out"
+    },
+    {
+      "name": "bob unshields 1 SOL to a fresh address (0.995 after the fee); relayer paid 0.002 SOL; a pre-funded nullifier address did not block it",
+      "units": 166561,
+      "txBytes": 1072,
+      "relayerNetLamports": 1104120
+    },
+    {
+      "name": "replaying the same proof is refused: NullifierAlreadySpent"
+    },
+    {
+      "name": "redirecting the payout or doubling the amount after proving is refused: InvalidProof"
+    },
+    {
+      "name": "honest token unshield goes through: 100 tokens out, 1 token to the relayer",
+      "units": 172970,
+      "txBytes": 1170
+    },
+    {
+      "name": "pause: deposits refused, a withdrawal still goes through"
+    },
+    {
+      "name": "pool books match its vaults; protocol fees accrue apart from them",
+      "solLamports": "408000000",
+      "solFees": "13050000",
+      "tokenFees": "3000000"
+    },
+    {
+      "name": "a stranger sweeps the fees to the fixed fee recipient; wrong destinations are refused",
+      "solFees": "13050000",
+      "tokenFees": "3000000"
+    }
+  ],
+  "costs": {
+    "shield SOL": {
+      "units": 36588,
+      "bytes": 514
+    },
+    "shield token": {
+      "units": 37752,
+      "bytes": 613
+    },
+    "private send": {
+      "units": 166834,
+      "bytes": 972
+    },
+    "unshield SOL with fee": {
+      "units": 166561,
+      "bytes": 1072
+    },
+    "unshield token with fee": {
+      "units": 172970,
+      "bytes": 1170
+    }
+  }
+}

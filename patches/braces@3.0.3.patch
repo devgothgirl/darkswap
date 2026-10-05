@@ -1,0 +1,62 @@
+diff --git a/lib/check-depth.js b/lib/check-depth.js
+new file mode 100644
+--- /dev/null
++++ b/lib/check-depth.js
+@@ -0,0 +1,18 @@
++'use strict';
++// Bound recursion before any AST walker runs, including caller-provided ASTs.
++module.exports = ast => {
++  const pending = [[ast, 0]];
++  const seen = new Set();
++  while (pending.length) {
++    const [node, depth] = pending.pop();
++    if (!node || typeof node !== 'object') continue;
++    if (depth > 128 || seen.has(node)) {
++      throw new RangeError('braces AST exceeds safe nesting depth');
++    }
++    seen.add(node);
++    if (Array.isArray(node.nodes)) {
++      for (const child of node.nodes) pending.push([child, depth + 1]);
++    }
++  }
++};
++
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -147,4 +147,7 @@
+     if (value === CHAR_LEFT_PARENTHESES) {
++      if (stack.length >= 128) {
++        throw new RangeError('braces pattern exceeds safe nesting depth');
++      }
+       block = push({ type: 'paren', nodes: [] });
+       stack.push(block);
+       push({ type: 'text', value });
+@@ -190,3 +193,6 @@
+     if (value === CHAR_LEFT_CURLY_BRACE) {
++      if (stack.length >= 128) {
++        throw new RangeError('braces pattern exceeds safe nesting depth');
++      }
+       depth++;
+ 
+diff --git a/lib/compile.js b/lib/compile.js
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -6,2 +6,3 @@
+ const compile = (ast, options = {}) => {
++  require('./check-depth')(ast);
+   const walk = (node, parent = {}) => {
+diff --git a/lib/expand.js b/lib/expand.js
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -33,2 +33,3 @@
+ const expand = (ast, options = {}) => {
++  require('./check-depth')(ast);
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+diff --git a/lib/stringify.js b/lib/stringify.js
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -5,2 +5,3 @@
+ module.exports = (ast, options = {}) => {
++  require('./check-depth')(ast);
+   const stringify = (node, parent = {}) => {

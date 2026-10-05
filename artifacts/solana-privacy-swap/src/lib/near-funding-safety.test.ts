@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { NearOrder, NearServiceStatus } from '@workspace/api-client-react';
 import { nearFundingReady, nearOrderFingerprint, nearRouteReady, type NearFundingReadiness } from './near-funding-safety';
+import { createNearServiceStatusAdapter } from '../../../api-server/src/lib/near-service-status';
 
 const now = Date.parse('2026-10-01T12:00:00Z');
 const route: NearServiceStatus = {
@@ -102,4 +103,42 @@ test('route incident transitions revoke funding even when review and order remai
   assert.equal(nearRouteReady({
     status: route, updatedAt: now, error: false, fetchStatus: 'idle', online: true, now: now + 60_000,
   }), false, 'time passing alone removes funding eligibility');
+});
+
+test('actual endpoint incident policy agrees with funding gates without waiving live review or freshness', async () => {
+  const entry = (scopeValue: string, scopeType = 'chain', status = 'active') => ({
+    id: `${scopeType}-${scopeValue}`, scopeType, scopeValue, status,
+    createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(),
+  });
+  const cases = [
+    { entries: [entry('stellar')], allowed: true },
+    { entries: [entry('plasma', 'chain_all')], allowed: true },
+    { entries: [entry('near')], allowed: false },
+    { entries: [entry('sol', 'chain_all')], allowed: false },
+    { entries: [entry('stellar'), entry('unknown')], allowed: false },
+    { entries: [entry('stellar', 'bridge')], allowed: false },
+    { entries: [entry('stellar', 'chain', 'acknowledged')], allowed: false },
+  ];
+  for (const scenario of cases) {
+    const get = createNearServiceStatusAdapter({ now: () => now, fetcher: async () => Response.json({
+      activeIncidentCount: scenario.entries.length, activeIncidents: scenario.entries, recentlyResolved: [],
+    }) });
+    const routeStatus = await get('sol', 'near');
+    const liveOrder = {
+      ...order, to: { ...order.to, chain: 'near', id: 'nep141:wrap.near', symbol: 'NEAR', chainName: 'NEAR' },
+      recipient: 'incident-test.near', routeStatus,
+    };
+    const input = {
+      ...ready, order: liveOrder, acceptedFingerprint: nearOrderFingerprint(liveOrder), routeStatus,
+    };
+    assert.equal(nearRouteReady({
+      status: routeStatus, updatedAt: now, error: false, fetchStatus: 'idle', online: true, now,
+    }), scenario.allowed);
+    assert.equal(nearFundingReady(input), scenario.allowed);
+    assert.equal(nearFundingReady({ ...input, acceptedFingerprint: null }), false);
+    assert.equal(nearFundingReady({ ...input, online: false }), false);
+    assert.equal(nearFundingReady({ ...input, routeError: true }), false);
+    assert.equal(nearFundingReady({ ...input, orderUpdatedAt: now - 30_001 }), false);
+    assert.equal(nearFundingReady({ ...input, routeStatus: route }), scenario.allowed, 'attached holds veto an older allowed query');
+  }
 });

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Save, Upload, Loader2, Lock, Check, X as XIcon, ImageIcon, CircleAlert, CircleCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Input } from '@workspace/darkswap-design-system/components/ui/input';
+import { Textarea } from '@workspace/darkswap-design-system/components/ui/textarea';
+import { Label } from '@workspace/darkswap-design-system/components/ui/label';
+import { Checkbox } from '@workspace/darkswap-design-system/components/ui/checkbox';
+import { Skeleton } from '@workspace/darkswap-design-system/components/ui/skeleton';
+import { useToast } from '@workspace/darkswap-design-system/hooks/use-toast';
 import {
   useGetStonkfunPairs,
   getGetStonkfunPairsQueryKey,
@@ -31,7 +31,7 @@ import { ErrorState, Pill, TokenAvatar } from '@/components/bits';
 import { useWallet, useCsrfRequest } from '@/lib/wallet';
 import { usePageMeta } from '@/lib/seo';
 import { HTTP_URL, fmtSupply, logoSrc, readError, shortAddr } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@workspace/darkswap-design-system/lib/utils';
 
 const DEFAULT: LaunchDraftInput = {
   name: '', symbol: '', description: '', website: '', x: '', telegram: '', discord: '', github: '',

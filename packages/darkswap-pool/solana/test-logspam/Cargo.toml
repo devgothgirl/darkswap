@@ -1,0 +1,15 @@
+[package]
+name = "logspam"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "TEST ONLY: logs ~12 KB so the next instruction's logs get cut off. Used to prove wallet sync does not depend on logs."
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+solana-account-info.workspace = true
+solana-msg.workspace = true
+solana-program-entrypoint.workspace = true
+solana-pubkey.workspace = true

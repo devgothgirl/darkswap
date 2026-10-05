@@ -1,0 +1,75 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -41,7 +41,9 @@
+   "dependencies": {
+     "blake-hash": "^2.0.0",
+     "blake2b": "^2.1.3",
+-    "ethers": "^5.5.1",
++    "@ethersproject/bytes": "^5.8.0",
++    "@ethersproject/keccak256": "^5.8.0",
++    "@ethersproject/strings": "^5.8.0",
+     "ffjavascript": "^0.2.45"
+   }
+ }
+diff --git a/src/ethers-utils.cjs b/src/ethers-utils.cjs
+new file mode 100644
+--- /dev/null
++++ b/src/ethers-utils.cjs
+@@ -0,0 +1,10 @@
++'use strict';
++// circomlibjs uses only these hashing/encoding utilities, never ECDSA.
++// Import the original utilities without ethers' vulnerable signing graph.
++exports.ethers = {
++  utils: {
++    ...require('@ethersproject/bytes'),
++    ...require('@ethersproject/keccak256'),
++    ...require('@ethersproject/strings')
++  }
++};
+diff --git a/build/main.cjs b/build/main.cjs
+--- a/build/main.cjs
++++ b/build/main.cjs
+@@ -5,5 +5,5 @@
+ var ffjavascript = require('ffjavascript');
+ var blake2b = require('blake2b');
+ var createBlakeHash = require('blake-hash');
+-var ethers = require('ethers');
++var ethers = require('../src/ethers-utils.cjs');
+ var assert = require('assert');
+diff --git a/src/mimc7.js b/src/mimc7.js
+--- a/src/mimc7.js
++++ b/src/mimc7.js
+@@ -3,1 +3,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";
+diff --git a/src/mimcsponge.js b/src/mimcsponge.js
+--- a/src/mimcsponge.js
++++ b/src/mimcsponge.js
+@@ -2,1 +2,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";
+diff --git a/src/evmasm.js b/src/evmasm.js
+--- a/src/evmasm.js
++++ b/src/evmasm.js
+@@ -5,1 +5,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";
+diff --git a/src/mimc7_gencontract.js b/src/mimc7_gencontract.js
+--- a/src/mimc7_gencontract.js
++++ b/src/mimc7_gencontract.js
+@@ -5,1 +5,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";
+diff --git a/src/mimcsponge_gencontract.js b/src/mimcsponge_gencontract.js
+--- a/src/mimcsponge_gencontract.js
++++ b/src/mimcsponge_gencontract.js
+@@ -5,1 +5,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";
+diff --git a/src/poseidon_gencontract.js b/src/poseidon_gencontract.js
+--- a/src/poseidon_gencontract.js
++++ b/src/poseidon_gencontract.js
+@@ -8,1 +8,1 @@
+-import { ethers } from "ethers";
++import { ethers } from "./ethers-utils.cjs";

@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ShieldX, Plus, Trash2, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Input } from '@workspace/darkswap-design-system/components/ui/input';
+import { Textarea } from '@workspace/darkswap-design-system/components/ui/textarea';
+import { Label } from '@workspace/darkswap-design-system/components/ui/label';
+import { Switch } from '@workspace/darkswap-design-system/components/ui/switch';
+import { Skeleton } from '@workspace/darkswap-design-system/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/darkswap-design-system/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/darkswap-design-system/components/ui/select';
+import { useToast } from '@workspace/darkswap-design-system/hooks/use-toast';
 import {
   useGetLaunchAdminConfig,
   getGetLaunchAdminConfigQueryKey,

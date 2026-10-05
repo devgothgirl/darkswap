@@ -111,7 +111,7 @@ export function Header() {
           <div><span className="section-label">Order lookup</span><h2 id="lookup-title">Find your transfer.</h2></div>
           <button className="secondary-button" onClick={() => setLookupOpen(false)} aria-label="Close" data-testid="button-close-lookup"><X size={15}/></button>
         </div>
-        <p>Enter the order ID from your deposit instructions. No wallet connection needed.</p>
+        <p>Enter the order ID from your deposit instructions. Tracking is read-only.</p>
         <form onSubmit={submit}>
           <label className="section-label" htmlFor="lookup-id" style={{marginTop:22}}>Order ID</label>
           <input id="lookup-id" className="input-standard" autoFocus value={id} onChange={e=>setId(e.target.value)} placeholder="Paste your order ID" data-testid="input-order-id"/>

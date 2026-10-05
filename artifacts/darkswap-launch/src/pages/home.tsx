@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'wouter';
 import { useQueries } from '@tanstack/react-query';
 import { ArrowRight, Lock, Star, Network, Compass, PenLine, Layers, ShieldAlert, Wallet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
 import {
   useGetStonkfunTokens,
   getGetStonkfunTokensQueryKey,
@@ -133,19 +133,19 @@ export default function Home() {
 
       <Page className="space-y-24">
         <section aria-labelledby="trending">
-          <SectionHead eyebrow="01 / Activity" title="Trending on DarkSwap" action={null}>
+          <SectionHead id="trending" eyebrow="01 / Activity" title="Trending on DarkSwap" action={null}>
             Ranked by provider-reported 24h volume, not market cap. Holder, buyer and transaction counts are not available from the current source.
           </SectionHead>
           <TokenModule params={{ view: 'trending', pageSize: 12 }} exploreView="trending" emptyTitle="Nothing trending right now" emptyBody="The discovery source returned no active tokens for this view." />
         </section>
 
         <section aria-labelledby="new">
-          <SectionHead eyebrow="02 / Recency" title="New launches">Newest first, as listed by the provider. Listing time is a provider timestamp, not a verified chain launch time.</SectionHead>
+          <SectionHead id="new" eyebrow="02 / Recency" title="New launches">Newest first, as listed by the provider. Listing time is a provider timestamp, not a verified chain launch time.</SectionHead>
           <TokenModule params={{ view: 'new', pageSize: 12 }} exploreView="new" emptyTitle="No new launches listed" emptyBody="Check back shortly; the catalog refreshes on a short cache." />
         </section>
 
         <section aria-labelledby="dark">
-          <SectionHead eyebrow="03 / Ecosystem" title="Built around $DARK">Build around $DARK. Only tokens quoted in the configured, verified $DARK mint on mainnet-beta appear here. Ticker look-alikes never qualify.</SectionHead>
+          <SectionHead id="dark" eyebrow="03 / Ecosystem" title="Built around $DARK">Build around $DARK. Only tokens quoted in the configured, verified $DARK mint on mainnet-beta appear here. Ticker look-alikes never qualify.</SectionHead>
           {cfg.isLoading ? (
             <CardGridSkeleton count={3} />
           ) : cfg.isError ? (
@@ -166,7 +166,7 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="near">
-          <SectionHead eyebrow="04 / Ecosystem" title="NEAR ecosystem launches">
+          <SectionHead id="near" eyebrow="04 / Ecosystem" title="NEAR ecosystem launches">
             Solana tokens quoted in an evidence-backed NEAR-symbol Solana mint. This does not imply native NEAR-chain support or bridging.
           </SectionHead>
           {config && !config.nearPairingEnabled ? (
@@ -177,7 +177,7 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="dark-launching">
-          <SectionHead eyebrow="05 / Featured" title="Launching in the Dark">Featured $DARK-paired launches only. Admin-curated mints appear first when verified; otherwise verified $DARK-paired tokens ranked by available 24h volume, then listing time.</SectionHead>
+          <SectionHead id="dark-launching" eyebrow="05 / Featured" title="Launching in the Dark">Featured $DARK-paired launches only. Admin-curated mints appear first when verified; otherwise verified $DARK-paired tokens ranked by available 24h volume, then listing time.</SectionHead>
           {cfg.isLoading ? <CardGridSkeleton count={3} /> : cfg.isError ? (
             <ErrorState title="Launch configuration unavailable" message={readError(cfg.error).message} onRetry={() => cfg.refetch()} />
           ) : darkLive ? <DarkFeatured featuredMints={config?.featuredMints ?? []} /> : (

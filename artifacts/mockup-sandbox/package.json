@@ -4,8 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
+    "check:claims": "node ../../scripts/check-retired-marketing-claims.mjs",
+    "test:claims": "node --test ../../scripts/check-retired-marketing-claims.test.mjs",
+    "dev": "pnpm run check:claims && vite dev",
+    "build": "pnpm run check:claims && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
+modules = ["nodejs-24", "python-base-3.13", "rust-stable", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -11,6 +11,56 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "theme"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "retired-claims"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "docs-fee"
+
+[[workflows.workflow]]
+name = "theme"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/solana-privacy-swap run check:theme"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "retired-claims"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/mockup-sandbox run check:claims && pnpm --filter @workspace/mockup-sandbox run test:claims"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "docs-fee"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/api-server run test:docs-fee"
+
+[workflows.workflow.metadata]
+isValidation = true
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -21,3 +71,19 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
+packages = ["foundry", "circom"]
+
+[userenv]
+
+[userenv.shared]
+MARKETING_PUBLIC_URL = "https://darkswap.app"
+MARKETING_FROM_EMAIL = "support@darkswap.app"
+MARKETING_POSTAL_ADDRESS = "4750 LINCOLN BLVD LOS ANGELES CA 90292 USA"
+POOL_RELAY_MIN_FEE_BASE_SEPOLIA = "0"
+POOL_RELAY_MIN_FEE_SEPOLIA = "0"
+POOL_RELAY_MIN_FEE_SOLANA_DEVNET = "500000"
+NEAR_PARTNER_FEE_BPS = "40"
+NEAR_PARTNER_PAYOUT_ADDRESS = "darkswapapp.near"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-dc4023fd-be53-413e-ba26-3199e3d6b9ef"

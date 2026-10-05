@@ -1,4 +1,12 @@
-type EventName = "swap_entry_clicked" | "terminal_opened" | "loyalty_details_clicked" | "token_mechanics_opened" | "docs_opened" | "previews_opened" | "faq_opened" | "rewards_page_opened" | "docs_topic_opened" | "preview_opened";
+type EventName = "swap_entry_clicked" | "terminal_opened" | "loyalty_details_clicked" | "token_mechanics_opened" | "docs_opened" | "previews_opened" | "faq_opened" | "rewards_page_opened" | "docs_topic_opened" | "preview_opened"
+  | "swap_route_tab_clicked" | "swap_review_opened" | "swap_quote_refreshed" | "swap_quote_requested"
+  | "swap_order_created" | "swap_order_failed" | "order_detail_copied"
+  | "announcement_viewed" | "announcement_action" | "token_address_copied"
+  | "whitepaper_opened" | "whitepaper_section_opened" | "whitepaper_print_opened"
+  | "help_answer_opened" | "support_request_sent"
+  | "order_status_viewed" | "order_shared" | "rewards_console_opened" | "near_intents_opened"
+  | "updates_signup_completed" | "rewards_account_viewed" | "rewards_enrollment_step";
+export type SwapRoute = "private_route" | "privacy_swap";
 type EventData = Record<string, string | number | boolean>;
 
 declare global {
@@ -44,5 +52,9 @@ export function trackLandingClick(target: EventTarget | null): void {
     trackEvent("previews_opened", { location });
   } else if (href === `${base}/rewards`) {
     trackEvent("rewards_page_opened", { location });
+  } else if (href === "https://rewards.darkswap.app") {
+    trackEvent("rewards_console_opened", { location });
+  } else if (href === "https://near-intents.org/") {
+    trackEvent("near_intents_opened", { location });
   }
 }

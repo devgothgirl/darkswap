@@ -10,28 +10,28 @@
   margin-top: 53px;
   display: grid;
   place-items: center;
-  border: 1px solid #72588b;
+  border: 1px solid #433d50;
   border-radius: 50%;
-  color: #c7a7ff;
-  background: #30213f;
+  color: #cdaef8;
+  background: #191521;
 }
 .closed-beta-label {
   margin: 25px 0 12px;
-  color: #c7a7ff;
+  color: #cdaef8;
   font: 700 12px 'Source Sans 3', sans-serif;
   letter-spacing: .14em;
 }
 .closed-beta-page h1 {
   margin: 0;
-  color: #f7efff;
+  color: hsl(var(--foreground));
   font: 700 clamp(40px, 6.5vw, 72px)/1.12 'Source Sans 3', sans-serif;
   letter-spacing: -.01em;
 }
-.closed-beta-page h1 span { color: #c7a7ff; }
+.closed-beta-page h1 span { color: #cdaef8; }
 .closed-beta-copy {
   max-width: 580px;
   margin: 23px 0 0;
-  color: #d7c9e4;
+  color: #d3c0ed;
   font-size: 18px;
   line-height: 1.75;
 }

@@ -5,7 +5,18 @@ import type { NearServiceIncident, NearServiceStatus } from "@workspace/api-zod"
 // and order lifecycle. Never forward caller headers or follow redirects.
 export const NEAR_STATUS_FEED = "https://partners.near-intents.org/api/shield/public/status";
 const SOURCE = "https://partners.near-intents.org/shield/status";
-const CHAINS = new Set(["sol", "near", "eth", "arb", "base", "op", "pol", "bsc"]);
+const ROUTE_CHAINS = new Set(["sol", "near", "eth", "arb", "base", "op", "pol", "bsc"]);
+// Exact blockchain identifiers in the first-party 1Click /v0/tokens catalog,
+// verified 2026-10-02. Recognition is NOT selectable/executable route support.
+// Keep bounded and reviewed, not dynamically expanded from an incident value.
+// chain/chain_all compare endpoints only; no bridge/transit graph is inferred.
+// Sources, unresolved direction semantics and maintenance: docs/near-rail-status-safety.md.
+const INCIDENT_CHAINS = new Set([
+  "abs", "adi", "aleo", "aptos", "arb", "avax", "base", "bch", "bera", "bsc",
+  "btc", "cardano", "dash", "doge", "eth", "fogo", "gnosis", "hood", "hypercore",
+  "ltc", "monad", "movement", "near", "op", "plasma", "pol", "scroll", "sol",
+  "starknet", "stellar", "sui", "ton", "tron", "xlayer", "xrp", "zec",
+]);
 const CACHE_MS = 30_000;
 const FAILURE_CACHE_MS = 10_000;
 const FRESH_MS = 60_000;
@@ -117,9 +128,9 @@ export function createNearServiceStatusAdapter(
     if (loading) await loading;
     const expired = lastSuccess !== undefined && now() >= lastSuccess + FRESH_MS;
     const state: NearServiceStatus["state"] = expired ? "stale" : lastFailure ?? (lastFeed ? "fresh" : "unavailable");
-    const knownRoute = !!fromChain && !!toChain && CHAINS.has(fromChain) && CHAINS.has(toChain);
+    const knownRoute = !!fromChain && !!toChain && ROUTE_CHAINS.has(fromChain) && ROUTE_CHAINS.has(toChain);
     const impact = (scopeType: string, scopeValue: string): NearServiceIncident["impact"] => {
-      if (!knownRoute || !["chain", "chain_all"].includes(scopeType) || !CHAINS.has(scopeValue)) return "unverified";
+      if (!knownRoute || !["chain", "chain_all"].includes(scopeType) || !INCIDENT_CHAINS.has(scopeValue)) return "unverified";
       return scopeValue === fromChain || scopeValue === toChain ? "matching" : "unrelated";
     };
     const activeIncidents: NearServiceIncident[] = (lastFeed?.activeIncidents ?? []).map(item => ({

@@ -13,7 +13,7 @@ function Sparkline({ token }: { token: DemoToken }) {
   const pts = s.map((v, i) => `${(i / (s.length - 1)) * 100},${40 - ((v - min) / r) * 36 - 2}`).join(' ');
   const up = token.change24h >= 0;
   return <svg className="tp-spark" viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label={`Synthetic demo price series for ${token.symbol}, ${up ? 'rising' : 'falling'}`}>
-    <polyline points={pts} fill="none" stroke={up ? '#8fe3b8' : '#ff9aa8'} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+    <polyline points={pts} fill="none" stroke={up ? '#a883e0' : '#ef9fa7'} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
   </svg>;
 }
 
@@ -131,7 +131,7 @@ export default function TerminalPreview() {
             <strong>Simulation complete. Nothing was executed.</strong>
             <span>Demo {result.side} of {result.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })} {result.symbol} would {result.side === 'buy' ? 'cost' : 'return'} ${result.total.toFixed(2)} including ${result.fee.toFixed(2)} demo fee.</span>
           </div>}</div>
-          <p className="tp-note">The arbitrary 0.3% demo fee is not a live quote or the proposed 3% token fee. Slippage and rewards are excluded. No wallet, funds, points or account state are touched.</p>
+          <p className="tp-note">The arbitrary 0.3% demo fee is not a live quote or the reported 1% wNEAR creator fee. Slippage and rewards are excluded. No wallet, funds, points or account state are touched.</p>
         </form>
       </div>
 

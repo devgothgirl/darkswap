@@ -23,15 +23,20 @@ remain available under `/api/stonkfun/...` and `/api/launch/...`.
 `/launch/api` is **not** a second alias for swap, marketing, or existing rewards
 routes. The launch artifact never imports another artifact's source.
 
-Target hostname: `launch.darkswap.app`. It is a deployment target, **not a claim
-that this hostname is live**. This work does not publish or change DNS/TLS.
+Current owner-selected Launch target: `darkswap.world`, replacing the earlier
+`launch.darkswap.app` plan. Only preparation is authorized. The existing site at
+`darkswap.world` must not be replaced without separate release approval; this
+target is **not a claim that Launch is live there**. This work does not publish
+or change DNS/TLS. The existing `darkswap.app` swap root must remain unchanged.
 The existing production deployment was reported as `https://darkswap.app` by the
 deployment service during implementation.
 
 For a subdomain-root build, set `BASE_PATH=/` when building this frontend.
 This makes its assets/routes root-based and its API requests `/api/...`.
-Serve `dist/public` with an SPA fallback **after** routing `/api` to the shared
-API server. The same-origin API ingress must preserve Origin, cookies, HTTPS
+Serve its root-built public assets with the standalone SSR renderer for page
+routes **after** routing `/api` to the shared API server; current Launch pages
+must not be replaced with a static HTML fallback. The same-origin API ingress
+must preserve Origin, cookies, HTTPS
 scheme and the intended host, and forward only the Launch discovery/private
 endpoints if the deployment should expose no other product APIs. Do not put API
 secrets in the frontend or call StonkFun from browser code.
@@ -44,6 +49,11 @@ a separate frontend deployment/project with a controlled same-origin API
 ingress. Do not change this workspace's root artifact to solve that problem.
 
 Owner-controlled release checks:
+
+Preparation for the owner's chosen separate frontend deployment is documented
+in [launch-standalone-deployment.md](launch-standalone-deployment.md). Preparation
+approval does not authorize publishing or DNS changes; that document records
+the remaining Host-preserving API ingress and production release blockers.
 
 1. Choose and verify the hostname-aware ingress/deployment topology.
 2. Build Launch with `/` only for its independent root host; keep `/launch/` here.

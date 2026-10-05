@@ -1,0 +1,11 @@
+[
+  "/pool",
+  "/pool/activate",
+  "/pool/shield",
+  "/pool/send",
+  "/pool/unshield",
+  "/pool/receive",
+  "/pool/activity",
+  "/pool/fees",
+  "/pool/what-stays-public"
+]

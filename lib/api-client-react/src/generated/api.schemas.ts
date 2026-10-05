@@ -5,6 +5,25 @@
  * Solana discovery, Houdini and NEAR Intents private routes, and separate OKX public swaps
  * OpenAPI spec version: 0.1.0
  */
+export type DarkRewardsEstimateLatestAirdrop = {
+  /** Sequence number of the latest $DARK airdrop */
+  number: number;
+  /** wNEAR paid in that airdrop */
+  usd: number;
+  /** Eligible holders paid in that airdrop */
+  holders: number;
+};
+
+export interface DarkRewardsEstimate {
+  /** Date the distributions were confirmed by the owner */
+  confirmedAsOf: string;
+  /** When the token prices were fetched */
+  pricedAt: string;
+  /** All wNEAR and DARK distributed */
+  allTimeUsd: number;
+  latestAirdrop: DarkRewardsEstimateLatestAirdrop;
+}
+
 /**
  * Base58 Solana address; server must additionally validate decoded 32-byte public key.
  * @minLength 32
@@ -1587,6 +1606,9 @@ export interface SwapChainList {
   chains: SwapChainListChainsItem[];
 }
 
+/**
+ * Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.
+ */
 export type NearServiceIncidentImpact = typeof NearServiceIncidentImpact[keyof typeof NearServiceIncidentImpact];
 
 
@@ -1604,6 +1626,7 @@ export interface NearServiceIncident {
   createdAt: string;
   updatedAt?: string;
   resolvedAt?: string;
+  /** Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified. */
   impact: NearServiceIncidentImpact;
 }
 
@@ -1690,6 +1713,12 @@ export interface NearQuote {
   minAmountOut: string;
   withdrawFee?: string;
   refundFee?: string;
+  /**
+     * DarkSwap partner fee in basis points
+     * @minimum 1
+     * @maximum 480
+     */
+  appFeeBps?: number;
   recipient: string;
   refundTo: string;
   validUntil: string;
@@ -1734,6 +1763,12 @@ export interface NearOrder {
   minAmountOut: string;
   withdrawFee?: string;
   refundFee?: string;
+  /**
+     * DarkSwap partner fee in basis points
+     * @minimum 1
+     * @maximum 480
+     */
+  appFeeBps?: number;
   recipient: string;
   refundTo: string;
   status: NearOrderStatus;

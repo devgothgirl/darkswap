@@ -7,10 +7,13 @@ import type { NearOrder, NearQuote, NearToken } from '@workspace/api-client-reac
 import { errorText, Footer, Header } from '../components/swap-ui';
 import { RewardOrderChoice } from '../components/reward-enrollment';
 import { useRewards } from '../hooks/use-rewards';
+import { trackEvent } from '../lib/analytics';
+import { RouteTabs, carriedAmount } from '../components/route-tabs';
 import { compareDestinations } from '../lib/destination-sort';
 import { NearServiceNotice, useNearRouteSafety } from '../components/near-service-notice';
 import { nearRouteReady } from '../lib/near-funding-safety';
 import './near.css';
+import './swap.css';
 
 const RECENT_KEY = 'dark-swap:near-recent-order';
 const MINIMUM_SWAP_USD = 3;
@@ -41,7 +44,7 @@ function AssetPicker({ side, token, onPick, selectedSource }: { side: 'source' |
     {open && <div className="near-picker">
       <div className="near-picker-title"><span>{side === 'source' ? 'SOLANA ASSETS' : chain ? 'DESTINATION ASSETS' : 'DESTINATION NETWORKS'}</span><button className="near-button near-button--text" type="button" onClick={() => setOpen(false)} aria-label="Close asset list" data-testid={`button-close-near-${side}-assets`}><X size={16}/></button></div>
       {destination && chain && <button className="near-button near-button--text" type="button" onClick={() => {setChain(null);setTerm('');}}>← All networks</button>}
-      <div style={{ position: 'relative' }}><Search size={14} style={{ position: 'absolute', top: 16, left: 12, color: '#ac9dbc' }}/><input className="near-input" style={{ paddingLeft: 34 }} value={term} onChange={e => setTerm(e.target.value)} placeholder={destination && !chain ? 'Search destination networks' : 'Search assets'} aria-label={`Search ${side} assets`} autoFocus data-testid={`input-search-near-${side}`}/></div>
+      <div style={{ position: 'relative' }}><Search size={14} style={{ position: 'absolute', top: 16, left: 12, color: '#9c74d7' }}/><input className="near-input" style={{ paddingLeft: 34 }} value={term} onChange={e => setTerm(e.target.value)} placeholder={destination && !chain ? 'Search destination networks' : 'Search assets'} aria-label={`Search ${side} assets`} autoFocus data-testid={`input-search-near-${side}`}/></div>
       <div className="near-picker-list" role="listbox" aria-label={`${side} assets`}>
         {tokens.isLoading || (!destination && tokens.isFetching && search !== term.trim()) ? <><div className="near-skeleton"/><div className="near-skeleton"/></>
           : tokens.isError ? <div><p className="near-error" role="alert">{errorText(tokens.error)}</p><button className="near-button near-button--subtle" type="button" onClick={() => tokens.refetch()} data-testid={`button-retry-near-${side}-assets`}>Try again</button></div>
@@ -65,7 +68,7 @@ export default function NearSwapPage() {
   const [from, setFrom] = useState<NearToken | null>(null);
   const [to, setTo] = useState<NearToken | null>(null);
   const routeSafety = useNearRouteSafety(from?.chain ?? 'sol', to?.chain);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(carriedAmount);
   const [recipient, setRecipient] = useState('');
   const [refundTo, setRefundTo] = useState('');
   const [preview, setPreview] = useState<NearQuote | null>(null);
@@ -85,6 +88,17 @@ export default function NearSwapPage() {
   const belowMinimum = estimatedUsd !== null && estimatedUsd < MINIMUM_SWAP_USD;
   const priceUnavailable = !!from && amountValid && estimatedUsd === null;
   const canQuote = Boolean(from && to && from.id !== to.id && amountValid && !belowMinimum && !priceUnavailable && recipient.trim().length > 0 && recipient.trim().length <= 120 && refundTo.trim().length > 0 && refundTo.trim().length <= 120);
+  const nearBlocker = !from ? 'Choose the Solana asset you send'
+    : !amount ? 'Enter an amount to send'
+    : !amountValid ? `Enter a valid amount${from ? ` (up to ${from.decimals} decimals)` : ''}`
+    : priceUnavailable ? 'A USD price is unavailable for this asset right now'
+    : belowMinimum ? `Minimum swap is $${MINIMUM_SWAP_USD} USD`
+    : !to ? 'Choose what you receive'
+    : from.id === to.id ? 'Choose two different assets'
+    : !recipient.trim() ? `Enter your ${to.symbol} address on ${to.chainName}`
+    : !refundTo.trim() ? 'Enter a Solana refund address'
+    : quote.isPending ? 'Requesting quote…'
+    : '';
   const expiresAt = preview ? Math.min(new Date(preview.validUntil).getTime(), quotedAt + 45_000) : 0;
   const secondsLeft = preview ? Math.max(0, Math.ceil((expiresAt - now) / 1000)) : 0;
   const live = !!preview && Number.isFinite(expiresAt) && secondsLeft > 0;
@@ -94,7 +108,8 @@ export default function NearSwapPage() {
     setPreview(null);
     setConfirm(false);
     quote.mutate({ data: { from: from.id, to: to.id, amount, recipient: recipient.trim(), refundTo: refundTo.trim() } }, {
-      onSuccess: result => { if (generation.current === request) { setPreview(result); setQuotedAt(Date.now()); } }
+      onSuccess: result => { trackEvent('swap_quote_requested', { route: 'privacy_swap', outcome: 'received' }); if (generation.current === request) { setPreview(result); setQuotedAt(Date.now()); } },
+      onError: () => trackEvent('swap_quote_requested', { route: 'privacy_swap', outcome: 'unavailable' }),
     });
   };
   const createOrder = async () => {
@@ -127,7 +142,9 @@ export default function NearSwapPage() {
     setRequestId(id);
     try { localStorage.setItem(RECENT_KEY, JSON.stringify({ address: '', memo: '', requestId: id })); } catch { /* Storage may be unavailable. */ }
     create.mutate({ data: { quoteId: preview.quoteId, requestId: id }, token }, {
+      onError: () => trackEvent('swap_order_failed', { route: 'privacy_swap' }),
       onSuccess: order => {
+        trackEvent('swap_order_created', { route: 'privacy_swap' });
         if (token) void rewards.refresh();
         try { localStorage.setItem(RECENT_KEY, JSON.stringify({ address: order.depositAddress, memo: order.depositMemo || '', requestId: id })); } catch { /* Storage may be unavailable. */ }
         setCreatedOrder(order);
@@ -144,13 +161,9 @@ export default function NearSwapPage() {
   };
   return <div className="near-shell"><Header/>
     <main className="near-main">
-      <div className="near-intro"><div className="near-kicker"><span className="near-symbol" aria-hidden="true">⋈</span> DARKSWAP / PRIVACY SWAP</div><h1>Review the route.<br/>Then decide.</h1><p>A wallet-free way to prepare a Solana-origin swap. Request a confidential-mode route, inspect its terms, and decide whether to fund it yourself.</p></div>
-      <aside className="near-trading-alternative">
-        Looking for limit orders or newly listed pairs? Privacy swap is a manual-deposit route, not a trading bot. For NEAR memecoin trades, <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">visit NearFi's external Telegram bot ↗</a>. Its bot wallet is custodial; check its current features before depositing.
-      </aside>
-      <NearServiceNotice safety={routeSafety}/>
+      <div className="sx-intro near-intro-compact"><h1 className="sx-title">Privacy swap from Solana.</h1><p className="sx-sub">Confidential routing built on NEAR Intents, with a Solana refund address. Review the terms, then decide whether to send.</p></div>
       <section className="near-panel" aria-label="Privacy swap form">
-        <div className="near-panel-head"><div><strong>Prepare your swap</strong><span>SOLANA ORIGIN → SUPPORTED DESTINATION</span></div><span className="near-route-mark" aria-hidden="true">⋈</span></div>
+        <div className="near-tabs-wrap"><RouteTabs active="near" amount={amount}/></div>
         <div className="near-panel-body">
           <fieldset className="near-form-lock" disabled={!!requestId || create.isPending || creatingToken}>
           <div className="near-field"><div className="near-label"><label htmlFor="near-amount">You send</label><small>Solana network</small></div><div className="near-asset-row"><input id="near-amount" className="near-amount" type="text" inputMode="decimal" value={amount} onChange={e => { setAmount(e.target.value); invalidate(); }} placeholder="0.00" autoComplete="off" data-testid="input-near-amount"/><AssetPicker side="source" token={from} onPick={v => { setFrom(v); setTo(null); setRecipient(''); invalidate(); }}/></div><p className="near-hint">Minimum swap: $3 USD of the asset you send. The provider may require more.</p>{amount && !amountValid && <p className="near-error" role="alert">Enter a positive amount with no more than {from?.decimals ?? 12} decimal places.</p>}{belowMinimum && <p className="near-error" role="alert" data-testid="status-near-amount-minimum">Estimated input is below $3 USD. Increase the amount to continue.</p>}{priceUnavailable && <p className="near-error" role="alert">Unable to verify this asset's USD price. Try another asset or try again later.</p>}</div>
@@ -158,23 +171,29 @@ export default function NearSwapPage() {
           <div className="near-field"><div className="near-label"><span>Estimated receive</span><small>{to?.chainName || 'Choose a network'}</small></div><div className="near-asset-row"><div className="near-amount" data-testid="text-near-estimated-receive">{live ? displayAmount(preview!.amountOut) : '—'}</div><AssetPicker side="destination" token={to} selectedSource={from} onPick={v => { setTo(v); setRecipient(''); invalidate(); }}/></div>{from && to && from.id === to.id && <p className="near-error" role="alert">Choose a different destination asset.</p>}</div>
           <div className="near-field"><div className="near-label"><label htmlFor="near-recipient">Recipient address</label><small>{to?.chainName || 'Destination network'}</small></div><input id="near-recipient" className="near-input" value={recipient} maxLength={120} onChange={e => { setRecipient(e.target.value); invalidate(); }} placeholder="Address that will receive the output" autoComplete="off" data-testid="input-near-recipient"/><p className="near-hint">Check the destination network and address carefully. Transfers cannot be reversed.</p></div>
           <div className="near-field"><div className="near-label"><label htmlFor="near-refund">Refund address</label><small>Solana network</small></div><input id="near-refund" className="near-input" value={refundTo} maxLength={120} onChange={e => { setRefundTo(e.target.value); invalidate(); }} placeholder="Your Solana address for a possible refund" autoComplete="off" data-testid="input-near-refund"/><p className="near-hint">Use an address you control on Solana. A refund, if applicable, is not guaranteed.</p></div>
-           <div className="near-notice">This route requests confidential handling, not Zcash shielding. Native Zcash is not enabled on this route. Your Solana origin deposit is public. This does not guarantee anonymity, unlinkability, or route availability.</div>
+          <div className="near-inline-notice"><NearServiceNotice safety={routeSafety}/></div>
+           <div className="near-notice"><strong>Confidential routing, not ZK shielding.</strong> This route requests confidential execution; it does not deposit funds into a Zcash shielded pool. Native Zcash is not enabled here. Your Solana deposit remains public, and destination transfers may be public. Anonymity, unlinkability and route availability are not guaranteed.</div>
           <div className="near-quote" aria-live="polite"><div className="near-quote-top"><span>ROUTE PREVIEW</span><span>{live ? `${secondsLeft}s LEFT` : preview ? 'EXPIRED' : 'NOT REQUESTED'}</span></div>
-             {quote.isPending && !preview ? <><div className="near-skeleton"/><div className="near-skeleton"/></> : live && preview ? <div className="near-quote-grid"><div><small>Estimated output</small><strong data-testid="text-near-quote-output">{displayAmount(preview.amountOut)} {preview.to.symbol}</strong></div><div><small>Minimum output</small><strong data-testid="text-near-quote-minimum">{displayAmount(preview.minAmountOut)} {preview.to.symbol}</strong></div><div><small>Expected duration</small><strong>~{Math.ceil(preview.estimatedSeconds / 60)} min</strong></div><div><small>Max slippage</small><strong>1%</strong></div>{preview.withdrawFee !== undefined && <div><small>Withdrawal fee (included in output)</small><strong>{displayAmount(preview.withdrawFee)} {preview.to.symbol}</strong></div>}{preview.refundFee !== undefined && <div><small>Possible refund fee</small><strong>{displayAmount(preview.refundFee)} {preview.from.symbol}</strong></div>}</div> : <p data-testid="status-near-quote">{preview ? 'This quote has expired. Request a fresh quote before continuing.' : 'Nothing is reserved yet. Complete the fields, then request a dry quote to see the route.'}</p>}
+             {quote.isPending && !preview ? <><div className="near-skeleton"/><div className="near-skeleton"/></> : live && preview ? <div className="near-quote-grid"><div><small>Estimated output</small><strong data-testid="text-near-quote-output">{displayAmount(preview.amountOut)} {preview.to.symbol}</strong></div><div><small>Minimum output</small><strong data-testid="text-near-quote-minimum">{displayAmount(preview.minAmountOut)} {preview.to.symbol}</strong></div><div><small>Expected duration</small><strong>~{Math.ceil(preview.estimatedSeconds / 60)} min</strong></div><div><small>Max slippage</small><strong>1%</strong></div>{preview.appFeeBps !== undefined && <div><small>DarkSwap fee (included in the quote)</small><strong data-testid="text-near-quote-appfee">{(preview.appFeeBps / 100).toFixed(2)}%</strong></div>}{preview.withdrawFee !== undefined && <div><small>Withdrawal fee (included in output)</small><strong>{displayAmount(preview.withdrawFee)} {preview.to.symbol}</strong></div>}{preview.refundFee !== undefined && <div><small>Possible refund fee</small><strong>{displayAmount(preview.refundFee)} {preview.from.symbol}</strong></div>}</div> : <p data-testid="status-near-quote">{preview ? 'This quote has expired. Request a fresh quote before continuing.' : 'Nothing is reserved yet. Complete the fields, then request a dry quote to see the route.'}</p>}
             {quote.isError && !preview && <p className="near-error" role="alert" data-testid="status-near-quote-error">{errorText(quote.error)}</p>}
           </div>
            <button type="button" className="near-button near-button--wide" onClick={requestQuote} disabled={!canQuote || quote.isPending || create.isPending || !!requestId || creatingToken} data-testid="button-request-near-quote">{quote.isPending ? 'Requesting quote…' : preview ? 'Request fresh quote' : 'Request quote'} <ArrowRight size={16}/></button>
-            {live && <button type="button" className="near-button near-button--wide near-button--subtle" disabled={!routeSafety.ready || !!requestId} onClick={() => { create.reset(); setRewardError(''); setRewardOptIn(false); setConfirm(true); }} data-testid="button-review-near-route">Review and create order <ArrowRight size={16}/></button>}
+           {!preview && <p className={`sx-blocker ${nearBlocker ? '' : 'is-clear'}`} role="status" data-testid="status-near-quote-blocker">{nearBlocker || 'Ready for a quote. Requesting one sends nothing.'}</p>}
+            {live && <button type="button" className="near-button near-button--wide near-button--subtle" disabled={!routeSafety.ready || !!requestId} onClick={() => { create.reset(); setRewardError(''); setRewardOptIn(false); setConfirm(true); trackEvent('swap_review_opened', { route: 'privacy_swap' }); }} data-testid="button-review-near-route">Review and create order <ArrowRight size={16}/></button>}
           </fieldset>
           {requestId && <div className="near-notice near-notice--warn" style={{ marginTop: 18 }} data-testid="near-request-preserved">
             <p>{createdOrder ? 'Order created. Review its final terms before continuing.' : 'This request may already have created an order. Do not submit a replacement. Check this saved receipt or contact support.'}</p>
             {createdOrder && <button type="button" className="near-button near-button--subtle" onClick={() => setConfirm(true)}>Review final order</button>}
             <Link href={`/near-order?requestId=${encodeURIComponent(requestId)}`} className="near-button near-button--text">Open saved receipt <ArrowRight size={14}/></Link>
           </div>}
-          <p className="near-hint" style={{ textAlign: 'center', marginTop: 15 }}>No wallet connection. Creating an order only prepares deposit instructions; it does not send funds.</p>
+          <p className="near-hint" style={{ textAlign: 'center', marginTop: 15 }}>Creating an order only prepares deposit instructions; it does not send funds.</p>
         </div>
         <div className="near-footline"><span><LockKeyhole size={13}/> Manual funding only</span><span><Clock3 size={13}/> Route status tracked separately</span></div>
       </section>
+      <aside className="near-trading-alternative">
+        Looking for limit orders or newly listed pairs? Privacy swap is a manual-deposit route, not a trading bot. For NEAR memecoin trades, <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">visit NearFi's external Telegram bot ↗</a>. Its bot wallet is custodial; check its current features before depositing.
+      </aside>
+      <p className="near-below"><Link href="/docs/confidential-routing">How confidential routing differs from ZK shielding <ArrowRight size={13} aria-hidden="true"/></Link></p>
       <p className="near-below">Already created an order? <Link href="/near-order" data-testid="link-track-near-order">Track by deposit address</Link>. Never share a seed phrase with a swap service.</p>
     </main><Footer/>
     {confirm && preview && <div className="near-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget && !create.isPending && !creatingToken) setConfirm(false); }}><div className="near-modal" role="dialog" aria-modal="true" aria-labelledby="near-confirm-title">
@@ -188,6 +207,7 @@ export default function NearSwapPage() {
           <div className="near-detail near-detail--stack"><span>Solana asset {terms.from.contractAddress ? 'mint' : 'type'}</span><strong>{terms.from.contractAddress || 'Native SOL (not an SPL token)'}</strong></div>
           <div className="near-detail"><span>Estimated output</span><strong>{displayAmount(terms.amountOut)} {terms.to.symbol} · {terms.to.chainName}</strong></div>
           <div className="near-detail"><span>Minimum output</span><strong>{displayAmount(terms.minAmountOut)} {terms.to.symbol}</strong></div>
+          {terms.appFeeBps !== undefined && <div className="near-detail"><span>DarkSwap fee (included in the quote)</span><strong>{(terms.appFeeBps / 100).toFixed(2)}%</strong></div>}
           {terms.withdrawFee !== undefined && <div className="near-detail"><span>Withdrawal fee (included in output)</span><strong>{displayAmount(terms.withdrawFee)} {terms.to.symbol}</strong></div>}
           {terms.refundFee !== undefined && <div className="near-detail"><span>Possible refund fee</span><strong>{displayAmount(terms.refundFee)} {terms.from.symbol}</strong></div>}
           <div className="near-detail"><span>Max slippage</span><strong>1%</strong></div>

@@ -1,0 +1,38 @@
+{
+  "name": "darkswap-pool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DarkSwap shielded pool: phase 1 (note circuit, hash parity, proof verification on EVM and Solana)",
+  "scripts": {
+    "preinstall": "node scripts/require-workspace-install.cjs",
+    "build:circuit": "bash scripts/build-circuit.sh",
+    "fixtures": "node scripts/gen-fixtures.mjs",
+    "test:circuit": "(test -f build/transaction2_js/transaction2.wasm || npm run build:wasm) && node --test scripts/circuit.test.mjs",
+    "test:evm": "cd evm && forge test -vv",
+    "test:solana": "bash scripts/test-rust.sh",
+    "test": "npm run test:circuit && npm run test:wallet && npm run test:kit && npm run test:evm && npm run test:solana",
+    "test:wallet": "node --test scripts/wallet.test.mjs",
+    "test:kit": "node --test scripts/deployer-kit.test.mjs",
+    "e2e:evm": "node scripts/e2e-evm.mjs",
+    "e2e:solana": "node scripts/e2e-solana.mjs",
+    "deploy:evm": "bash scripts/deploy-evm.sh",
+    "setup:devnet": "node scripts/devnet-setup.mjs",
+    "check:deployment": "node scripts/check-deployment.mjs",
+    "build:wasm": "mkdir -p build && circom circuits/transaction2.circom --wasm --O2 -o build"
+  },
+  "devDependencies": {
+    "@noble/ciphers": "^2.4.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "@openzeppelin/contracts": "^5.6.1",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.99.0",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "ffjavascript": "^0.3.1",
+    "poseidon-solidity": "^0.0.5",
+    "snarkjs": "^0.7.6",
+    "viem": "^2.57.2"
+  }
+}

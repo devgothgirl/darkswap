@@ -45,32 +45,32 @@ function PoolRow({ pool }: { pool: NearTrendPool }) {
   const [expanded, setExpanded] = useState(false);
   const link = safePoolUrl(pool.url);
   const change = pool.priceChange24h;
-  return <div className="trends-entry" data-testid={`row-near-pool-${pool.id}`}>
-    <div className="trends-row">
-      <div className="trends-token">
+  return <tbody className="trends-entry" role="rowgroup" data-testid={`row-near-pool-${pool.id}`}>
+    <tr className="trends-row" role="row">
+      <td className="trends-token" role="cell" headers="near-pools-token">
         <TokenMark pool={pool} />
         <div className="trends-token-copy"><strong data-testid={`text-token-symbol-${pool.id}`}>{pool.tokenSymbol}</strong><small title={pool.tokenName}>{pool.tokenName}</small></div>
-      </div>
-      <span className={`trends-value${pool.priceUsd === null ? ' muted' : ''}`} data-testid={`text-price-${pool.id}`}>{usd(pool.priceUsd)}</span>
-      <span className={`trends-value ${change === null ? 'muted' : change > 0 ? 'up' : change < 0 ? 'down' : ''}`} data-testid={`text-change-${pool.id}`}>{change === null || !Number.isFinite(change) ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(2)}%`}</span>
-      <span className={`trends-value${pool.volume24h === null ? ' muted' : ''}`} data-testid={`text-volume-${pool.id}`}>{usd(pool.volume24h, true)}</span>
-      <span className={`trends-value${pool.liquidityUsd === null ? ' muted' : ''}`} data-testid={`text-liquidity-${pool.id}`}>{usd(pool.liquidityUsd, true)}</span>
-      <span className="trends-trades" data-testid={`text-trades-${pool.id}`}>{pool.buys24h.toLocaleString()} buys<small>{pool.sells24h.toLocaleString()} sells</small></span>
-      <span className="trends-dex" data-testid={`text-dex-${pool.id}`}>{pool.dex}</span>
-      <div className="trends-actions">
+      </td>
+      <td role="cell" headers="near-pools-price" className={`trends-value${pool.priceUsd === null ? ' muted' : ''}`} data-testid={`text-price-${pool.id}`}>{usd(pool.priceUsd)}</td>
+      <td role="cell" headers="near-pools-change" className={`trends-value ${change === null ? 'muted' : change > 0 ? 'up' : change < 0 ? 'down' : ''}`} data-testid={`text-change-${pool.id}`}>{change === null || !Number.isFinite(change) ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(2)}%`}</td>
+      <td role="cell" headers="near-pools-volume" className={`trends-value${pool.volume24h === null ? ' muted' : ''}`} data-testid={`text-volume-${pool.id}`}>{usd(pool.volume24h, true)}</td>
+      <td role="cell" headers="near-pools-liquidity" className={`trends-value${pool.liquidityUsd === null ? ' muted' : ''}`} data-testid={`text-liquidity-${pool.id}`}>{usd(pool.liquidityUsd, true)}</td>
+      <td role="cell" headers="near-pools-trades" className="trends-trades" data-testid={`text-trades-${pool.id}`}>{pool.buys24h.toLocaleString()} buys<small>{pool.sells24h.toLocaleString()} sells</small></td>
+      <td role="cell" headers="near-pools-dex" className="trends-dex" data-testid={`text-dex-${pool.id}`}>{pool.dex}</td>
+      <td role="cell" headers="near-pools-inspect" className="trends-actions">
         <button type="button" className="trends-detail-trigger" aria-expanded={expanded} aria-label={`${expanded ? 'Hide' : 'Show'} details for ${pool.tokenSymbol}`} onClick={() => setExpanded(!expanded)} data-testid={`button-details-${pool.id}`}><ChevronDown size={16} /></button>
         {link && <a className="trends-out" href={link} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" aria-label={`Open ${pool.tokenSymbol} pool in external source`} data-testid={`link-pool-${pool.id}`}>Pool <ArrowUpRight size={14} /></a>}
-      </div>
-    </div>
-    {expanded && <div className="trends-details" data-testid={`details-pool-${pool.id}`}>
+      </td>
+    </tr>
+    {expanded && <tr role="row"><td role="cell" colSpan={8} className="trends-details-cell"><div className="trends-details" data-testid={`details-pool-${pool.id}`}>
       <div><span>Pool address</span><code>{pool.address}</code></div>
       <div><span>Token address</span><code>{pool.tokenAddress}</code></div>
       <div><span>Pool created</span><code>{dateLabel(pool.createdAt)}</code></div>
       <div><span>Pool ID</span><code>{pool.id}</code></div>
       <div><span>DEX</span><code>{pool.dex}</code></div>
       <div><span>Source link</span><code>{link ? 'Available via Open pool' : 'No secure external link available'}</code></div>
-    </div>}
-  </div>;
+    </div></td></tr>}
+  </tbody>;
 }
 
 export default function NearTrends() {
@@ -133,8 +133,8 @@ export default function NearTrends() {
         <div className="trends-board-top">
           <div><h2>Pool activity</h2><p>Public market data · read-only · no wallet required</p></div>
           <div className="trends-tabs" role="tablist" aria-label="Pool view">
-            <button type="button" role="tab" aria-selected={view === 'trending'} onClick={() => { setView('trending'); setSort('default'); }} data-testid="button-view-trending">Trending</button>
-            <button type="button" role="tab" aria-selected={view === 'new'} onClick={() => { setView('new'); setSort('default'); }} data-testid="button-view-new">New pools</button>
+            <button id="near-tab-trending" type="button" role="tab" aria-controls="near-pool-results" aria-selected={view === 'trending'} onClick={() => { setView('trending'); setSort('default'); }} data-testid="button-view-trending">Trending</button>
+            <button id="near-tab-new" type="button" role="tab" aria-controls="near-pool-results" aria-selected={view === 'new'} onClick={() => { setView('new'); setSort('default'); }} data-testid="button-view-new">New pools</button>
           </div>
         </div>
         <div className="trends-tools">
@@ -144,16 +144,30 @@ export default function NearTrends() {
             <option value="default">Source order</option><option value="volume">24h volume</option><option value="liquidity">Liquidity</option><option value="change">24h change</option><option value="price">Price</option><option value="trades">24h trades</option><option value="newest">Newest created</option>
           </select><ChevronDown size={14} aria-hidden="true" /></div>
         </div>
+        <div id="near-pool-results" role="tabpanel" aria-labelledby={`near-tab-${view}`} tabIndex={0}>
         <div className="trends-meta">
           <span data-testid="text-trends-source">{activeData ? <><strong>{pools.length} pools{searching ? ` on search page ${searchPage}` : ''}</strong> · Source: {activeData.source} · Updated {dateLabel(activeData.updatedAt)} · {searching ? 'NEAR search matches' : view === 'new' ? 'New pools' : 'Trending'}</> : 'Public NEAR pool data · Source: GeckoTerminal · update time shown when available'}</span>
           <button type="button" onClick={() => searching ? results.refetch() : trends.refetch()} disabled={isFetching || (searching && !searchReady)} data-testid="button-refresh-pools">{isFetching && !isPending ? 'Refreshing…' : 'Refresh data'}</button>
         </div>
-        <div className="trends-columns" aria-hidden="true"><span>Token / pool</span><span>Price</span><span>24h change</span><span>24h volume</span><span>Liquidity</span><span>24h trades</span><span>DEX</span><span>Inspect</span></div>
+        <table className="trends-table" role="table" aria-label="NEAR pool metrics" data-testid={state === 'list' ? 'list-near-pools' : undefined}>
+        <thead role="rowgroup"><tr className="trends-columns" role="row">
+          <th role="columnheader" scope="col" id="near-pools-token">Token / pool</th>
+          <th role="columnheader" scope="col" id="near-pools-price">Price</th>
+          <th role="columnheader" scope="col" id="near-pools-change">24h change</th>
+          <th role="columnheader" scope="col" id="near-pools-volume">24h volume</th>
+          <th role="columnheader" scope="col" id="near-pools-liquidity">Liquidity</th>
+          <th role="columnheader" scope="col" id="near-pools-trades">24h trades</th>
+          <th role="columnheader" scope="col" id="near-pools-dex">DEX</th>
+          <th role="columnheader" scope="col" id="near-pools-inspect">Inspect</th>
+        </tr></thead>
+        {state === 'list' ? pools.map(pool => <PoolRow key={pool.id} pool={pool} />) : <tbody role="rowgroup"><tr role="row"><td role="cell" colSpan={8} className="trends-state-cell">
         {state === 'short' ? <div className="trends-state" role="status"><Search size={23} /><h3>Enter at least two characters.</h3><p>Search the NEAR pools indexed by GeckoTerminal using a token name, symbol, or address.</p></div>
           : state === 'loading' ? <div className="trends-loading" role="status" aria-label="Loading NEAR pools" data-testid="status-trends-loading">{Array.from({ length: 6 }, (_, index) => <div className="trends-loading-row" key={index}><span className="skeleton" /><span className="skeleton" /><span className="skeleton" /></div>)}</div>
           : state === 'error' ? <div className="trends-state" role="alert" data-testid="status-trends-error"><Database size={23} /><h3>Pool data is unavailable.</h3><p>We could not load {searching ? 'search results' : 'the public feed'} right now. Try again in a moment; no order or wallet data is involved.</p><button type="button" onClick={() => searching ? results.refetch() : trends.refetch()} data-testid="button-retry-pools">Try again</button></div>
           : state === 'empty' ? <div className="trends-state" data-testid="status-trends-empty"><SlidersHorizontal size={23} /><h3>{searching ? 'No displayable pools on this search page.' : 'No pools in this view.'}</h3><p>{searching ? 'Use Previous page to return to earlier matches, or Next page if available. You can also try another name, symbol, or exact address. An empty page does not mean a token or pool does not exist.' : 'The source has no pools to show here at the moment. Check the other view or refresh later.'}</p>{searching && <button type="button" onClick={() => { setSearch(''); setSearchPage(1); }} data-testid="button-clear-pool-search">Clear search</button>}</div>
-          : <div className="trends-list" data-testid="list-near-pools">{pools.map(pool => <PoolRow key={pool.id} pool={pool} />)}</div>}
+          : null}
+        </td></tr></tbody>}
+        </table>
         {searching && searchReady && <nav className="trends-pagination" aria-label="NEAR search result pages" data-testid="pagination-near-search">
           <button type="button" className="secondary-button" onClick={() => setSearchPage(page => Math.max(1, page - 1))} disabled={searchPage <= 1 || isPending || isFetching} data-testid="button-search-previous">Previous page</button>
           <span role="status" aria-live="polite" data-testid="text-search-page">Search page {searchPage} · up to 10 pages</span>
@@ -161,6 +175,7 @@ export default function NearTrends() {
           {state !== 'loading' && state !== 'error' && results.data?.page === searchPage && !results.data.hasNextPage && <p role="status">{searchPage === 10 ? 'Search page limit reached. Refine your query for other matches.' : 'The provider returned an empty page. Earlier pages remain available.'} This is not an exhaustive directory.</p>}
         </nav>}
         <div className="trends-footnote">{searching ? 'Search queries GeckoTerminal one NEAR pool page at a time, up to 10 pages. Another page may be empty; results are provider-limited and are not an exhaustive token directory. Sorting applies only to the current page.' : 'Each feed shows up to 20 pools. Search GeckoTerminal above for older or less active NEAR pools.'} This is not a verified memecoin list. Prices and 24h figures may be delayed or unavailable. Opening a pool leaves DarkSwap.</div>
+        </div>
       </section>
     </main>
     <Footer />

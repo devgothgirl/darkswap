@@ -25,4 +25,4 @@ export * from "./marketing-deliveries";
 export * from "./support-cases";
 export * from "./rewards";
 export * from "./launch";
-export * from "./launch-catalog";
+export * from "./launch-catalog";export * from "./shielded-pool";

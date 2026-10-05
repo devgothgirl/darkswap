@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { ArrowRight, CheckCircle2, ChevronRight, CircleHelp, LifeBuoy, Plus, Search, ShieldAlert, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronRight, CircleHelp, Plus, Search, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { useCreateSupportRequest, type SupportRequestInput, SupportRequestInputIssue, SupportRequestInputRoute } from '@workspace/api-client-react';
 import { Form } from '@/components/ui/form';
 import { Footer, Header } from '../components/swap-ui';
 import { findSupportFaq, supportFaq } from '../components/support-faq';
+import { HelpRecoveryGuidance } from './help-recovery-guidance';
+import { trackEvent } from '../lib/analytics';
 
 type ReportFields = {
   email: string;
@@ -72,6 +74,8 @@ function ContactForm() {
         message: fields.message.trim(),
         website: fields.website
       } });
+      // Only the chosen category and route are recorded; never the email, order reference or message.
+      trackEvent('support_request_sent', { issue: fields.issue, route: fields.route || 'not_given' });
       setSentMessage(response.message);
       setDeliveryStatus(response.status);
       setCaseToken(response.token);
@@ -112,9 +116,9 @@ export default function HelpPage() {
       <div className="help-grid">
         <section aria-labelledby="faq-title"><div className="help-section-head"><div><span className="help-overline">01 / INSTANT ANSWERS</span><h2 id="faq-title">Reviewed FAQ</h2></div><span>{supportFaq.length.toString().padStart(2,'0')} TOPICS</span></div>
           <div className="help-search"><Search size={19} aria-hidden="true"/><input type="search" aria-label="Search reviewed answers" placeholder="Search a question, e.g. wrong network or refund" value={query} onChange={event => setQuery(event.target.value)} data-testid="input-help-search"/>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search" data-testid="button-clear-help-search"><X size={18}/></button>}</div>
-          {results.length ? <div className="help-faq-list" data-testid="list-help-faq">{results.map((item, index) => <details className="help-faq" key={item.id}><summary data-testid={`button-help-faq-${item.id}`}><span className="help-number">{String(index + 1).padStart(2,'0')}</span><span>{item.question}</span><Plus className="help-plus" size={20} aria-hidden="true"/></summary><div className="help-faq-answer"><p>{item.answer}</p></div></details>)}</div> : <div className="help-no-results" role="status"><CircleHelp size={23}/><h3>No reviewed answer found.</h3><p>Try “deposit”, “refund”, or “status”, or report the issue directly. We won’t invent an answer.</p><a href="#contact-support" className="help-submit" data-testid="link-help-no-results-report">Report an issue <ArrowRight size={16}/></a></div>}
+          {results.length ? <div className="help-faq-list" data-testid="list-help-faq">{results.map((item, index) => <details className="help-faq" key={item.id} onToggle={event => { if (event.currentTarget.open) trackEvent('help_answer_opened', { topic: item.id }); }}><summary data-testid={`button-help-faq-${item.id}`}><span className="help-number">{String(index + 1).padStart(2,'0')}</span><span>{item.question}</span><Plus className="help-plus" size={20} aria-hidden="true"/></summary><div className="help-faq-answer"><p>{item.answer}</p></div></details>)}</div> : <div className="help-no-results" role="status"><CircleHelp size={23}/><h3>No reviewed answer found.</h3><p>Try “deposit”, “refund”, or “status”, or report the issue directly. We won’t invent an answer.</p><a href="#contact-support" className="help-submit" data-testid="link-help-no-results-report">Report an issue <ArrowRight size={16}/></a></div>}
         </section>
-        <aside className="help-side"><div className="help-side-card"><LifeBuoy size={27}/><h3>Something went wrong with a deposit?</h3><p>Stop. Do not resend. Save your order reference and the hash of the transaction you sent. Recovery is not guaranteed.</p><a href="#contact-support" data-testid="link-help-report-issue">Report an issue <ArrowRight size={16}/></a></div><div className="help-side-note"><ShieldAlert size={17} style={{display:'block',marginBottom:10,color:'#d5baf4'}}/>Only send the exact specified asset on Solana before the deadline, including a memo if required. The active order page is the source of truth.</div></aside>
+        <HelpRecoveryGuidance />
       </div>
       <ContactForm/>
     </main><Footer/></div>;
