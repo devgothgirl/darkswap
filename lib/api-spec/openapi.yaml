@@ -19,6 +19,20 @@ tags:
   - name: launch-auth
   - name: launch-admin
 paths:
+  /dark-rewards/estimate:
+    get:
+      operationId: getDarkRewardsEstimate
+      tags: [rewards]
+      summary: Daily USD estimate of owner-confirmed $DARK holder distributions
+      description: Confirmed distribution amounts valued at the day's public token prices. An estimate, not a payout record or guarantee.
+      responses:
+        "200":
+          description: USD estimate priced at most once per day
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DarkRewardsEstimate" }
+        "503":
+          description: Prices are unavailable; no placeholder values are returned
   /stonkfun/tokens:
     get:
       operationId: getStonkfunTokens
@@ -1279,6 +1293,20 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/LaunchApiError" }
   schemas:
+    DarkRewardsEstimate:
+      type: object
+      required: [confirmedAsOf, pricedAt, allTimeUsd, latestAirdrop]
+      properties:
+        confirmedAsOf: { type: string, description: Date the distributions were confirmed by the owner }
+        pricedAt: { type: string, format: date-time, description: When the token prices were fetched }
+        allTimeUsd: { type: number, description: All wNEAR and DARK distributed, valued at current prices (not payout-time value) }
+        latestAirdrop:
+          type: object
+          required: [number, usd, holders]
+          properties:
+            number: { type: integer, description: Sequence number of the latest $DARK airdrop }
+            usd: { type: number, description: wNEAR paid in that airdrop, valued at current prices }
+            holders: { type: integer, description: Eligible holders paid in that airdrop }
     LaunchSolanaAddress:
       type: string
       minLength: 32
@@ -2131,7 +2159,10 @@ components:
         createdAt: { type: string }
         updatedAt: { type: string }
         resolvedAt: { type: string }
-        impact: { type: string, enum: [matching, unrelated, unverified] }
+        impact:
+          type: string
+          enum: [matching, unrelated, unverified]
+          description: Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.
     NearServiceStatus:
       type: object
       required: [sourceUrl, lastSuccessAt, freshUntil, state, activeIncidents, recentlyResolved, eligibility, reason]
@@ -2188,6 +2219,7 @@ components:
         minAmountOut: { type: string }
         withdrawFee: { type: string }
         refundFee: { type: string }
+        appFeeBps: { type: integer, minimum: 1, maximum: 480, description: DarkSwap partner fee in basis points, charged from the input asset and reflected in the quoted output. Absent when no partner fee applies. }
         recipient: { type: string }
         refundTo: { type: string }
         validUntil: { type: string }
@@ -2216,6 +2248,7 @@ components:
         minAmountOut: { type: string }
         withdrawFee: { type: string }
         refundFee: { type: string }
+        appFeeBps: { type: integer, minimum: 1, maximum: 480, description: DarkSwap partner fee in basis points, charged from the input asset and reflected in the quoted output. Absent when no partner fee applies. }
         recipient: { type: string }
         refundTo: { type: string }
         status: { type: string, enum: [PENDING_DEPOSIT, KNOWN_DEPOSIT_TX, INCOMPLETE_DEPOSIT, PROCESSING, SUCCESS, REFUNDED, FAILED] }

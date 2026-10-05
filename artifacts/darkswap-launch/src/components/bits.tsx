@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Inbox, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Skeleton } from '@workspace/darkswap-design-system/components/ui/skeleton';
+import { cn } from '@workspace/darkswap-design-system/lib/utils';
 import { ago } from '@/lib/api';
 import type { StonkfunSource } from '@workspace/api-client-react';
 
@@ -37,12 +37,12 @@ export function Metric({ label, value, hint, testId }: { label: string; value: s
   );
 }
 
-export function SectionHead({ eyebrow, title, children, action }: { eyebrow?: string; title: string; children?: ReactNode; action?: ReactNode }) {
+export function SectionHead({ eyebrow, title, id, children, action }: { eyebrow?: string; title: string; id?: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div className="max-w-2xl">
         {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
-        <h2 className="text-2xl font-extrabold md:text-3xl">{title}</h2>
+        <h2 id={id} className="text-2xl font-extrabold md:text-3xl">{title}</h2>
         {children && <p className="mt-2 text-sm text-muted-foreground">{children}</p>}
       </div>
       {action}

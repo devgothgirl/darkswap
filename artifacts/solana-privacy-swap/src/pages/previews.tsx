@@ -81,7 +81,7 @@ export default function Previews() {
       <div className="pv-eyebrow">DARKSWAP / FOUNDER PREVIEWS</div>
       <h1>Founder <span>previews.</span></h1>
       <p className="pv-intro">Demos, drafts and research tools, kept apart from the product. Only the private route and Privacy swap are live swap flows. Nothing here is a launch.</p>
-      <div className="pv-status"><FileText size={18} aria-hidden="true" /><span>Founder previews are for exploration. The DARK holder program is a plan on the Tokenomics page, not a preview. No wallet connection, payment, funding, or launch transaction is initiated here.</span></div>
+      <div className="pv-status"><FileText size={18} aria-hidden="true" /><span>Founder previews are for exploration. The DARK holder rewards program is tracked on the rewards site, not here. No wallet connection, payment, funding, or launch transaction is initiated here.</span></div>
       <div className="pv-grid">
         {features.map(feature => {
           const Icon = feature.icon;

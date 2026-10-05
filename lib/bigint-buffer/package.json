@@ -1,0 +1,12 @@
+{
+  "name": "@darkswap/bigint-buffer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bounded native-BigInt replacement for the unmaintained bigint-buffer addon.",
+  "main": "./index.cjs",
+  "exports": {
+    "types": "./index.d.cts",
+    "default": "./index.cjs"
+  },
+  "dependencies": { "buffer": "^6.0.3" }
+}

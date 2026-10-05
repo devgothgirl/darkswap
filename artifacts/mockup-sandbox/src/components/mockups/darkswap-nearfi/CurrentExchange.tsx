@@ -105,7 +105,7 @@ export default function CurrentExchange() {
           </div>
           <button type="button" className="near-button near-button--wide" onClick={requestQuote} disabled={!canQuote || quote.isPending || create.isPending} data-testid="button-request-near-quote">{quote.isPending ? 'Requesting quote…' : preview ? 'Request fresh quote' : 'Request quote'} <ArrowRight size={16}/></button>
           {live && <button type="button" className="near-button near-button--wide near-button--subtle" onClick={() => { create.reset(); setConfirm(true); }} data-testid="button-review-near-route">Review and create order <ArrowRight size={16}/></button>}
-          <p className="near-hint" style={{ textAlign: 'center', marginTop: 15 }}>No wallet connection. Creating an order only prepares deposit instructions; it does not send funds.</p>
+          <p className="near-hint" style={{ textAlign: 'center', marginTop: 15 }}>Creating an order only prepares deposit instructions; it does not send funds.</p>
         </div>
         <div className="near-footline"><span><LockKeyhole size={13}/> Manual funding only</span><span><Clock3 size={13}/> Route status tracked separately</span></div>
       </section>

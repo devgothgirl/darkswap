@@ -9,6 +9,22 @@ import * as zod from 'zod';
 
 
 /**
+ * Confirmed distribution amounts valued at the day's public token prices. An estimate, not a payout record or guarantee.
+ * @summary Daily USD estimate of owner-confirmed $DARK holder distributions
+ */
+export const GetDarkRewardsEstimateResponse = zod.object({
+  "confirmedAsOf": zod.string().describe('Date the distributions were confirmed by the owner'),
+  "pricedAt": zod.coerce.date().describe('When the token prices were fetched'),
+  "allTimeUsd": zod.number().describe('All wNEAR and DARK distributed'),
+  "latestAirdrop": zod.object({
+  "number": zod.number().int().describe('Sequence number of the latest $DARK airdrop'),
+  "usd": zod.number().describe('wNEAR paid in that airdrop'),
+  "holders": zod.number().int().describe('Eligible holders paid in that airdrop')
+})
+})
+
+
+/**
  * Uses documented provider-wide q (name/symbol/mint), quoteMint and status
  * filters, with bounded page/pageSize. Matching case/prefix/fuzzy semantics
  * are provider-defined and not independently established. No creator or
@@ -2454,7 +2470,7 @@ export const GetNearServiceStatusResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "recentlyResolved": zod.array(zod.object({
   "id": zod.string(),
@@ -2464,7 +2480,7 @@ export const GetNearServiceStatusResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
   "reason": zod.string()
@@ -2519,6 +2535,10 @@ export const GetNearQuoteBody = zod.object({
   "refundTo": zod.string().min(1).max(getNearQuoteBodyRefundToMax)
 })
 
+export const getNearQuoteResponseAppFeeBpsMax = 480;
+
+
+
 export const GetNearQuoteResponse = zod.object({
   "quoteId": zod.string(),
   "from": zod.object({
@@ -2544,6 +2564,7 @@ export const GetNearQuoteResponse = zod.object({
   "minAmountOut": zod.string(),
   "withdrawFee": zod.string().optional(),
   "refundFee": zod.string().optional(),
+  "appFeeBps": zod.number().int().min(1).max(getNearQuoteResponseAppFeeBpsMax).optional().describe('DarkSwap partner fee in basis points'),
   "recipient": zod.string(),
   "refundTo": zod.string(),
   "validUntil": zod.string(),
@@ -2568,6 +2589,10 @@ export const CreateNearOrderBody = zod.object({
   "requestId": zod.string().uuid()
 })
 
+export const createNearOrderResponseAppFeeBpsMax = 480;
+
+
+
 export const CreateNearOrderResponse = zod.object({
   "routeStatus": zod.object({
   "sourceUrl": zod.string(),
@@ -2582,7 +2607,7 @@ export const CreateNearOrderResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "recentlyResolved": zod.array(zod.object({
   "id": zod.string(),
@@ -2592,7 +2617,7 @@ export const CreateNearOrderResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
   "reason": zod.string()
@@ -2624,6 +2649,7 @@ export const CreateNearOrderResponse = zod.object({
   "minAmountOut": zod.string(),
   "withdrawFee": zod.string().optional(),
   "refundFee": zod.string().optional(),
+  "appFeeBps": zod.number().int().min(1).max(createNearOrderResponseAppFeeBpsMax).optional().describe('DarkSwap partner fee in basis points'),
   "recipient": zod.string(),
   "refundTo": zod.string(),
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),
@@ -2714,6 +2740,10 @@ export const GetNearOrderReceiptParams = zod.object({
   "requestId": zod.coerce.string().uuid()
 })
 
+export const getNearOrderReceiptResponseAppFeeBpsMax = 480;
+
+
+
 export const GetNearOrderReceiptResponse = zod.object({
   "routeStatus": zod.object({
   "sourceUrl": zod.string(),
@@ -2728,7 +2758,7 @@ export const GetNearOrderReceiptResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "recentlyResolved": zod.array(zod.object({
   "id": zod.string(),
@@ -2738,7 +2768,7 @@ export const GetNearOrderReceiptResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
   "reason": zod.string()
@@ -2770,6 +2800,7 @@ export const GetNearOrderReceiptResponse = zod.object({
   "minAmountOut": zod.string(),
   "withdrawFee": zod.string().optional(),
   "refundFee": zod.string().optional(),
+  "appFeeBps": zod.number().int().min(1).max(getNearOrderReceiptResponseAppFeeBpsMax).optional().describe('DarkSwap partner fee in basis points'),
   "recipient": zod.string(),
   "refundTo": zod.string(),
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),
@@ -2793,6 +2824,10 @@ export const GetNearOrderStatusQueryParams = zod.object({
   "depositMemo": zod.coerce.string().max(getNearOrderStatusQueryDepositMemoMax).optional()
 })
 
+export const getNearOrderStatusResponseAppFeeBpsMax = 480;
+
+
+
 export const GetNearOrderStatusResponse = zod.object({
   "routeStatus": zod.object({
   "sourceUrl": zod.string(),
@@ -2807,7 +2842,7 @@ export const GetNearOrderStatusResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "recentlyResolved": zod.array(zod.object({
   "id": zod.string(),
@@ -2817,7 +2852,7 @@ export const GetNearOrderStatusResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
-  "impact": zod.enum(['matching', 'unrelated', 'unverified'])
+  "impact": zod.enum(['matching', 'unrelated', 'unverified']).describe('Exact endpoint comparison for recognized chain/chain_all identifiers, independently of selectable route networks. Unrelated is not an execution or dependency-health guarantee; unknown scopes, identifiers or active statuses remain unverified.')
 })),
   "eligibility": zod.enum(['allowed', 'paused', 'unverified']),
   "reason": zod.string()
@@ -2849,6 +2884,7 @@ export const GetNearOrderStatusResponse = zod.object({
   "minAmountOut": zod.string(),
   "withdrawFee": zod.string().optional(),
   "refundFee": zod.string().optional(),
+  "appFeeBps": zod.number().int().min(1).max(getNearOrderStatusResponseAppFeeBpsMax).optional().describe('DarkSwap partner fee in basis points'),
   "recipient": zod.string(),
   "refundTo": zod.string(),
   "status": zod.enum(['PENDING_DEPOSIT', 'KNOWN_DEPOSIT_TX', 'INCOMPLETE_DEPOSIT', 'PROCESSING', 'SUCCESS', 'REFUNDED', 'FAILED']),

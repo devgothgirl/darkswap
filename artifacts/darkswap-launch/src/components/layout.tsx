@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, PauseCircle, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@workspace/darkswap-design-system/components/ui/sheet';
 import { useGetLaunchConfig, getGetLaunchConfigQueryKey } from '@workspace/api-client-react';
 import { WalletButton, ConnectDialog, AuthDialog } from './wallet-ui';
 import { useWallet } from '@/lib/wallet';
 import { asset } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@workspace/darkswap-design-system/lib/utils';
 
 const NAV = [
   { href: '/explore', label: 'Explore' },

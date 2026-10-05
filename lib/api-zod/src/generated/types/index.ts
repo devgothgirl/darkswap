@@ -7,6 +7,8 @@
  */
 
 export * from './betaAccessError';
+export * from './darkRewardsEstimate';
+export * from './darkRewardsEstimateLatestAirdrop';
 export * from './discoverTokensParams';
 export * from './discoveryAsset';
 export * from './discoveryDetail';

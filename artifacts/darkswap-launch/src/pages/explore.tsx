@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearch, useLocation } from 'wouter';
 import { Search, ChevronLeft, ChevronRight, Info, Lock } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@workspace/darkswap-design-system/components/ui/input';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/darkswap-design-system/components/ui/select';
 import {
   useGetStonkfunTokens,
   getGetStonkfunTokensQueryKey,
@@ -17,7 +17,7 @@ import { TokenCard } from '@/components/token-card';
 import { CardGridSkeleton, EmptyState, ErrorState, SourceNote } from '@/components/bits';
 import { usePageMeta } from '@/lib/seo';
 import { readError, SOLANA_ADDRESS, DARK_ACTIVATION_COPY } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@workspace/darkswap-design-system/lib/utils';
 
 const VIEWS: { id: GetStonkfunTokensView; label: string }[] = [
   { id: 'trending', label: 'Trending' },
@@ -29,8 +29,8 @@ const VIEWS: { id: GetStonkfunTokensView; label: string }[] = [
 ];
 
 export default function Explore() {
-  usePageMeta({ title: 'Explore launches', description: 'Search and browse Solana token launches by name, ticker, mint or pair mint, with sourced data and clear coverage notes.' });
   const search = useSearch();
+  usePageMeta({ title: 'Explore launches', description: 'Search and browse Solana token launches by name, ticker, mint or pair mint, with sourced data and clear coverage notes.', noindex: !!search });
   const [, setLocation] = useLocation();
   const sp = new URLSearchParams(search);
   const cfg = useGetLaunchConfig({ query: { queryKey: getGetLaunchConfigQueryKey(), staleTime: 60_000 } });
@@ -88,15 +88,15 @@ export default function Explore() {
       <h1 className="text-4xl font-extrabold md:text-6xl">Explore launches</h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">Every number below is provider-sourced. Missing data is shown as unavailable, never zero.</p>
 
-      <div role="tablist" aria-label="Discovery views" className="mt-8 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card/60 p-1">
+      <div role="group" aria-label="Filter launches" className="mt-8 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card/60 p-1">
         {VIEWS.map((v) => (
           <button
             key={v.id}
-            role="tab"
-            aria-selected={effectiveView === v.id}
+            type="button"
+            aria-pressed={effectiveView === v.id}
             onClick={() => navigate({ view: v.id, page: '' })}
             className={cn('whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground', effectiveView === v.id && 'bg-primary text-primary-foreground hover:text-primary-foreground')}
-            data-testid={`tab-${v.id}`}
+            data-testid={`button-view-${v.id}`}
           >
             {v.label}
           </button>

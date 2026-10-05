@@ -1,0 +1,13 @@
+{
+  "retiredPhrases": [
+    "no wallet connection",
+    "no wallet required"
+  ],
+  "allowedContexts": [
+    {
+      "file": "src/components/mockups/darkswap-beta/Launch.tsx",
+      "text": "No wallet connection is needed to request and create an order. After reviewing the quote, you send the exact deposit amount yourself from a Solana wallet to the deposit address shown in the order.",
+      "reason": "Existing factual FAQ about order creation and manual deposits, not a marketing promise. Do not reuse as a headline or badge."
+    }
+  ]
+}

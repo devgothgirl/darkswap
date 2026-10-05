@@ -1,6 +1,7 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # compiled output
+target/
 dist
 tmp
 out-tsc
@@ -52,6 +53,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!packages/darkswap-pool/scripts/.env.deploy.example
 attached_assets/
 exports/
 .agents/

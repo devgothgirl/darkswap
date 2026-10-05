@@ -49,7 +49,7 @@ export function NearServiceNotice({ safety }: { safety: ReturnType<typeof useNea
     </div>
     <p className="near-hint">Last successful check: {data?.lastSuccessAt ? new Date(data.lastSuccessAt).toLocaleString() : 'Not available'}. This feed is separate from your order status. No reported matching incident is not a guarantee of route availability, privacy, or settlement.</p>
     {!!data?.activeIncidents.length && <details><summary>Reported active incidents ({data.activeIncidents.length})</summary>
-      <ul>{data.activeIncidents.map(incident => <li key={incident.id}>{incident.scopeType}: {incident.scopeValue || 'unspecified'} · {incident.impact === 'matching' ? 'Matches this route' : incident.impact === 'unrelated' ? 'Other supported chain' : 'Route impact unverified'} · {incident.status}</li>)}</ul>
+      <ul>{data.activeIncidents.map(incident => <li key={incident.id}>{incident.scopeType}: {incident.scopeValue || 'unspecified'} · {incident.impact === 'matching' ? 'Matches this route' : incident.impact === 'unrelated' ? 'Unrelated to selected endpoint networks' : 'Route impact unverified'} · {incident.status}</li>)}</ul>
     </details>}
     {!!data?.recentlyResolved.length && <details><summary>Recently resolved · historical information only</summary>
       <ul>{data.recentlyResolved.map(incident => <li key={incident.id}>{incident.scopeType}: {incident.scopeValue || 'unspecified'}{incident.resolvedAt ? ` · ${new Date(incident.resolvedAt).toLocaleString()}` : ''}</li>)}</ul>

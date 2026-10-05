@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, Suspense, lazy, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import Home from './pages/home';
@@ -14,6 +14,8 @@ import Previews from './pages/previews';
 import SplitMixerPreview from './pages/splitwise-preview';
 import PrivacyBundlePreview from './pages/privacy-bundle-preview';
 import Docs from './pages/docs';
+import ConfidentialRoutingDocs from './pages/docs-confidential-routing';
+import Whitepaper from './pages/whitepaper';
 import RewardsPage from './pages/rewards';
 import { RewardsProvider } from './hooks/use-rewards';
 import HelpPage from './pages/help';
@@ -30,7 +32,12 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 import TerminalPreview from './pages/terminal-preview';
-import Tokenomics, { TokenomicsLeaderboard } from './pages/tokenomics';
+import poolPaths from './pool/routes.json';
+
+// The shielded pool (testnet) loads on its own, outside RewardsProvider, so
+// the rewards wallet SDK never loads on pool pages.
+const PoolSection = lazy(() => import('./pool/pool-page'));
+const isPoolPath = (path: string) => poolPaths.includes(path.replace(/\/+$/, '') || '/');
 
 const queryClient = new QueryClient({defaultOptions:{queries:{retry:1,refetchOnWindowFocus:true}}});
 
@@ -41,6 +48,13 @@ function NotFound() {
 function AliasRedirect({ to }: { to: string }) {
   const [, navigate] = useLocation();
   useEffect(() => { navigate(to, { replace: true }); }, [navigate, to]);
+  return null;
+}
+
+const REWARDS_URL = 'https://rewards.darkswap.app';
+
+function ExternalRedirect({ to }: { to: string }) {
+  useEffect(() => { window.location.replace(to); }, [to]);
   return null;
 }
 
@@ -62,8 +76,11 @@ function Router() {
         <Route path="/near-discovery" component={NearDiscovery} />
         <Route path="/near-order" component={NearOrder} />
         <Route path="/docs" component={Docs} />
-        <Route path="/tokenomics" component={Tokenomics} />
-        <Route path="/tokenomics/leaderboard" component={TokenomicsLeaderboard} />
+        <Route path="/docs/confidential-routing" component={ConfidentialRoutingDocs} />
+        <Route path="/docs/whitepaper" component={Whitepaper} />
+        {/* Tokenomics is paused until the ZEC airdrop starts; holder rewards live on the rewards site. */}
+        <Route path="/tokenomics"><ExternalRedirect to={REWARDS_URL} /></Route>
+        <Route path="/tokenomics/leaderboard"><ExternalRedirect to={REWARDS_URL} /></Route>
         <Route path="/rewards" component={RewardsPage} />
         <Route path="/help" component={HelpPage} />
         <Route path="/founder" component={Previews} />
@@ -89,15 +106,29 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
+function Sections() {
+  const [location] = useLocation();
+  if (isPoolPath(location)) {
+    return (
+      <RoutedErrorBoundary>
+        <Suspense fallback={null}><PoolSection /></Suspense>
+      </RoutedErrorBoundary>
+    );
+  }
+  return (
+    <RewardsProvider>
+      <Router />
+      <HelpWidget />
+      <TokenLaunchPopup />
+    </RewardsProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <RewardsProvider>
-          <Router />
-          <HelpWidget />
-          <TokenLaunchPopup />
-        </RewardsProvider>
+        <Sections />
       </WouterRouter>
     </QueryClientProvider>
   );

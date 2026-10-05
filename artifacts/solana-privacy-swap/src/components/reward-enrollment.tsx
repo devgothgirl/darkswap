@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { ArrowRight, LockKeyhole } from 'lucide-react';
 import { useRewards } from '../hooks/use-rewards';
 import { errorText } from './swap-ui';
+import { trackEvent } from '../lib/analytics';
 
 export function RewardEnrollment({ compact = false }: { compact?: boolean }) {
   const rewards = useRewards();
@@ -14,17 +15,25 @@ export function RewardEnrollment({ compact = false }: { compact?: boolean }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   if (!rewards.available) return <div className="rewards-panel"><h3>Email rewards are not available</h3><p>Swap as a guest. No email account is needed to create an order.</p></div>;
-  const run = async (action: () => Promise<void>, success: string) => {
+  // Only the step name and whether it succeeded; never the email or the one-time code.
+  const run = async (action: () => Promise<void>, success: string, step?: string) => {
     setBusy(true); setError(''); setMessage('');
-    try { await action(); setMessage(success); } catch (cause) { setError(errorText(cause)); } finally { setBusy(false); }
+    try {
+      await action();
+      setMessage(success);
+      if (step) trackEvent('rewards_enrollment_step', { step, outcome: 'completed' });
+    } catch (cause) {
+      setError(errorText(cause));
+      if (step) trackEvent('rewards_enrollment_step', { step, outcome: 'failed' });
+    } finally { setBusy(false); }
   };
   const submitEmail = (event: FormEvent) => {
     event.preventDefault();
-    void run(async () => { await rewards.sendCode(email.trim()); setSent(true); }, 'Check your inbox for the one-time code.');
+    void run(async () => { await rewards.sendCode(email.trim()); setSent(true); }, 'Check your inbox for the one-time code.', 'code_requested');
   };
   const submitCode = (event: FormEvent) => {
     event.preventDefault();
-    void run(async () => { await rewards.loginWithCode(code.trim()); }, 'Email verified. Enrollment is a separate choice below.');
+    void run(async () => { await rewards.loginWithCode(code.trim()); }, 'Email verified. Enrollment is a separate choice below.', 'email_verified');
   };
   return <div className="rewards-panel">
     <div className="rewards-overline">OPTIONAL / EMAIL REWARDS</div>
@@ -48,7 +57,7 @@ export function RewardEnrollment({ compact = false }: { compact?: boolean }) {
       {rewards.accountError && <p className="rewards-error" role="alert">{errorText(rewards.accountError)} <button type="button" className="rewards-action secondary" onClick={() => void rewards.refresh()}>Retry</button></p>}
       <p>Enrollment stores your verified email for your rewards account. If you opt in on a future order, that order is permanently associated with this account at creation. Guest and past orders cannot be credited later. This does not make on-chain deposits private.</p>
       <label className="rewards-check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)}/><span>I understand the account and order-linking privacy trade-off and explicitly agree to enroll in email rewards. This is not consent to marketing email.</span></label>
-      <button type="button" className="rewards-action" disabled={!consent || busy || !!rewards.accountError} onClick={() => void run(rewards.enroll, 'Enrollment confirmed. You can now choose rewards per new order.')}>Enroll in rewards <ArrowRight size={15}/></button>
+      <button type="button" className="rewards-action" disabled={!consent || busy || !!rewards.accountError} onClick={() => void run(rewards.enroll, 'Enrollment confirmed. You can now choose rewards per new order.', 'enrolled')}>Enroll in rewards <ArrowRight size={15}/></button>
     </>}
     {error && <p className="rewards-error" role="alert">{error}</p>}
     {message && <p className="rewards-ok" role="status">{message}</p>}

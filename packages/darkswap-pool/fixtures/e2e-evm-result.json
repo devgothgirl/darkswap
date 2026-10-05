@@ -1,0 +1,58 @@
+{
+  "chainId": 31337,
+  "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+  "steps": [
+    {
+      "name": "shield 1 ETH, 0.5 ETH, 500 tUSD (plus the protocol fee); wallet finds all three notes",
+      "notes": [
+        "1000000000000000000",
+        "500000000000000000",
+        "500000000"
+      ],
+      "feeBps": 50
+    },
+    {
+      "name": "alice sends 1.2 ETH privately to bob, relayed, asset hidden",
+      "proveMs": 2423,
+      "gas": "1324636"
+    },
+    {
+      "name": "bob finds 1.2 ETH; alice finds 0.3 ETH change; spent notes drop out"
+    },
+    {
+      "name": "bob unshields 1 ETH to a fresh address (0.995 after the fee); relayer paid 0.001 ETH",
+      "gas": "1393105",
+      "relayerNetWei": "-827027454956515"
+    },
+    {
+      "name": "replaying the same proof is refused: NullifierAlreadySpent"
+    },
+    {
+      "name": "changing the recipient or the amount after proving is refused: InvalidProof"
+    },
+    {
+      "name": "honest version of the same token unshield goes through",
+      "gas": "1377872"
+    },
+    {
+      "name": "pool books match its balances; protocol fees accrue apart from them",
+      "ethFees": "12500000000000000",
+      "tokenFees": "3000000"
+    },
+    {
+      "name": "anyone sweeps the fees to the fixed fee recipient",
+      "ethFees": "12500000000000000",
+      "tokenFees": "3000000"
+    }
+  ],
+  "protocolFeeBps": 50,
+  "gas": {
+    "shield ETH": "1169198",
+    "shield token": "1240639",
+    "private send (relayed)": "1324636",
+    "unshield ETH with fee (relayed)": "1393105",
+    "unshield token, no fee (relayed)": "1377872",
+    "collect fees ETH": "60814",
+    "collect fees token": "59204"
+  }
+}

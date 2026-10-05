@@ -1,0 +1,7 @@
+{
+  "origin": "https://darkswap.app",
+  "basePath": "/launch/",
+  "indexable": ["/", "/explore", "/docs", "/terms", "/privacy", "/risk"],
+  "dynamic": ["/token/:mint"],
+  "private": ["/create", "/creator", "/admin"]
+}

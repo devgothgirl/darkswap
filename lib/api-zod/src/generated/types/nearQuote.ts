@@ -16,6 +16,12 @@ export interface NearQuote {
   minAmountOut: string;
   withdrawFee?: string;
   refundFee?: string;
+  /**
+     * DarkSwap partner fee in basis points
+     * @minimum 1
+     * @maximum 480
+     */
+  appFeeBps?: number;
   recipient: string;
   refundTo: string;
   validUntil: string;

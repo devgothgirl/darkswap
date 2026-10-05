@@ -1,8 +1,8 @@
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, ExternalLink, Globe, Send, Github, MessageCircle, ShieldAlert } from 'lucide-react';
 import { SiX } from 'react-icons/si';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Skeleton } from '@workspace/darkswap-design-system/components/ui/skeleton';
 import { useGetStonkfunToken, getGetStonkfunTokenQueryKey } from '@workspace/api-client-react';
 import { Page } from '@/components/layout';
 import { CopyAddress, EmptyState, ErrorState, Metric, Pill, SourceNote, TokenAvatar } from '@/components/bits';
@@ -17,6 +17,7 @@ export default function TokenPage() {
   usePageMeta({
     title: token ? `${token.metadataSuppressed ? 'Token' : token.name} ($${token.symbol})` : 'Token',
     description: token ? `Sourced identity, pair and market facts for ${token.symbol} on Solana mainnet-beta.` : 'Solana token details on DarkSwap Launch.',
+    noindex: !valid || !token || token.underReview || token.metadataSuppressed || !!q.data?.source.stale,
   });
 
   const back = (
@@ -78,7 +79,7 @@ export default function TokenPage() {
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-accent/50 to-card p-6">
-            <div className="eyebrow mb-3">Pair</div>
+            <h2 className="eyebrow mb-3">Pair</h2>
             {token.quote ? (
               <div className="flex items-center gap-4">
                 <TokenAvatar src={token.quote.logoUrl} label={token.quote.symbol} size={48} />
@@ -93,7 +94,7 @@ export default function TokenPage() {
           </section>
 
           <section>
-            <div className="eyebrow mb-3">Market</div>
+            <h2 className="eyebrow mb-3">Market</h2>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <Metric label="Price" value={fmtUsd(m.priceUsd)} testId="metric-price" />
               <Metric label="Market cap" value={fmtUsd(m.marketCapUsd)} />
@@ -109,7 +110,7 @@ export default function TokenPage() {
 
           {!sup && token.description && (
             <section className="rounded-2xl border border-border bg-card/60 p-6">
-              <div className="eyebrow mb-3">Description (provider text)</div>
+              <h2 className="eyebrow mb-3">Description (provider text)</h2>
               <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{token.description}</p>
             </section>
           )}
@@ -117,7 +118,7 @@ export default function TokenPage() {
 
         <aside className="space-y-6">
           <section className="rounded-2xl border border-border bg-card/60 p-6">
-            <div className="eyebrow mb-4">Launch facts</div>
+            <h2 className="eyebrow mb-4">Launch facts</h2>
             <dl className="space-y-3 text-sm">
               {[
                 ['Creator', token.creatorWallet ?? 'Unavailable (no verified attribution)'],
@@ -138,7 +139,7 @@ export default function TokenPage() {
           </section>
           {linkItems.length > 0 && (
             <section className="rounded-2xl border border-border bg-card/60 p-6">
-              <div className="eyebrow mb-3">Links (unverified)</div>
+              <h2 className="eyebrow mb-3">Links (unverified)</h2>
               <div className="flex flex-wrap gap-2">
                 {linkItems.map(([label, url, Icon]) => (
                   <Button key={label} asChild variant="outline" size="sm"><a href={url!} target="_blank" rel="noopener noreferrer nofollow ugc"><Icon className="mr-1.5 h-3.5 w-3.5" />{label}</a></Button>

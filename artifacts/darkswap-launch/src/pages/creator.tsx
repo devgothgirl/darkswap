@@ -1,10 +1,10 @@
 import { Link } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Skeleton } from '@workspace/darkswap-design-system/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@workspace/darkswap-design-system/components/ui/alert-dialog';
+import { useToast } from '@workspace/darkswap-design-system/hooks/use-toast';
 import {
   useGetLaunchCreator,
   getGetLaunchCreatorQueryKey,

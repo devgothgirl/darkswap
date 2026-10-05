@@ -19,7 +19,7 @@ const faqs = [
   {
     question: "What does “private route” mean here?",
     answer:
-      "The available route is provided by Houdini for a Solana-origin swap or bridge. DarkSwap does not connect your wallet, and the order is created before you manually send funds. Privacy is route-specific; it is not a guarantee of anonymity.",
+      "The available private route supports a Solana-origin swap or bridge. DarkSwap does not connect your wallet, and the order is created before you manually send funds. Privacy is route-specific; it is not a guarantee of anonymity.",
   },
   {
     question: "Do I connect a wallet to use it?",
@@ -29,7 +29,7 @@ const faqs = [
   {
     question: "Which assets and destinations are supported?",
     answer:
-      "Availability depends on Houdini’s live quote for your selected amount and destination. Support is not universal, and the quote screen is the source of truth before you create an order.",
+      "Availability depends on the route provider’s live quote for your selected amount and destination. Support is not universal, and the quote screen is the source of truth before you create an order.",
   },
   {
     question: "Is execution instant or guaranteed private?",
@@ -43,7 +43,7 @@ function RouteIllustration() {
     <div className="launch-visual" aria-label="Illustration of a manually deposited Solana route">
       <div className="visual-cap">
         <span><i /> ROUTE MODEL / 01</span>
-        <span>NOT A WALLET CONNECTION</span>
+        <span>YOU MAKE THE SEND</span>
       </div>
       <svg className="route-art" viewBox="0 0 640 430" role="img" aria-labelledby="route-title route-desc">
         <title id="route-title">A measured route from Solana deposit to destination</title>
@@ -80,7 +80,7 @@ function RouteIllustration() {
         </g>
         <g fill="#ffb49a" fontFamily="Space Mono, monospace" fontSize="9">
           <text x="160" y="235">MANUAL SEND</text>
-          <text x="396" y="223">HOUDINI ROUTE</text>
+          <text x="396" y="223">PRIVATE ROUTE</text>
         </g>
         <path d="M182 221l-14 7m262-8-12 7" stroke="#ffb49a" strokeWidth="1" strokeDasharray="2 3" />
       </svg>
@@ -101,7 +101,7 @@ export function Launch() {
 
   return (
     <div className="ds-launch">
-      <div className="launch-ribbon"><span className="ribbon-dot" /> PRIVATE BETA IS LIVE <span className="ribbon-rule" /> SOLANA ORIGIN · HOUDINI ROUTE</div>
+      <div className="launch-ribbon"><span className="ribbon-dot" /> PRIVATE BETA IS LIVE <span className="ribbon-rule" /> SOLANA ORIGIN · PRIVATE ROUTE</div>
       <header className="launch-header">
         <a href="#top" className="launch-brand" aria-label="DarkSwap home">
           <span className="brand-symbol"><span /></span>
@@ -124,9 +124,9 @@ export function Launch() {
             <div className="overline"><span className="overline-square" /> A PRIVATE ROUTE OUT OF SOLANA</div>
             <h1>Move value.<br /><em>Leave less</em><br />behind.</h1>
             <p className="hero-lede">A deposit-based route for Solana holders who want more separation between the wallet they send from and where assets arrive.</p>
-            <div className="hero-qualifier"><LockKeyhole size={15} /><span>No wallet connection. No automatic send.<br /><b>You review, then deposit manually.</b></span></div>
+            <div className="hero-qualifier"><LockKeyhole size={15} /><span>No automatic send. Creating an order moves no funds.<br /><b>You review, then deposit manually.</b></span></div>
             <a className="hero-cta" href="/swap">Start a private route <ArrowRight size={17} /></a>
-            <p className="cta-note">Opens the Houdini route flow · Quote availability varies</p>
+            <p className="cta-note">Opens the private route flow · Quote availability varies</p>
           </div>
           <RouteIllustration />
           <div className="hero-index"><span>01</span><span className="index-line" /> <span>PRIVATE ROUTING, IN BETA</span></div>
@@ -136,7 +136,7 @@ export function Launch() {
           <div className="manifesto-side"><span className="manifesto-kicker">THE IDEA</span><span className="manifesto-mark">DS / 01</span></div>
           <div className="manifesto-copy">
             <p>Some routes deserve <i>a little distance.</i></p>
-            <span>DarkSwap gives you a clear place to request a supported Solana-origin private swap or bridge—without connecting a wallet to the app.</span>
+            <span>DarkSwap gives you a clear place to request a supported Solana-origin private swap or bridge—creating an order moves no funds, and any deposit is one you make yourself.</span>
           </div>
           <div className="manifesto-stamp"><Shield size={22} strokeWidth={1.35} /><span>LESS<br />LINKED</span></div>
         </section>
@@ -152,7 +152,7 @@ export function Launch() {
               <div className="step-icon"><ArrowDownLeft size={22} /></div>
               <h3>Choose a route</h3>
               <p>Select a Solana asset, a destination supported by the live quote, and enter the receiving address.</p>
-              <span className="step-foot">NO WALLET CONNECTED</span>
+              <span className="step-foot">NOTHING MOVES YET</span>
             </article>
             <div className="step-connector"><span /></div>
             <article className="step-card">
@@ -183,8 +183,8 @@ export function Launch() {
             <article className="scope-card scope-live">
               <div className="scope-card-top"><span className="scope-status"><i /> LIVE IN PRIVATE BETA</span><span className="scope-code">01</span></div>
               <div className="scope-emblem"><span className="emblem-core" /><span className="emblem-orbit orbit-a" /><span className="emblem-orbit orbit-b" /><span className="emblem-axis" /></div>
-              <h3>Houdini private route</h3>
-              <p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. No wallet connection to DarkSwap.</p>
+              <h3>Private route</h3>
+              <p>Solana-origin swap or bridge, when a live quote is available. Manual deposit. Creating an order moves no funds.</p>
               <a href="/swap" className="scope-link">Open the available route <ArrowUpRight size={15} /></a>
             </article>
             <article className="scope-card scope-closed">
@@ -197,7 +197,7 @@ export function Launch() {
             <article className="scope-card scope-closed">
               <div className="scope-card-top"><span className="scope-status closed"><i /> CLOSED BETA</span><span className="scope-code">03</span></div>
               <div className="closed-art public-art" aria-hidden="true"><span className="public-line line-one" /><span className="public-line line-two" /><span className="public-node node-one" /><span className="public-node node-two" /><span className="public-node node-three" /></div>
-              <h3>OKX public swap</h3>
+              <h3>Public Solana swap</h3>
               <p>A separate, on-chain same-chain swap. It is not private and is not a bridge. Closed beta.</p>
               <span className="scope-lock"><LockKeyhole size={13} /> NOT AVAILABLE YET</span>
             </article>
@@ -213,7 +213,7 @@ export function Launch() {
           <div className="trust-copy">
             <span className="overline"><span className="overline-square" /> PRIVACY, PRECISELY</span>
             <h2>Designed for<br /><em>less linkage.</em></h2>
-            <p>DarkSwap does not ask to connect to your wallet. The available order is handled by Houdini’s route; you review it and make a separate, manual deposit.</p>
+            <p>DarkSwap never takes control of your wallet. The available order is handled by the route provider; you review it and make a separate, manual deposit.</p>
             <div className="trust-note"><span className="note-bar" /><p>Privacy depends on the route and its providers. DarkSwap does not promise absolute anonymity, hide every on-chain detail, or make a route risk-free.</p></div>
             <a href="#questions" className="text-link">Read the practical details <ArrowRight size={15} /></a>
           </div>
@@ -243,14 +243,14 @@ export function Launch() {
           <div className="closing-index"><span className="ribbon-dot" /> PRIVATE BETA / LIVE ROUTE</div>
           <h2>Start with a quote.<br /><em>Decide from there.</em></h2>
           <p>Check the supported options first. Creating an order does not move your funds; deposit instructions come after order creation.</p>
-          <a className="hero-cta closing-button" href="/swap">Open the Houdini route <ArrowRight size={17} /></a>
-          <span className="closing-note"><LockKeyhole size={13} /> No wallet connection required</span>
+          <a className="hero-cta closing-button" href="/swap">Open the private route <ArrowRight size={17} /></a>
+          <span className="closing-note"><LockKeyhole size={13} /> Creating an order moves no funds</span>
         </section>
       </main>
 
       <footer className="launch-footer">
         <a href="#top" className="launch-brand footer-brand"><span className="brand-symbol"><span /></span><span>dark<span>swap</span></span></a>
-        <span className="footer-caption">SOLANA ORIGIN · HOUDINI PRIVATE ROUTE · PRIVATE BETA</span>
+        <span className="footer-caption">SOLANA ORIGIN · PRIVATE ROUTE · PRIVATE BETA</span>
         <a href="/swap" className="footer-route">Enter route <ArrowUpRight size={14} /></a>
       </footer>
     </div>

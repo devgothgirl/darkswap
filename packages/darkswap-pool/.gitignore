@@ -1,0 +1,12 @@
+node_modules/
+build/
+evm/out/
+evm/cache/
+evm/lib/
+solana/*/target/
+*.ptau
+.keys/
+deployments/31337.json
+evm/broadcast/
+.rust-check/
+scripts/.env.deploy

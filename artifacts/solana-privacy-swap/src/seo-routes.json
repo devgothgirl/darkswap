@@ -7,12 +7,21 @@
     "/near-trends",
     "/near-discovery",
     "/docs",
-    "/tokenomics",
+    "/docs/confidential-routing",
+    "/docs/whitepaper",
+    "/pool",
+    "/pool/what-stays-public",
     "/rewards",
     "/help"
   ],
   "nonIndexable": [
-    "/tokenomics/leaderboard",
+    "/pool/activate",
+    "/pool/shield",
+    "/pool/send",
+    "/pool/unshield",
+    "/pool/receive",
+    "/pool/activity",
+    "/pool/fees",
     "/near-order",
     "/previews",
     "/founder",
@@ -27,5 +36,9 @@
   "aliases": {
     "/splitwise-preview": "/split-mixer-preview",
     "/screener-preview": "/screener-beta"
+  },
+  "externalRedirects": {
+    "/tokenomics": "https://rewards.darkswap.app",
+    "/tokenomics/leaderboard": "https://rewards.darkswap.app"
   }
 }

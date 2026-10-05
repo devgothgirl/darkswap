@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
 import { Wallet, ShieldCheck, LogOut, Unplug, LayoutDashboard, KeyRound, Loader2, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
+import { Checkbox } from '@workspace/darkswap-design-system/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@workspace/darkswap-design-system/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@workspace/darkswap-design-system/components/ui/dropdown-menu';
 import { useWallet } from '@/lib/wallet';
 import { shortAddr, readError } from '@/lib/api';
 

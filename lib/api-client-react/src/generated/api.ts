@@ -21,6 +21,7 @@ import type {
 
 import type {
   BetaAccessError,
+  DarkRewardsEstimate,
   DiscoverTokensParams,
   DiscoveryDetail,
   DiscoveryList,
@@ -128,6 +129,84 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetDarkRewardsEstimateUrl = () => {
+
+
+
+
+  return `/api/dark-rewards/estimate`
+}
+
+/**
+ * Confirmed distribution amounts valued at the day's public token prices. An estimate, not a payout record or guarantee.
+ * @summary Daily USD estimate of owner-confirmed $DARK holder distributions
+ */
+export const getDarkRewardsEstimate = async ( options?: Parameters<typeof customFetch>[1]): Promise<DarkRewardsEstimate> => {
+
+  return customFetch<DarkRewardsEstimate>(getGetDarkRewardsEstimateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDarkRewardsEstimateQueryKey = () => {
+    return [
+    `/api/dark-rewards/estimate`
+    ] as const;
+    }
+
+
+export const getGetDarkRewardsEstimateQueryOptions = <TData = Awaited<ReturnType<typeof getDarkRewardsEstimate>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDarkRewardsEstimate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDarkRewardsEstimateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDarkRewardsEstimate>>> = ({ signal }) => getDarkRewardsEstimate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDarkRewardsEstimate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDarkRewardsEstimateQueryResult = NonNullable<Awaited<ReturnType<typeof getDarkRewardsEstimate>>>
+export type GetDarkRewardsEstimateQueryError = ErrorType<void>
+
+
+/**
+ * @summary Daily USD estimate of owner-confirmed $DARK holder distributions
+ */
+
+export function useGetDarkRewardsEstimate<TData = Awaited<ReturnType<typeof getDarkRewardsEstimate>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDarkRewardsEstimate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDarkRewardsEstimateQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetStonkfunTokensUrl = (params?: GetStonkfunTokensParams,) => {
   const normalizedParams = new URLSearchParams();

@@ -1,0 +1,1 @@
+export function getResearchHtml(pathname: string): Promise<string>;

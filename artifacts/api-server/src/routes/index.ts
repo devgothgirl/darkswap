@@ -8,7 +8,9 @@ import nearTrendsRouter from "./near-trends";
 import marketingRouter from "./marketing";
 import supportRouter from "./support";
 import rewardsRouter from "./rewards";
+import darkRewardsRouter from "./dark-rewards";
 import launchRouter from "./launch";
+import poolRouter from "./pool";
 
 const router: IRouter = Router();
 
@@ -20,6 +22,8 @@ router.use(nearTrendsRouter);
 router.use(marketingRouter);
 router.use(supportRouter);
 router.use(rewardsRouter);
+router.use(darkRewardsRouter);
+router.use(poolRouter);
 router.use(["/explore", "/swap/okx"], (_req, res) => {
   res.status(403).json({
     error: "This feature is closed for beta testing. Private swap and bridge routes remain available.",

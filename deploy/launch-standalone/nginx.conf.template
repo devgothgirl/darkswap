@@ -1,0 +1,164 @@
+# PREPARATION ONLY. Not installed into this workspace's routing.
+# See docs/launch-standalone-deployment.md before rendering or using this file.
+# Run only behind a trusted HTTPS edge with this listener inaccessible directly.
+# Substitute ONLY the named ${...} placeholders, not Nginx's $variables.
+# LAUNCH_UPSTREAM_HOST must name an owner-verified TLS ingress that accepts
+# Host: darkswap.world and forwards it unchanged to the shared Launch API.
+# Simply choosing darkswap.app does NOT establish that contract.
+worker_processes auto;
+pid ${RUNTIME_DIR}/nginx.pid;
+error_log stderr warn;
+
+events { worker_connections 1024; }
+
+http {
+    # Do not record wallet identifiers, proofs, queries, cookies or signed URLs.
+    access_log off;
+    server_tokens off;
+    client_body_temp_path ${RUNTIME_DIR}/client_temp;
+    proxy_temp_path ${RUNTIME_DIR}/proxy_temp;
+    client_max_body_size 64k;
+    client_body_timeout 15s;
+    send_timeout 30s;
+
+    types {
+        text/html html;
+        text/css css;
+        application/javascript js mjs;
+        application/json json;
+        image/png png;
+        image/jpeg jpg jpeg;
+        image/svg+xml svg;
+        image/webp webp;
+        image/x-icon ico;
+        font/woff woff;
+        font/woff2 woff2;
+    }
+    default_type application/octet-stream;
+
+    # Match the ORIGINAL request path, not a normalized or decoded variant.
+    # Queries are preserved for backend validation. No arbitrary API passthrough.
+    map "$request_method:$request_uri" $launch_api_allowed {
+        default 0;
+        "~^(GET|HEAD):/api/stonkfun/(tokens|pairs)(\?.*)?$" 1;
+        "~^(GET|HEAD):/api/stonkfun/tokens/[1-9A-HJ-NP-Za-km-z]{32,44}(\?.*)?$" 1;
+        "~^(GET|HEAD):/api/launch/(config|auth/session|creator|admin/audit)(\?.*)?$" 1;
+        "~^POST:/api/launch/auth/(challenge|verify|logout)(\?.*)?$" 1;
+        "~^(GET|HEAD|POST):/api/launch/drafts(\?.*)?$" 1;
+        "~^(GET|HEAD|PUT|DELETE):/api/launch/drafts/[0-9a-fA-F-]{36}(\?.*)?$" 1;
+        "~^POST:/api/launch/logos/request-url(\?.*)?$" 1;
+        "~^POST:/api/launch/logos/[0-9a-fA-F-]{36}/complete(\?.*)?$" 1;
+        "~^(GET|HEAD):/api/launch/logos/[0-9a-fA-F-]{36}(\?.*)?$" 1;
+        "~^(GET|HEAD|PUT):/api/launch/admin/config(\?.*)?$" 1;
+        "~^(GET|HEAD|POST):/api/launch/admin/reviews(\?.*)?$" 1;
+    }
+    # Reject ambiguous original paths before Nginx can normalize them into an
+    # allowed API, SSR page or static file. Query values are not path segments.
+    map $request_uri $launch_bad_path {
+        default 0;
+        "~^[^?]*%(2[fF]|5[cC]|25|0[0-9a-fA-F]|1[0-9a-fA-F]|20|7[fF])" 1;
+        "~^[^?]*%(?![0-9a-fA-F]{2})" 1;
+        "~^[^?]*[\\\\]" 1;
+        "~^[^?]*//" 1;
+        "~^[^?]*/(\.|%2[eE])(\.|%2[eE])?(/|\?|$)" 1;
+    }
+    map "$status:$uri" $launch_robots {
+        default "";
+        "~^[45][0-9][0-9]:" "noindex, nofollow";
+        "~^[0-9]+:/(create|creator|admin)(/|$)" "noindex, nofollow";
+        "~^[0-9]+:/api/launch/" "noindex, nofollow";
+    }
+
+    upstream launch_api {
+        server ${LAUNCH_UPSTREAM_HOST}:443;
+    }
+
+    server {
+        listen ${PORT} default_server;
+        server_name darkswap.world;
+        root ${PUBLIC_DIR};
+
+        # The edge must overwrite these headers and strip any caller-supplied
+        # forwarding headers. Reject any other authority or plaintext ingress.
+        if ($http_host != "darkswap.world") { return 421; }
+        if ($http_x_forwarded_proto != "https") { return 400; }
+        if ($launch_bad_path = 1) { return 400; }
+
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Robots-Tag $launch_robots always;
+        add_header Cache-Control "no-store" always;
+
+        # Health proves only the gateway is running, NOT SSR or API readiness.
+        location = /healthz { default_type text/plain; return 200 "gateway only\n"; }
+        location = /api { default_type application/json; return 404 '{"error":"Not found"}'; }
+        location = /api/launch/submit {
+            default_type application/json;
+            return 503 '{"code":"EXECUTION_UNAVAILABLE","executionAvailable":false,"error":"Launch execution is unavailable."}';
+        }
+        location /api/ {
+            default_type application/json;
+            if ($launch_api_allowed = 0) { return 404 '{"error":"Not found"}'; }
+            # Prefixing ORIGINAL /api/... confines upstream to /launch/api/....
+            proxy_pass https://launch_api/launch$request_uri;
+            proxy_http_version 1.1;
+            proxy_ssl_server_name on;
+            proxy_ssl_name ${LAUNCH_UPSTREAM_HOST};
+            proxy_ssl_verify on;
+            proxy_ssl_trusted_certificate ${CA_CERTIFICATES_FILE};
+            proxy_ssl_verify_depth 4;
+            proxy_set_header Host darkswap.world;
+            proxy_set_header X-Forwarded-Host darkswap.world;
+            proxy_set_header X-Forwarded-Proto https;
+            # Never append untrusted caller forwarding headers.
+            # Without a reviewed real_ip config this is the edge's IP, so
+            # rate limits may be shared. Resolve that before release.
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header Forwarded "";
+            proxy_set_header Connection "";
+            proxy_set_header Upgrade "";
+            proxy_set_header Proxy "";
+            proxy_set_header Origin $http_origin;
+            proxy_set_header Cookie $http_cookie;
+            proxy_set_header X-Launch-CSRF $http_x_launch_csrf;
+            proxy_set_header Sec-Fetch-Site $http_sec_fetch_site;
+            proxy_set_header If-Unmodified-Since $http_if_unmodified_since;
+            proxy_connect_timeout 5s;
+            proxy_read_timeout 30s;
+            proxy_send_timeout 15s;
+            proxy_cache off;
+            proxy_buffering off;
+            proxy_redirect off;
+            proxy_next_upstream off;
+            proxy_intercept_errors off;
+            # Do not rewrite Domain/Path/SameSite/Secure or collapse Set-Cookie.
+        }
+
+        # Only classified pages and generated crawler endpoints reach SSR.
+        # The original query/path is preserved; the loopback renderer validates
+        # it independently and obtains data from its fixed public API origin.
+        location ~ "^/(|explore|docs|terms|privacy|risk|create|creator|admin|token/[1-9A-HJ-NP-Za-km-z]{32,44}|robots\.txt|sitemap\.xml)/?$" {
+            proxy_pass http://127.0.0.1:${LAUNCH_SSR_PORT};
+            proxy_http_version 1.1;
+            proxy_pass_request_headers off;
+            proxy_pass_request_body off;
+            proxy_set_header Host darkswap.world;
+            proxy_set_header Content-Length "";
+            proxy_set_header Connection "";
+            proxy_connect_timeout 5s;
+            proxy_read_timeout 60s;
+            proxy_send_timeout 15s;
+            proxy_cache off;
+            proxy_redirect off;
+            proxy_next_upstream off;
+            proxy_intercept_errors off;
+        }
+        # A raw Vite template must never be served as a page.
+        location = /index.html { return 404; }
+        location / {
+            limit_except GET { deny all; }
+            # Missing scripts and unrelated paths must never become SPA HTML.
+            try_files $uri =404;
+        }
+    }
+}

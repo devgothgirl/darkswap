@@ -6,14 +6,14 @@ import "./QuietControl.css";
 // Independent exploration of the extracted Current homepage.
 // Route descriptions are local disclosures, never quotes, orders, or live links.
 const faqs = [
-  { question: "What does “maximum privacy” mean?", answer: "It describes DarkSwap’s design goal, not a verified privacy ranking or an absolute result. The product is built around private routing, no wallet connection to the app, and a deposit you make yourself. Privacy depends on the route and its providers. Solana deposits remain public, and destination transfers may be public." },
+  { question: "What does “maximum privacy” mean?", answer: "It describes DarkSwap’s design goal, not a verified privacy ranking or an absolute result. The product is built around private routing, an order that moves no funds when created, and a deposit you make yourself. Privacy depends on the route and its providers. Solana deposits remain public, and destination transfers may be public." },
   { question: "Do I connect a wallet?", answer: "Not for the two live Solana-origin swap routes. You request a quote without connecting a wallet to DarkSwap. After reviewing the quote and creating an order, you send the exact deposit amount yourself from your Solana wallet. DarkSwap does not send a transaction for you." },
   { question: "What should I check before sending?", answer: "Check the selected asset, destination network, recipient and any refund address, quote, fees, limits, estimated time, and deposit instructions. Creating an order does not move your funds. Make a deposit only after checking the exact address, amount, network and any time limit shown in that order." },
   { question: "Are all assets and destinations supported?", answer: "No. Availability depends on the route, selected amount and destination. A live quote is the source of truth. Private execution may take longer than a direct swap, and execution is not guaranteed. This local preview does not request quotes or create orders." },
   { question: "Are holder rewards live?", answer: "No. NEAR + ZEC loyalty is a planned DARK holder incentive, not yield or active payouts. The proposal starts with a three-day holder streak for eligibility; the daily progression formula and rates are not finalized. Rewards accrued by team allocations would be split 50% toward holder-streak bonuses and 50% toward buyback + burn. Funding and verified eligibility rules still apply." },
 ];
 const process = [
-  { title: "Choose what arrives, and where.", copy: "Select a Solana asset and a supported destination. Enter the receiving address. Your wallet stays disconnected from DarkSwap." },
+  { title: "Choose what arrives, and where.", copy: "Select a Solana asset and a supported destination. Enter the receiving address. Nothing moves at this step." },
   { title: "Review the quote before the order.", copy: "Check the quote, fees, limits, recipient and estimated time. If the details do not work for you, stop here. Nothing has been sent." },
   { title: "Make the deposit yourself.", copy: "Create the order, then check its deposit instructions. Manually send the exact amount on Solana and track the order as the route progresses." },
 ];
@@ -92,11 +92,11 @@ export function QuietControl() {
               <li><span className="qc-number">2</span><div><strong>You review</strong><p>The quote and its details before an order.</p></div></li>
               <li><span className="qc-number">3</span><div><strong>You send</strong><p>A manual deposit from your Solana wallet.</p></div></li>
             </ol>
-            <div className="qc-control-foot"><LockKeyhole size={16} /> No wallet connection. No automatic send.</div>
+            <div className="qc-control-foot"><LockKeyhole size={16} /> No automatic send. Creating an order moves no funds.</div>
           </div>
         </section>
         <div className="qc-wrap qc-assurance" aria-label="Product essentials">
-          <span><LockKeyhole /> Your wallet stays disconnected</span>
+          <span><LockKeyhole /> Creating an order moves no funds</span>
           <span><Check /> A quote before commitment</span>
           <span><ArrowUpRight /> A deposit you send yourself</span>
         </div>
@@ -126,14 +126,14 @@ export function QuietControl() {
                 <h3>Existing private route</h3>
                 <p>A Solana-origin swap or bridge when a live quote is available. Review the supported destination, then decide whether to deposit.</p>
                 <button className="qc-text-link" type="button" aria-expanded={routeOpen === "private"} aria-controls="qc-private-detail" onClick={() => setRouteOpen(routeOpen === "private" ? null : "private")}>View private route details <ArrowRight size={16} /></button>
-                <div className="qc-route-detail" id="qc-private-detail" hidden={routeOpen !== "private"}><strong>Local route description — not an order</strong><p>No wallet connection to DarkSwap. In the live flow, request and review a quote, create an order, then manually send its exact Solana deposit.</p><p>Assets, destinations, limits and timing depend on the live quote. Privacy varies by provider and route; there is no anonymity guarantee.</p></div>
+                <div className="qc-route-detail" id="qc-private-detail" hidden={routeOpen !== "private"}><strong>Local route description — not an order</strong><p>Creating an order moves no funds. In the live flow, request and review a quote, create an order, then manually send its exact Solana deposit.</p><p>Assets, destinations, limits and timing depend on the live quote. Privacy varies by provider and route; there is no anonymity guarantee.</p></div>
               </article>
               <article className="qc-route">
                 <div className="qc-route-top"><Shield strokeWidth={1.3} /><span>LIVE IN PRIVATE BETA</span></div>
                 <h3>Privacy swap</h3>
                 <p>Request confidential handling for a supported Solana-origin route. Review the quote, recipient and refund addresses before a manual deposit.</p>
                 <button className="qc-text-link" type="button" aria-expanded={routeOpen === "privacy"} aria-controls="qc-privacy-detail" onClick={() => setRouteOpen(routeOpen === "privacy" ? null : "privacy")}>View Privacy swap details <ArrowRight size={16} /></button>
-                <div className="qc-route-detail" id="qc-privacy-detail" hidden={routeOpen !== "privacy"}><strong>Local route description — not an order</strong><p>No wallet connection to DarkSwap. The live flow requests confidential handling, shows available quotes, and lets you review recipient and refund addresses before creating an order.</p><p>You fund that order manually. Solana deposits remain public; destination transfers may be public. Confidential handling is not an anonymity guarantee.</p></div>
+                <div className="qc-route-detail" id="qc-privacy-detail" hidden={routeOpen !== "privacy"}><strong>Local route description — not an order</strong><p>Creating an order moves no funds. The live flow requests confidential handling, shows available quotes, and lets you review recipient and refund addresses before creating an order.</p><p>You fund that order manually. Solana deposits remain public; destination transfers may be public. Confidential handling is not an anonymity guarantee.</p></div>
               </article>
             </div>
             <p className="qc-route-bottom">Supported assets and destinations are determined by the live quote, not this overview.</p>

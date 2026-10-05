@@ -1,0 +1,53 @@
+[
+  {
+    "name": "poseidon syscall matches all 16 vectors",
+    "ok": true,
+    "unitsByArity": {
+      "1": 1190,
+      "2": 1386,
+      "3": 1704,
+      "4": 2144
+    }
+  },
+  {
+    "name": "empty-tree root from 26 hashes on-chain",
+    "ok": true,
+    "units": 24718
+  },
+  {
+    "name": "proof accepted: unshield",
+    "ok": true,
+    "units": 120711,
+    "txBytes": 723,
+    "err": null
+  },
+  {
+    "name": "changed public amount rejected: unshield",
+    "ok": true,
+    "units": 120832
+  },
+  {
+    "name": "proof accepted: transfer",
+    "ok": true,
+    "units": 120745,
+    "txBytes": 723,
+    "err": null
+  },
+  {
+    "name": "changed public amount rejected: transfer",
+    "ok": true,
+    "units": 120870
+  },
+  {
+    "name": "proof accepted: shield",
+    "ok": true,
+    "units": 120724,
+    "txBytes": 723,
+    "err": null
+  },
+  {
+    "name": "changed public amount rejected: shield",
+    "ok": true,
+    "units": 120845
+  }
+]

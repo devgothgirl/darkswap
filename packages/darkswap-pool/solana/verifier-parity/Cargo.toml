@@ -1,0 +1,15 @@
+[package]
+name = "darkswap-verifier-parity"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Phase 1 check: Solana's Poseidon and Groth16 verifier agree with the DarkSwap circuit"
+
+[dependencies]
+groth16-solana = "0.2.0"
+solana-poseidon = "5.0.0"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"

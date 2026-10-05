@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://darkswap.app/sitemap.xml
+Sitemap: https://darkswap.app/launch/sitemap.xml

@@ -66,7 +66,7 @@ function TrackModal({ close }: { close: () => void }) {
   const [id, setId] = useState("");
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <div className="modal"><div className="modal-head"><div><span className="section-label">Order lookup</span><h2>Find your transfer.</h2></div><button className="secondary-button" onClick={close} aria-label="Close"><X size={15} /></button></div>
-      <p>Enter the Houdini order ID from your deposit instructions. No wallet connection needed.</p>
+      <p>Enter the order ID from your deposit instructions. Tracking is read-only.</p>
       <label className="section-label">Order ID</label><input className="input-standard" value={id} onChange={(event) => setId(event.target.value)} placeholder="Paste your order ID" />
       <button className="primary-button" disabled={!id.trim()} style={{ marginTop: 15 }}>Find order <ArrowRight size={16} /></button>
     </div>
@@ -88,7 +88,7 @@ export function Current() {
       <div className="page-enter">
         <div className="eyebrow"><span className="eyebrow-line" /> DARKSWAP / PRIVATE ROUTING</div>
         <h1 className="hero-title">Move value.<br /><em>Leave less</em><br />behind.</h1>
-        <p className="hero-copy">A quieter way out of Solana. Compare a live private route, choose where your assets land, then send from any Solana wallet. Nothing to connect here.</p>
+        <p className="hero-copy">A quieter way out of Solana. Compare a live private route, choose where your assets land, then send from any Solana wallet. Creating an order moves no funds.</p>
         <div className="hero-stamp"><LockKeyhole size={28} strokeWidth={1.3} /></div>
         <ol className="flow-list">
           <li className="flow-item"><span className="flow-num">01</span><div><strong>Choose your route</strong><p>Start with a Solana asset. Find a destination on a supported chain.</p></div></li>
@@ -112,12 +112,12 @@ export function Current() {
           </div>
           <div className="address-block"><label className="section-label">Recipient address <span className="label-right">On {to.chainName}</span></label><input className="input-standard" value={address} onChange={(event) => setAddress(event.target.value)} /><p className="field-help">Double-check the chain and address. Transfers cannot be reversed.</p></div>
           <button className="primary-button" style={{ marginTop: 23 }} onClick={() => setReview(true)}>Review order <ArrowRight size={17} /></button>
-          <p className="fine-print">No wallet connection. Creating an order does not move your funds.</p>
+          <p className="fine-print">Creating an order does not move your funds. You make the deposit yourself.</p>
         </div>
-        <div className="trust-strip"><span><LockKeyhole size={12} /> No wallet connection</span><span><Clock3 size={12} /> Private execution takes longer</span></div>
+        <div className="trust-strip"><span><LockKeyhole size={12} /> Orders move no funds</span><span><Clock3 size={12} /> Private execution takes longer</span></div>
       </section>
     </main>
-    <footer className="footer"><span>DARKSWAP / PRIVATE AND PUBLIC ROUTES ARE DISTINCT.</span><span>Houdini private exchange · OKX public Solana swap</span></footer>
+    <footer className="footer"><span>DARKSWAP / PRIVATE AND PUBLIC ROUTES ARE DISTINCT.</span><span>Private exchange · Public Solana swap</span></footer>
     {review && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setReview(false); }}><div className="modal"><div className="modal-head"><div><span className="section-label">Final review</span><h2>Confirm your route.</h2></div><button className="secondary-button" onClick={() => setReview(false)}><X size={15} /></button></div><p>Check the recipient carefully. The deposit address is provided only after you create the order.</p><div className="modal-row"><span>You will send</span><strong>{amount} {from.symbol} · Solana</strong></div><div className="modal-row"><span>Estimated receive</span><strong>{selected.amount} {to.symbol} · {to.chainName}</strong></div><div className="modal-row"><span>Recipient</span><strong>{address}</strong></div><div className="warning-box">Creating this order does not send any assets. You must manually transfer the exact deposit amount on Solana to the address on the next screen.</div><button className="primary-button" onClick={() => setReview(false)}>Confirm &amp; create order</button></div></div>}
     {tracking && <TrackModal close={() => setTracking(false)} />}
   </div>;

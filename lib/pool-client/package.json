@@ -1,0 +1,31 @@
+{
+  "name": "@darkswap/pool-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser and Node client for the DarkSwap shielded pools (TESTNET, dev proving keys).",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "browser": "./src/browser.js",
+      "default": "./src/node.js"
+    },
+    "./browser": { "types": "./src/index.d.ts", "default": "./src/browser.js" },
+    "./node": { "types": "./src/index.d.ts", "default": "./src/node.js" }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.4.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "@scure/bip39": "^2.0.1",
+    "@solana/web3.js": "^1.99.0",
+    "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
+    "circomlibjs": "^0.1.7",
+    "snarkjs": "^0.7.6",
+    "viem": "^2.57.2"
+  }
+}

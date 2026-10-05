@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getRewardsMe } from '@workspace/api-client-react';
 import { ArrowLeft, ArrowRight, RotateCw, ShieldCheck } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Link } from 'wouter';
 import { Footer, Header, errorText } from '../components/swap-ui';
 import { RewardEnrollment } from '../components/reward-enrollment';
 import { useRewards } from '../hooks/use-rewards';
+import { trackEvent } from '../lib/analytics';
 
 export default function RewardsPage() {
   const rewards = useRewards();
@@ -25,6 +26,14 @@ export default function RewardsPage() {
   const progress = data && tier && data.nextThreshold !== null
     ? Math.max(0, Math.min(100, ((data.balance - tier.threshold) / Math.max(1, data.nextThreshold - tier.threshold)) * 100))
     : 100;
+  // Which state the page resolves to, never an email, balance or account identifier.
+  const state = !rewards.available ? 'unavailable' : !rewards.ready ? '' : !rewards.authenticated ? 'signed_out' : rewards.enrolled ? 'enrolled' : 'not_enrolled';
+  const trackedState = useRef('');
+  useEffect(() => {
+    if (!state || trackedState.current === state) return;
+    trackedState.current = state;
+    trackEvent('rewards_account_viewed', { state });
+  }, [state]);
   const extra = data as (typeof data & { rules?: { version?: string; pointsPerSwap?: number; dailyCap?: number; tiers?: { id: string; name: string; threshold: number }[] } }) | undefined;
   return <div className="rewards-shell"><Header/>
     <main className="rewards-main">

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, Check, CircleDot, Hourglass, Mail, Repeat, Send, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, CircleAlert, CircleDot, Clock3, Hourglass, Info, LockKeyhole, Mail, RefreshCw, Repeat, Send, ShieldCheck } from 'lucide-react';
 import { useSubscribeUpdates } from '@workspace/api-client-react';
 import { CopyButton, errorText } from './swap-ui';
+import { trackEvent } from '../lib/analytics';
 import './waiting.css';
 
 const STAGES = [
@@ -11,11 +12,17 @@ const STAGES = [
   { label: 'Exchanging', sub: 'Route running', icon: Repeat },
   { label: 'Completed', sub: 'Provider confirmed', icon: Check },
 ];
+const TRACKING_STAGES = [
+  { label: 'Send', sub: 'On your wallet', icon: Send },
+  { label: 'Processing', sub: 'Deposit detected', icon: Clock3 },
+  { label: 'Exchanging', sub: 'Route in progress', icon: ArrowRight },
+  { label: 'Completed', sub: 'Output reported', icon: Check },
+];
 
 /** stage: 0-3 index of the current stage. halted: route stopped (failed/expired/refunded). */
-export function WaitingStepper({ stage, halted, haltLabel, reviewFirst }: { stage: number; halted?: boolean; haltLabel?: string; reviewFirst?: boolean }) {
+export function WaitingStepper({ stage, halted, haltLabel, reviewFirst, tracking = false }: { stage: number; halted?: boolean; haltLabel?: string; reviewFirst?: boolean; tracking?: boolean }) {
   return <ol className="ws-stepper" aria-label="Order progress" data-testid="waiting-stepper">
-    {STAGES.map((s, i) => {
+    {(tracking ? TRACKING_STAGES : STAGES).map((s, i) => {
       const Icon = halted && i === stage ? AlertTriangle : s.icon;
       const state = i < stage || (i === 3 && stage === 3 && !halted) ? 'done' : i === stage ? (halted ? 'halt' : 'current') : 'todo';
       return <li key={s.label} className={`ws-step ws-step--${state}`} aria-current={i === stage ? 'step' : undefined}>
@@ -30,7 +37,14 @@ export function OrderMeta({ items }: { items: { label: string; value: ReactNode 
   return <div className="ws-meta">{items.map(item => <span key={item.label}>{item.label}: <b>{item.value}</b></span>)}</div>;
 }
 
-export function SwapPair({ inAmount, inSymbol, outAmount, outSymbol, outNetwork, estimated, inputLabel = 'Send' }: { inAmount: string; inSymbol: string; outAmount: string; outSymbol: string; outNetwork?: string; estimated?: boolean; inputLabel?: string }) {
+export function SwapPair({ inAmount, inSymbol, outAmount, outSymbol, outNetwork, estimated, inputLabel = 'Send', tracking = false }: { inAmount: string; inSymbol: string; outAmount: string; outSymbol: string; outNetwork?: string; estimated?: boolean; inputLabel?: string; tracking?: boolean }) {
+  if (tracking) return <section className="nt-summary" aria-label={`${inputLabel}: ${inAmount} ${inSymbol} on Solana; ${estimated ? 'estimated receive' : 'receive'}: ${outAmount} ${outSymbol}${outNetwork ? ` on ${outNetwork}` : ''}`} data-testid="near-order-swap-summary">
+    <span className="nt-coin" aria-hidden="true">{inSymbol.slice(0, 1)}</span>
+    <div><strong>{inAmount} {inSymbol}</strong><small>{inputLabel}</small></div><span>Solana</span>
+    <ArrowRight size={17} aria-hidden="true"/>
+    <span className="nt-coin nt-coin--output" aria-hidden="true">{outSymbol.slice(0, 1)}</span>
+    <div><strong>{outAmount} {outSymbol}</strong>{estimated && <small>Estimated receive</small>}</div><span>{outNetwork}</span>
+  </section>;
   return <div className="ws-pair">
     <div><small>{inputLabel} · Solana</small><strong>{inAmount} <em>{inSymbol}</em></strong></div>
     <ArrowRight size={20} className="ws-pair-arrow" aria-hidden="true" />
@@ -41,9 +55,10 @@ export function SwapPair({ inAmount, inSymbol, outAmount, outSymbol, outNetwork,
 /** Only render when the order is genuinely fundable. */
 export type AssetKind = 'native' | 'spl' | 'unknown';
 
-export function DepositCard({ amount, symbol, assetKind, mint, address, memo, recipient, recipientTag, deadlineText, remainingText }: {
+export function DepositCard({ amount, symbol, assetKind, mint, address, memo, recipient, recipientTag, deadlineText, remainingText, deadlineInSidePanel = false, actions }: {
   amount: string; symbol: string; assetKind: AssetKind; mint?: string; address: string; memo?: string;
   recipient: string; recipientTag?: string; deadlineText: string; remainingText?: string;
+  deadlineInSidePanel?: boolean; actions?: ReactNode;
 }) {
   return <section className="ws-card ws-deposit" data-testid="waiting-deposit-card">
     <div className="ws-deposit-line">Please send <b data-testid="text-waiting-amount">{amount} {symbol}</b><CopyButton value={amount} name="exact amount" /></div>
@@ -51,12 +66,14 @@ export function DepositCard({ amount, symbol, assetKind, mint, address, memo, re
     <span className="ws-label">SOLANA DEPOSIT WALLET · {assetKind === 'spl' ? `${symbol} (SPL TOKEN)` : assetKind === 'native' ? 'NATIVE SOL' : symbol}</span>
     <div className="ws-address"><span data-testid="text-waiting-deposit-address">{address}</span><CopyButton value={address} name="deposit address" /></div>
     {assetKind === 'spl' && mint && <p className="ws-small">Token mint: <span className="ws-mono">{mint}</span></p>}
+    {deadlineInSidePanel && assetKind === 'native' && <p className="ws-small">Asset type: <span className="ws-mono">Native SOL (not an SPL token)</span></p>}
     {memo && <><span className="ws-label ws-label--warn">REQUIRED MEMO · INCLUDE WITH TRANSFER</span><div className="ws-address ws-address--memo"><span data-testid="text-waiting-memo">{memo}</span><CopyButton value={memo} name="deposit memo" /></div></>}
     <div className="ws-deposit-foot">
-      <div><span className="ws-label">Deadline</span><b>{deadlineText}</b>{remainingText && <small className="ws-remaining">{remainingText}</small>}</div>
+      {!deadlineInSidePanel && <div><span className="ws-label">Deadline</span><b>{deadlineText}</b>{remainingText && <small className="ws-remaining">{remainingText}</small>}</div>}
       <div className="ws-recipient"><span className="ws-label">Destination recipient (not a deposit address)</span><span className="ws-mono" data-testid="text-waiting-recipient">{recipient}</span>{recipientTag && <small className="ws-mono">Tag: {recipientTag}</small>}</div>
     </div>
     <p className="ws-small">No wallet is connected here. Send manually from your own Solana wallet.</p>
+    {actions && <div className="nt-deposit-actions">{actions}</div>}
   </section>;
 }
 
@@ -64,15 +81,19 @@ export function ClosedNotice({ title, children }: { title: string; children: Rea
   return <section className="ws-card ws-closed" role="alert" data-testid="waiting-closed-notice"><AlertTriangle size={20} /><div><strong>{title}</strong><p>{children}</p></div></section>;
 }
 
-export function InfoTips({ assetKind, symbol, hasMemo }: { assetKind: AssetKind; symbol: string; hasMemo: boolean }) {
+export function InfoTips({ assetKind, symbol, hasMemo, showPrivacyTip = false, tracking = false }: { assetKind: AssetKind; symbol: string; hasMemo: boolean; showPrivacyTip?: boolean; tracking?: boolean }) {
   const tips = [
-    { icon: AlertTriangle, text: `Send only on the Solana network. ${assetKind === 'spl' ? `${symbol} must be sent as an SPL token transfer, not as native SOL.` : assetKind === 'native' ? 'Send native SOL, not a wrapped or SPL version.' : `Send ${symbol} exactly as quoted for this order; check the asset in your wallet matches.`} Assets sent on another network may not be recoverable.` },
-    { icon: CircleDot, text: 'Send the exact amount shown. If your wallet deducts a fee from the entered amount, adjust it so the received deposit is exact. A different amount can delay or fail the route.' },
+    { icon: tracking ? Info : AlertTriangle, text: `Send only on the Solana network. ${assetKind === 'spl' ? `${symbol} must be sent as an SPL token transfer, not as native SOL.` : assetKind === 'native' ? 'Send native SOL, not a wrapped or SPL version.' : `Send ${symbol} exactly as quoted for this order; check the asset in your wallet matches.`} Assets sent on another network may not be recoverable.` },
+    { icon: tracking ? LockKeyhole : CircleDot, text: 'Send the exact amount shown. If your wallet deducts a fee from the entered amount, adjust it so the received deposit is exact. A different amount can delay or fail the route.' },
     ...(hasMemo ? [{ icon: Mail, text: 'Include the memo exactly as shown. A missing memo can prevent the deposit from being matched.' }] : []),
     { icon: ShieldCheck, text: 'Send one transfer only, before the deadline, from a wallet you control. Avoid sending through a third-party contract or exchange withdrawal batch.' },
-    { icon: Repeat, text: 'Never send twice. If status stalls, keep your order details and sending transaction hash for a support inquiry. Recovery is not guaranteed.' },
+    { icon: tracking ? RefreshCw : Repeat, text: 'Never send twice. If status stalls, keep your order details and sending transaction hash for a support inquiry. Recovery is not guaranteed.' },
+    ...(showPrivacyTip ? [{ icon: CircleAlert, text: 'A public origin. Solana deposits are visible on-chain. Confidential mode does not guarantee anonymity or unlinkability.' }] : []),
   ];
-  return <section className="ws-card"><h2 className="ws-h2">Information tips</h2><ul className="ws-tips">{tips.map((t, i) => <li key={i}><span className="ws-tip-icon"><t.icon size={14} /></span><p>{t.text}</p></li>)}</ul></section>;
+  return <section className="ws-card"><h2 className="ws-h2">Information tips</h2><ul className="ws-tips">{tips.map((t, i) => {
+    const firstSentence = t.text.indexOf('. ') + 1;
+    return <li key={i}><span className="ws-tip-icon"><t.icon size={tracking ? 16 : 14} /></span><p>{tracking && firstSentence > 0 ? <><strong>{t.text.slice(0, firstSentence)}</strong>{t.text.slice(firstSentence)}</> : t.text}</p></li>;
+  })}</ul></section>;
 }
 
 export function UpdatesSignup() {
@@ -83,7 +104,12 @@ export function UpdatesSignup() {
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!valid || !consent || subscribe.isPending) return;
-    subscribe.mutate({ data: { email: email.trim(), consent: true } });
+    subscribe.mutate({ data: { email: email.trim(), consent: true } }, {
+      // Never the email address; only that an optional signup succeeded, and where.
+      onSuccess: () => trackEvent('updates_signup_completed', {
+        route: window.location.pathname.includes('/near-order') ? 'privacy_swap' : 'private_route'
+      })
+    });
   };
   return <section className="ws-card ws-signup" aria-labelledby="ws-signup-title" data-testid="panel-updates-signup">
     <span className="ws-label">OPTIONAL</span>

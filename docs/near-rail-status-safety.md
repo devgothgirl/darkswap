@@ -1,6 +1,6 @@
 # NEAR rail status safety — operator runbook
 
-**Evidence checked: October 1, 2026 (UTC).** This concerns only DarkSwap's NEAR Intents 1Click Privacy swap rail. The public incident feed is an observation, not a route quote, order status, account entitlement, privacy certification, or settlement guarantee.
+**Evidence rechecked: October 2, 2026 at 22:38–22:39 UTC.** This concerns only DarkSwap's NEAR Intents 1Click Privacy swap rail. The public incident feed is an observation, not a route quote, order status, account entitlement, privacy certification, or settlement guarantee.
 
 ## Setup and contract
 
@@ -25,18 +25,22 @@ Queries poll every 15 seconds and revalidate on mount/focus. Offline, failed, pa
 
 ## Scope handling and mapping limits
 
-The adapter's explicit route chain set is `sol`, `near`, `eth`, `arb`, `base`, `op`, `pol`, `bsc`. It does not infer transit chains or bridge dependencies from token tickers, contract names, confidential mode or the word “NEAR.”
+The adapter's **selectable route network** set remains `sol`, `near`, `eth`, `arb`, `base`, `op`, `pol`, `bsc`. Selected route validation and the token picker are not expanded by incident recognition.
+
+The separate, bounded **recognized incident identifier** set is the exact `blockchain` values verified in the first-party 1Click catalog [S6] on October 2: `abs`, `adi`, `aleo`, `aptos`, `arb`, `avax`, `base`, `bch`, `bera`, `bsc`, `btc`, `cardano`, `dash`, `doge`, `eth`, `fogo`, `gnosis`, `hood`, `hypercore`, `ltc`, `monad`, `movement`, `near`, `op`, `plasma`, `pol`, `scroll`, `sol`, `starknet`, `stellar`, `sui`, `ton`, `tron`, `xlayer`, `xrp`, `zec`. Recognition says what a chain-valued incident names, not that DarkSwap can execute on that chain. No aliases, ticker conversion, case folding, whitespace trimming or wildcard matching is applied.
+
+A **genuinely unknown identifier** is outside that reviewed recognition set, even if it looks like a chain name. It remains unverified and blocking. Never learn identifiers automatically from the incident feed itself. Neither recognition nor a nonmatching chain incident establishes the health of hidden dependencies. The adapter does not infer transit chains or bridge dependencies from token tickers, contract names, confidential mode or the word “NEAR.”
 
 | Public scope | Evidence and DarkSwap handling |
 | --- | --- |
-| `chain` | Official schemas and public client recognize a chain-valued scope. An `active` incident with an exact known chain value matches either selected endpoint; another value in DarkSwap's chain set is unrelated. |
+| `chain` | Official schemas/client and incident documentation identify a chain-valued scope. An `active` incident with an exact recognized identifier matches either selected endpoint; a recognized non-endpoint value is unrelated to the selected endpoint networks, including Stellar on SOL → NEAR. The public feed omits direction, so either endpoint match holds regardless of deposit/withdraw direction. |
 | `chain_all` | Public client labels this **“chain and intents”**, not “all chains.” It retains a chain-valued `scopeValue`; DarkSwap applies the same exact endpoint matching as `chain`. |
 | `bridge` | Observed `hot` in the active feed. The catalog supplies no explicit selected-route bridge dependency, so impact remains unverified and new orders/funding guidance pause conservatively. Do not report that every confidential/basic route uses HOT or is down. |
 | `token`, `token_chain` | Official schema/client recognize both; the client labels the latter “token, on-chain deposits” and displays token identifiers using a token catalog. DarkSwap's current incident endpoint is chain-only, not an exact-asset dependency evaluator: these scopes remain unverified and blocking. |
 | `intents`, `address` | Included in the current official incident enum. The public client treats `intents` as chain-valued for display, but display behavior alone does not establish route-execution impact. Current DarkSwap handling remains unverified and blocking. |
 | `global`, unknown scope/value/status | `global` appears in configuration/grant concepts, **not** in the observed incident enum. It was not observed as an active incident. Do not invent a supported public global-outage semantic; any such incident or unknown value/status is unverified and blocking. |
 
-Only `active` incident status is mapped to verified chain impact; even an `acknowledged` entry is conservatively unverified. A chain outside the explicit DarkSwap set is also unverified, not automatically unrelated. These conservative choices can pause a route that is actually operating; that is a **local safety hold**, not evidence of a universal provider outage.
+Only `active` incident status is mapped to verified chain impact; even an `acknowledged` entry is conservatively unverified. A recognized external chain is not unknown merely because it is unselectable; an arbitrary nonmatching value is not automatically unrelated. Mixed unrelated and unverified entries still hold; matching entries still pause. These conservative choices can pause a route that is actually operating; that is a **local safety hold**, not evidence of a universal provider outage.
 
 The public 1Click catalog [S6] returned 202 entries at 14:16 UTC, with `assetId`, `blockchain`, decimals, symbol and optional contract address. It includes native SOL and chain-specific representations sharing tickers such as ETH. Some `op`/`pol`/`bsc` entries use `nep245:`; current DarkSwap token normalization admits only `nep141:` plus its network/source checks. Chain allowlisting or a catalog listing is not executable-route proof. Neither catalog nor these incident fields establishes a bridge/transit dependency graph.
 
@@ -48,6 +52,8 @@ The public 1Click catalog [S6] returned 202 entries at 14:16 UTC, with `assetId`
 4. Investigate transport/JSON/size/schema changes without weakening the guard or forwarding 1Click credentials to Shield. `/incident` is a different authenticated partner surface [S4]; this runbook does not authorize incident submission, enforcement or account permission changes.
 5. Restore guidance only after a successful validated observation produces fresh **allowed** eligibility for the selected route, all active scopes are verifiably unrelated or removed/resolved, and fresh independent/live-order checks pass. A recent resolved record, empty stale cache or a working quote is insufficient. Exact final terms must still be accepted, the order must still await a deposit, and its deadline must remain future.
 6. If an unknown scope/dependency persists, retain the hold and request provider clarification. Update explicit mappings/contract and isolated tests through review; do not add a manual “assume healthy” fallback. Incident resolution does not extend an expired deposit deadline or clear provider-history/recovery entitlement gates.
+
+Recognition maintenance: compare exact network identifiers with fresh first-party catalog/schema evidence and recheck `chain`/`chain_all` semantics before changing the explicit set. Record sources and UTC time, add external-chain/unknown/mixed/matching regressions, and review any addition/removal. Do not expand selectable destinations or bridge/token/intents mappings as a side effect. A new identifier stays unknown until verified and reviewed. Direction is absent from the public response; authenticated incident APIs having direction fields does not permit narrowing public endpoint holds. The public client labels `chain_all` “chain and intents,” not all networks; this supports chain-valued endpoint comparison, not claims about transit participation or full dependency health.
 
 Houdini is a distinct private execution rail with its own credentials, quotes and order lifecycle; this guard neither disables it nor certifies it as a safe equivalent substitute. OKX/terminal research or preview is not private execution and must not be presented as an incident workaround. Confidential `basic` handling does not shield a public Solana deposit or guarantee anonymity, unlinkability or settlement.
 
@@ -65,7 +71,7 @@ node scripts/verify-near-funding-browser.mjs --expired-preview
 
 The dependency-free browser script requires Chromium on `PATH` (or `CHROMIUM_PATH`) and a running app at `http://localhost:80` (override with `NEAR_TEST_BASE_URL`). It intercepts every `/api/` request before navigation; all quote/order/status responses are fixtures. It checks desktop/mobile review, incident transitions, offline/stale/error/deadline/lifecycle gates, recovery and historical copy controls. Screenshots are written to ignored `screenshots/near-safety/`. The second command checks expired previews only.
 
-Verify fresh/failed/stale/invalid/count-mismatched feed behavior; known matching/unrelated and unknown scopes; pre-create rejection without a preview claim/provider POST; replay/recovery during a pause; post-create attached blocking; deadline/status changes; exact-term changes; cached-before-mount, offline/error/paused and >30-second UI responses. Use mocks for allow/blocked states, including a mid-create incident; do not wait for a real incident or create a provider order to test a guard.
+Verify fresh/failed/stale/invalid/count-mismatched feed behavior; Stellar and other recognized external chains on SOL → NEAR; unknown identifiers, mixed incidents, matching endpoints, missing direction and unknown scopes/statuses; pre-create rejection without a preview claim/provider POST; replay/recovery/tracking during a pause; post-create attached blocking; deadline/status changes; exact-term changes; cached-before-mount, offline/error/paused and >30-second UI responses. Use mocks for allow/blocked states, including a mid-create incident; do not wait for a real incident or create a provider order to test a guard.
 
 Public-read inspection only (no authorization/cookies needed):
 
@@ -76,11 +82,11 @@ curl --fail --max-time 10 -H 'Accept: application/json' \
   https://shield.chaindefuser.com/docs-json
 ```
 
-These commands inspect public data, not settlement or account access. This documentation task performed only unauthenticated public GET/search and source inspection: no secrets, quote requests, live orders, deposits, browser tests, workflow changes, incident writes or deployment. Test commands above are source-verified instructions, not a claim that this documentation task executed them.
+These commands inspect public data, not settlement or account access. This correction uses public unauthenticated GETs and isolated mocked regression tests: no credential inspection, live provider quote/order requests, deposits, incident writes or production deployment.
 
 ## Dated source evidence and unconfirmed limits
 
-All sources below were retrieved October 1, 2026 UTC. Counts are point-in-time observations, not current status promises.
+The original source observations below were retrieved October 1, 2026 UTC. October 2 rechecks are recorded after the table. Counts are point-in-time observations, not current status promises.
 
 | Source | Evidence |
 | --- | --- |
@@ -91,5 +97,18 @@ All sources below were retrieved October 1, 2026 UTC. Counts are point-in-time o
 | **S5** — [Proactive Intents Security](https://docs.near-intents.org/security-compliance/proactive-intents-security.md) | Describes scoped quote-time checks and broader adoption as rolling out/vision. Does not prove end-to-end enforcement on every route or expose a public bridge-dependency graph. |
 | **S6** — [1Click token catalog](https://1click.chaindefuser.com/v0/tokens) | Unauthenticated GET HTTP 200 at 14:16:29 UTC. Exact identity/network fields were inspected; no explicit bridge dependency field observed. |
 | **S7** — [Public status client bundle inspected](https://partners.near-intents.org/_next/static/chunks/0rnwrujxobpro.js?dpl=dpl_2RD6fXc7jy4UGTXxWn7knLjDTwdR) | Served from S2; observed scope labels, chain/token display classification and public feed path. A deployment-specific bundle is mutable implementation evidence, not a contractual API or proof of route dependencies. |
+
+### October 2 recognition evidence
+
+- At 22:38:25 UTC, S1 returned HTTP 200 with one active `chain:stellar` incident, status `active`. Deployed SOL → NEAR returned `state=fresh`, `eligibility=unverified`, impact `unverified`, reproducing the old mapper's hold. This deployment has not been changed by this task.
+- S6 returned HTTP 200 with 202 tokens and the 36 exact network identifiers listed above, including `stellar`. No explicit bridge/transit dependency graph was supplied.
+- S3 again returned HTTP 200. `PublicActiveIncidentDto` retains the scope enum and no direction field. `CreateIncidentRequestDto` describes `deposit`, `withdraw`, `*` direction for authenticated incident evaluation; it does not supply that information in the public feed.
+- S2's current client bundle (`/_next/static/chunks/0jz8z35xz8_nk.js`, retrieved at approximately 22:39 UTC) still labels `chain_all` “chain and intents” and treats `chain`/`chain_all` as chain-valued. S4's incident example describes `chain:eth`, direction `withdraw`, as delayed ETH withdrawals. These are endpoint-scope evidence, not evidence of hidden bridge/transit participation. S4's shorter scope table remains incomplete versus S3.
+
+### Correction verification and final observation
+
+On October 2 at 22:41:48 UTC, the final public read-only check still reported one active `chain:stellar` incident. The restarted workspace SOL → NEAR status endpoint returned `state=fresh`, `eligibility=allowed`, with that incident retained as `impact=unrelated`. The deployed endpoint still returned `fresh`/`unverified` and `impact=unverified`: no production deployment was performed. This is a point-in-time classification check, not a live order, funding, settlement or guaranteed-availability test.
+
+Executed checks: the disposable PostgreSQL `test:order-recovery` harness passed all 15 tests (provider calls intercepted); the funding-safety suite passed all six tests, including actual adapter outputs for SOL → NEAR; OpenAPI codegen and the workspace `pnpm run typecheck` passed. Both relevant workflows restarted successfully and the Privacy swap page rendered in a screenshot check. No end-to-end browser funding script was run for this mapper correction; the endpoint, mocked route harness and pure funding-gate tests verify the changed policy without funds. The preview also reported an unrelated existing Privy configuration 403; authentication was not changed or certified by this work.
 
 Public observations do not establish production deployment, provider history authorization, executed/refunded settlement, price freshness, hidden incidents, incident direction (not supplied in this public feed), solver health or all intermediate-chain dependencies. No universal outage or healthy-network certification is inferred.

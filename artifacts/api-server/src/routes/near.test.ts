@@ -4,7 +4,14 @@ import { test } from "node:test";
 // Importing the route constructs the database pool but does not open a connection.
 process.env.DATABASE_URL ??= "postgres://localhost/near_recovery_test";
 process.env.NEAR_INTENTS_API_KEY ??= "near-recovery-test";
-const { reconcileNearProviderResponse } = await import("./near");
+// Partner-fee configuration is memoized on first use; fix it deterministically
+// so recovery tests exercise both legacy (no appFees) and configured requests.
+process.env.NEAR_PARTNER_FEE_BPS = "40";
+process.env.NEAR_PARTNER_PAYOUT_ADDRESS = "0000000000000000000000000000000000000000000000000000000000000000";
+const { reconcileNearProviderResponse, checkedQuote, echoedPartnerFeeBps } = await import("./near");
+
+const PARTNER_PAYOUT = process.env.NEAR_PARTNER_PAYOUT_ADDRESS;
+const PROVIDER_FEE_ADDRESS = "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805";
 
 test("NEAR recovery accepts omitted memo but rejects a different status memo", async () => {
   const createdAt = new Date();
@@ -70,4 +77,136 @@ test("NEAR recovery accepts omitted memo but rejects a different status memo", a
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+function feePreview(createdAt: Date) {
+  const recipient = "0x1111111111111111111111111111111111111111";
+  const refundTo = "11111111111111111111111111111111";
+  return {
+    recipient,
+    refundTo,
+    preview: {
+      input: { recipient, refundTo } as Parameters<typeof reconcileNearProviderResponse>[1]["input"],
+      from: { id: "nep141:sol.omft.near", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["from"],
+      to: { id: "nep141:eth.omft.near", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["to"],
+      units: "1000000",
+      minOut: 1n,
+      expires: createdAt.getTime() + 60_000,
+    },
+  };
+}
+
+function feeRequestBody(createdAt: Date, withFees: boolean) {
+  const { recipient, refundTo } = feePreview(createdAt);
+  return {
+    dry: false, swapType: "EXACT_INPUT", slippageTolerance: 100,
+    originAsset: "nep141:sol.omft.near", depositType: "ORIGIN_CHAIN",
+    destinationAsset: "nep141:eth.omft.near", amount: "1000000",
+    recipient, recipientType: "DESTINATION_CHAIN",
+    refundTo, refundType: "ORIGIN_CHAIN",
+    confidentiality: "basic",
+    deadline: new Date(createdAt.getTime() + 30 * 60_000).toISOString(),
+    ...(withFees ? { appFees: [{ recipient: PARTNER_PAYOUT, fee: 40 }] } : {}),
+  };
+}
+
+function stubProvider(echoed: unknown, createdAt: Date) {
+  const { recipient, refundTo } = feePreview(createdAt);
+  const historyItem = {
+    createdAt: createdAt.toISOString(), depositAddress: "11111111111111111111111111111111",
+    originAsset: "nep141:sol.omft.near", destinationAsset: "nep141:eth.omft.near",
+    recipient, refundTo,
+    depositType: "ORIGIN_CHAIN", recipientType: "DESTINATION_CHAIN", refundType: "ORIGIN_CHAIN",
+    amountInFormatted: "1",
+  };
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/account/history")) {
+      return Response.json({ items: [historyItem] });
+    }
+    return Response.json({
+      status: "PENDING_DEPOSIT",
+      quoteResponse: {
+        quoteRequest: { ...feeRequestBody(createdAt, true), ...(echoed === undefined ? {} : { appFees: echoed }) },
+        quote: { depositAddress: "11111111111111111111111111111111" },
+      },
+    });
+  };
+}
+
+test("NEAR recovery accepts verbatim and 50/50-split partner fee echoes, rejects tampering", async () => {
+  const createdAt = new Date();
+  const { preview } = feePreview(createdAt);
+  const requestBody = feeRequestBody(createdAt, true);
+  const receipt = { createdAt } as Parameters<typeof reconcileNearProviderResponse>[0];
+  const originalFetch = globalThis.fetch;
+  try {
+    // Authenticated echoes repeat our entry verbatim and append the
+    // provider's own platform-fee entry (observed against the live API).
+    stubProvider([{ recipient: PARTNER_PAYOUT, fee: 40 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }], createdAt);
+    assert.equal((await reconcileNearProviderResponse(receipt, preview, requestBody))?.status, "PENDING_DEPOSIT");
+
+    // The documented partner schedule may instead split our fee 50/50.
+    stubProvider([{ recipient: PARTNER_PAYOUT, fee: 20 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }], createdAt);
+    assert.equal((await reconcileNearProviderResponse(receipt, preview, requestBody))?.status, "PENDING_DEPOSIT");
+
+    // A different fee to our address, an inflated provider entry, and a
+    // missing partner entry must all fail verification.
+    for (const tampered of [
+      [{ recipient: PARTNER_PAYOUT, fee: 41 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }],
+      [{ recipient: PARTNER_PAYOUT, fee: 40 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 30 }],
+      [{ recipient: PROVIDER_FEE_ADDRESS, fee: 20 }],
+    ]) {
+      stubProvider(tampered, createdAt);
+      await assert.rejects(
+        reconcileNearProviderResponse(receipt, preview, requestBody),
+        /NEAR order history did not match the saved request/,
+      );
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("NEAR legacy orders saved before partner fees recover despite provider-added fee entries", async () => {
+  const createdAt = new Date();
+  const { preview } = feePreview(createdAt);
+  const requestBody = feeRequestBody(createdAt, false);
+  const receipt = { createdAt } as Parameters<typeof reconcileNearProviderResponse>[0];
+  const originalFetch = globalThis.fetch;
+  try {
+    // The provider adds its own platform-fee entry even to requests that
+    // never carried appFees; legacy orders must still reconcile.
+    stubProvider([{ recipient: PROVIDER_FEE_ADDRESS, fee: 20 }], createdAt);
+    assert.equal((await reconcileNearProviderResponse(receipt, preview, requestBody))?.status, "PENDING_DEPOSIT");
+
+    stubProvider(undefined, createdAt);
+    assert.equal((await reconcileNearProviderResponse(receipt, preview, requestBody))?.status, "PENDING_DEPOSIT");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("NEAR quote validation and fee disclosure accept both echo shapes and reject tampering", () => {
+  const createdAt = new Date();
+  const { preview } = feePreview(createdAt);
+  const requestBody = feeRequestBody(createdAt, true) as Parameters<typeof checkedQuote>[2];
+  const quote = { amountIn: "1000000", amountOut: "990000", minAmountOut: "980000", timeEstimate: 22 };
+  const result = (appFees: unknown) => ({
+    quoteRequest: { ...requestBody, appFees },
+    quote,
+  });
+  assert.equal(checkedQuote(result([{ recipient: PARTNER_PAYOUT, fee: 40 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }]), preview, requestBody), quote);
+  assert.equal(checkedQuote(result([{ recipient: PARTNER_PAYOUT, fee: 20 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }]), preview, requestBody), quote);
+  assert.throws(
+    () => checkedQuote(result([{ recipient: PARTNER_PAYOUT, fee: 60 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }]), preview, requestBody),
+    /did not match/,
+  );
+
+  // Disclosure reports the configured total whenever the echo accounts for
+  // it, and stays silent for legacy or foreign requests.
+  assert.equal(echoedPartnerFeeBps({ appFees: [{ recipient: PARTNER_PAYOUT, fee: 40 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }] }), 40);
+  assert.equal(echoedPartnerFeeBps({ appFees: [{ recipient: PARTNER_PAYOUT, fee: 20 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }] }), 40);
+  assert.equal(echoedPartnerFeeBps({ appFees: [{ recipient: PROVIDER_FEE_ADDRESS, fee: 20 }] }), undefined);
+  assert.equal(echoedPartnerFeeBps({}), undefined);
 });

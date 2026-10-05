@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/darkswap-design-system/"
+title = "DarkSwap Design System"
+description = "The shared visual language for every DarkSwap surface: DTCG design tokens for a violet-on-near-black dark-default theme with a derived light companion, a token-themed component library including swap-product families (widget shell, route card, token row, amount field, status pill, caution banner), and a living style-guide preview documenting colour roles, type, spacing, and usage rules."
+version = "1.0.0"
+id = "artifacts/darkswap-design-system"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/darkswap-design-system/" ]
+localPort = 19195
+
+[services.development]
+run = "pnpm --filter @workspace/darkswap-design-system run dev"
+
+[services.env]
+PORT = "19195"
+BASE_PATH = "/darkswap-design-system/"

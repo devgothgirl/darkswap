@@ -14,14 +14,17 @@ const lock = readFileSync(new URL("pnpm-lock.yaml", root), "utf8");
 function auditedPackage(name, version) {
   const store = fileURLToPath(new URL("node_modules/.pnpm/", root));
   const prefix = `${name.replaceAll("/", "+")}@${version}`;
+  const patchHash = lock.match(new RegExp(`  ${name}@${version}:\\n    hash: ([a-f0-9]+)`))?.[1];
   const directory = readdirSync(store).find(
-    entry => entry === prefix || entry.startsWith(`${prefix}_`),
+    entry => patchHash
+      ? entry.startsWith(`${prefix}_patch_hash=${patchHash}`)
+      : entry === prefix || entry.startsWith(`${prefix}_`),
   );
   assert.ok(directory, `${name}@${version} must be installed`);
   return createRequire(`${store}/${directory}/node_modules/${name}/package.json`)(name);
 }
 
-test("the lockfile contains no versions from the 12 reported findings", () => {
+test("the workspace lockfile excludes vulnerable versions that have replacements", () => {
   for (const [name, versions] of Object.entries({
     "brace-expansion": ["5.0.9"],
     ws: ["8.18.0", "8.18.3"],
@@ -29,12 +32,106 @@ test("the lockfile contains no versions from the 12 reported findings", () => {
     "stream-json": ["1.9.1"],
     "fast-uri": ["3.1.7"],
     "decode-uri-component": ["0.2.2"],
+    "bigint-buffer": ["1.1.5"],
+    elliptic: ["6.6.1"],
+    underscore: ["1.13.6"],
   })) {
     for (const version of versions) {
       assert.ok(!lock.includes(`  ${name}@${version}:`), `${name}@${version} remains in the lockfile`);
     }
   }
   assert.ok(!/^  stream-json@/m.test(lock), "the incompatible old parser must be removed, not forcibly upgraded");
+});
+
+test("every Solana crate uses the same lockfile without the flagged Rust dependencies", () => {
+  const cargoRoot = new URL("packages/darkswap-pool/solana/", root);
+  const cargoLock = readFileSync(new URL("Cargo.lock", cargoRoot), "utf8");
+  const packages = cargoLock.split("[[package]]").slice(1).map(block => ({
+    name: block.match(/^name = "([^"]+)"/m)?.[1],
+    version: block.match(/^version = "([^"]+)"/m)?.[1],
+  }));
+  for (const name of ["derivative", "paste", "bincode", "libsecp256k1", "solana-program"]) {
+    assert.ok(!packages.some(pkg => pkg.name === name), `${name} must not re-enter the Solana graph`);
+  }
+  assert.ok(!packages.some(pkg => pkg.name === "rand" && pkg.version?.startsWith("0.7.")));
+  assert.ok(!packages.some(pkg => pkg.name === "borsh" && pkg.version?.startsWith("0.10.")));
+  assert.ok(packages.some(pkg => pkg.name === "pastey"));
+  assert.ok(packages.some(pkg => pkg.name === "wincode"));
+  for (const crate of ["pool", "pool-probe", "test-logspam", "verifier-parity"]) {
+    assert.throws(() => readFileSync(new URL(`${crate}/Cargo.lock`, cargoRoot)), { code: "ENOENT" });
+  }
+});
+
+test("braces rejects excessive nesting before recursive AST processing", () => {
+  const braces = auditedPackage("braces", "3.0.3");
+  assert.deepEqual(braces.expand("a{b,c}"), ["ab", "ac"]);
+  assert.deepEqual(braces("a{b,c}"), ["a(b|c)"]);
+  for (const pattern of [
+    "{".repeat(4000) + "a,b" + "}".repeat(4000),
+    "(".repeat(4000) + "x" + ")".repeat(4000),
+    "{(".repeat(2000) + "a,b" + ")}".repeat(2000),
+  ]) {
+    for (const fn of [braces, braces.parse, braces.compile, braces.expand, braces.stringify]) {
+      assert.throws(() => fn(pattern), /safe nesting depth/);
+    }
+  }
+  let ast = { type: "text", value: "x" };
+  for (let i = 0; i < 4000; i++) ast = { type: "root", nodes: [ast] };
+  for (const fn of [braces.compile, braces.expand, braces.stringify]) {
+    assert.throws(() => fn(ast), /safe nesting depth/);
+  }
+  const cycle = { type: "root", nodes: [] };
+  cycle.nodes.push(cycle);
+  for (const fn of [braces.compile, braces.expand, braces.stringify]) {
+    assert.throws(() => fn(cycle), /safe nesting depth/);
+  }
+});
+
+test("native bigint replacement round-trips Solana integer widths and rejects overflow", () => {
+  const native = rootRequire("./lib/bigint-buffer/index.cjs");
+  for (const width of [0, 8, 16, 24, 32]) {
+    const max = width === 0 ? 0n : (1n << BigInt(width * 8)) - 1n;
+    for (const value of [0n, max / 3n, max]) {
+      for (const endian of ["LE", "BE"]) {
+        const bytes = native[`toBuffer${endian}`](value, width);
+        assert.equal(bytes.length, width);
+        assert.equal(native[`toBigInt${endian}`](bytes), value);
+      }
+    }
+    assert.throws(() => native.toBufferLE(max + 1n, width), RangeError);
+  }
+  assert.equal(native.toBufferBE(0x1234n, 2).toString("hex"), "1234");
+  assert.equal(native.toBufferLE(0x1234n, 2).toString("hex"), "3412");
+  assert.throws(() => native.toBufferLE(-1n, 8), RangeError);
+  assert.throws(() => native.toBufferLE(0n, -1), RangeError);
+  assert.throws(() => native.toBufferLE(0n, Infinity), RangeError);
+  const layout = createRequire(new URL("packages/darkswap-pool/package.json", root))("@solana/spl-token");
+  const account = Buffer.alloc(layout.AccountLayout.span);
+  layout.AccountLayout.encode({
+    mint: rootRequire("@solana/web3.js").PublicKey.default,
+    owner: rootRequire("@solana/web3.js").PublicKey.default,
+    amount: 123n, delegateOption: 0,
+    delegate: rootRequire("@solana/web3.js").PublicKey.default,
+    state: 1, isNativeOption: 0, isNative: 0n,
+    delegatedAmount: 0n, closeAuthorityOption: 0,
+    closeAuthority: rootRequire("@solana/web3.js").PublicKey.default,
+  }, account);
+  assert.equal(layout.AccountLayout.decode(account).amount, 123n);
+});
+
+test("circomlibjs ESM and CJS keep identical hashes and generated contracts without signing dependencies", async () => {
+  const consumer = createRequire(new URL("lib/pool-client/package.json", root));
+  const cjs = consumer("circomlibjs");
+  const esm = await import(new URL("../main.js", `file://${consumer.resolve("circomlibjs")}`));
+  for (const lib of [cjs, esm]) {
+    const poseidon = await lib.buildPoseidon();
+    assert.equal(poseidon.F.toObject(poseidon([1n, 2n])), 7853200120776062878684798364095072458815029376092732009249414926327459813530n);
+    assert.equal(lib.poseidonContract.createCode(2), cjs.poseidonContract.createCode(2));
+    const mimc = await lib.buildMimc7();
+    const reference = await cjs.buildMimc7();
+    assert.equal(mimc.F.toObject(mimc.hash(1n, 2n)), reference.F.toObject(reference.hash(1n, 2n)));
+  }
+  assert.throws(() => createRequire(consumer.resolve("circomlibjs")).resolve("ethers"), { code: "MODULE_NOT_FOUND" });
 });
 
 test("brace expansion handles nested and comma-heavy attack patterns", { timeout: 5000 }, () => {

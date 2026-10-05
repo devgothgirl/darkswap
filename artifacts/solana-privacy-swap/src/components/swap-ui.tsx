@@ -5,6 +5,8 @@ import { getGetSwapChainsQueryKey, getSearchSwapTokensQueryKey, useGetSwapChains
 import { compareDestinations } from '../lib/destination-sort';
 import type { SwapToken } from '@workspace/api-client-react';
 import { RiskDisclaimer } from './risk-disclaimer';
+import { trackEvent } from '../lib/analytics';
+import { NearFiLink } from './nearfi-link';
 
 export const RECENT_ORDER_KEY = 'solana-privacy-swap:recent-order';
 
@@ -62,11 +64,11 @@ export function Header() {
      <header className={`topbar ${menuOpen ? 'menu-open' : ''}`}>
        <Link href="/" className="brand" data-testid="link-home"><img className="brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
        <nav id="site-navigation" className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
-          <Link href="/swap" className={location==='/swap'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-private">Private route</Link>
-          <Link href="/near-swap" className={location==='/near-swap'||location==='/near-order'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-near"><span className="nav-near-glyph" aria-hidden="true">⋈</span> Privacy swap</Link>
-          <Link href="/tokenomics" className={location==='/tokenomics'||location.startsWith('/tokenomics/')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-tokenomics">Tokenomics</Link>
+          <Link href="/swap" className={location==='/swap'||location==='/near-swap'||location==='/near-order'||location.startsWith('/order/')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-swap">Swap</Link>
+          <a href="https://rewards.darkswap.app" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} data-testid="link-nav-rewards">Rewards ↗</a>
+          <Link href="/pool" className={location.startsWith('/pool')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-pool">Pool <span className="nav-testnet-tag">testnet</span></Link>
           <Link href="/docs" className={location==='/docs'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-docs">Docs</Link>
-          <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} data-testid="link-nav-nearfi">NearFi ↗</a>
+          <NearFiLink onClick={() => setMenuOpen(false)} />
           <button type="button" className="site-nav-track" onClick={() => { setMenuOpen(false); setLookupOpen(true); }}>Track order <ArrowRight size={15}/></button>
       </nav>
       <div className="top-right">
@@ -96,10 +98,27 @@ export function Header() {
 export function Footer() {
   return <><RiskDisclaimer/><footer className="footer">
     <span>DARKSWAP / PRIVATE BETA</span>
-    <span>Live: <Link href="/swap" style={{color:'#d2b5ff'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d2b5ff'}}>Privacy swap</Link>. Founder demos and the DARK holder program are not live.</span>
-    <span><Link href="/rewards" style={{color:'#d2b5ff'}} data-testid="link-footer-account-points">Account points</Link> · <Link href="/founder" style={{color:'#d2b5ff'}} data-testid="link-footer-founder">Founder preview</Link> · <Link href="/help" style={{color:'#d2b5ff'}} data-testid="link-footer-help">Help &amp; support</Link></span>
-    <span className="footer-external">NEAR memecoin trades: <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a> · <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" data-testid="link-footer-nearly">Nearly ↗</a></span>
+    <span>Live: <Link href="/swap" style={{color:'#d5bbf9'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d5bbf9'}}>Privacy swap</Link>. Founder demos are not live.</span>
+    <span>Privacy swap is built on <a href="https://near-intents.org/" target="_blank" rel="noopener noreferrer" style={{color:'#d5bbf9'}}>NEAR Intents</a>.</span>
+    <span><Link href="/rewards" style={{color:'#d5bbf9'}} data-testid="link-footer-account-points">Account points</Link> · <Link href="/founder" style={{color:'#d5bbf9'}} data-testid="link-footer-founder">Founder preview</Link> · <Link href="/help" style={{color:'#d5bbf9'}} data-testid="link-footer-help">Help &amp; support</Link></span>
+    <span className="footer-external">NEAR memecoin trades: <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a> · <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" className="nearly-link" data-testid="link-footer-nearly">Nearly ↗</a></span>
   </footer></>;
+}
+
+// Only the static field label and route are sent, never the copied value.
+const COPY_FIELDS: Record<string, string> = { 'exact amount': 'exact_amount', 'deposit address': 'deposit_address', 'deposit memo': 'deposit_memo', 'order ID': 'order_id', 'outbound transaction': 'outbound_transaction' };
+function trackCopy(name: string) {
+  const path = window.location.pathname;
+  if (name === 'DARK token address') {
+    // A public contract address, so only where it was copied from is recorded.
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    trackEvent('token_address_copied', { location: path === base || path === `${base}/` ? 'home' : path.includes('/docs') ? 'docs' : 'other' });
+    return;
+  }
+  const field = COPY_FIELDS[name];
+  if (!field) return;
+  const route = path.includes('/near-order') ? 'privacy_swap' : path.includes('/order/') ? 'private_route' : '';
+  if (route) trackEvent('order_detail_copied', { field, route });
 }
 
 export function CopyButton({ value, name }: {value: string; name: string}) {
@@ -110,6 +129,7 @@ export function CopyButton({ value, name }: {value: string; name: string}) {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
+      trackCopy(name);
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 2000);
     } catch { setCopied(false); }
@@ -147,11 +167,11 @@ export function TokenPicker({side, token, onChange, selectedSource}: {side:'sour
   return <div ref={wrapper} style={{position:'relative'}}>
     <button type="button" className="token-trigger" onClick={()=>{setOpen(!open);setTerm('');setDebounced('');setChain(null);}} aria-expanded={open} aria-label={`Select ${side} token`} data-testid={`button-select-${side}`}>
       {token ? <TokenBadge token={token}/> : <span className="token-icon"><Search size={13}/></span>}
-      <span className="label">{token?.symbol || 'Select token'}</span><ChevronDown size={14}/>
+      <span className="label">{token?.symbol || 'Select'}</span><ChevronDown size={14}/>
     </button>
     {open && <div className="token-popover">
        {destination && chain && <button className="secondary-button" type="button" style={{marginBottom:10}} onClick={()=>{setChain(null);setTerm('');setDebounced('');}}>← All networks</button>}
-       <div style={{position:'relative'}}><Search size={15} style={{position:'absolute',left:11,top:13,color:'#a8beb1'}}/><input className="input-standard" style={{paddingLeft:34}} autoFocus value={term} onChange={e=>setTerm(e.target.value)} aria-label={searchLabel} placeholder={searchLabel} data-testid={`input-search-${side}`}/></div>
+       <div style={{position:'relative'}}><Search size={15} style={{position:'absolute',left:11,top:13,color:'#a37eda'}}/><input className="input-standard" style={{paddingLeft:34}} autoFocus value={term} onChange={e=>setTerm(e.target.value)} aria-label={searchLabel} placeholder={searchLabel} data-testid={`input-search-${side}`}/></div>
       <div className="token-list">
          {destination && !chain ? chains.isLoading ? <div className="skeleton" style={{margin:15}}/>
            : chains.isError ? <div style={{padding:'15px 5px'}}><p className="quote-error">{errorText(chains.error)}</p><button className="secondary-button" type="button" onClick={()=>chains.refetch()}>Try again</button></div>
@@ -169,5 +189,5 @@ export function TokenPicker({side, token, onChange, selectedSource}: {side:'sour
 }
 
 export function PrivacyNote() {
-  return <span style={{display:'inline-flex',gap:7,alignItems:'center'}}><LockKeyhole size={12}/> No wallet connection</span>;
+  return <span style={{display:'inline-flex',gap:7,alignItems:'center'}}><LockKeyhole size={12}/> Manual deposit</span>;
 }

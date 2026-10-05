@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "pnpm run seo:generate && vite build --config vite.config.ts",
+    "build": "pnpm run seo:generate && vite build --config vite.config.ts && node scripts/generate-public-guides.mjs",
     "seo:generate": "node scripts/generate-sitemap.mjs",
     "seo:check": "node scripts/generate-sitemap.mjs --check",
+    "check:theme": "node scripts/check-theme-tokens.mjs",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@privy-io/react-auth": "^3.0.0",
-    "@stripe/stripe-js": "^8.0.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-aspect-ratio": "^1.1.3",
@@ -45,10 +45,12 @@
     "@replit/vite-plugin-cartographer": "catalog:",
     "@replit/vite-plugin-dev-banner": "catalog:",
     "@replit/vite-plugin-runtime-error-modal": "catalog:",
+    "@stripe/stripe-js": "^8.0.0",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@types/node": "catalog:",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
@@ -77,5 +79,17 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@darkswap/pool-client": "workspace:*",
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/source-sans-3": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
+    "@solana/web3.js": "^1.99.0",
+    "@workspace/darkswap-design-system": "workspace:*",
+    "buffer": "^6.0.3",
+    "qrcode": "^1.5.4",
+    "viem": "^2.57.2"
   }
 }

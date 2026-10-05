@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="1250" viewBox="0 0 620 1250" role="img" aria-labelledby="title description">
+  <title id="title">DarkSwap privacy route: wallet to Privacy Routers to receiving wallet</title>
+  <desc id="description">Review a quote and create an order before manually depositing from your Solana wallet. Privacy Routers execute the selected route. Successful settlement delivers the quoted asset to the receiving wallet. Track your order. Deposits are public and privacy is not guaranteed.</desc>
+  <rect width="620" height="1250" rx="24" fill="#151020"/>
+  <g font-family="DejaVu Sans, sans-serif">
+    <rect x="40" y="41" width="7" height="21" rx="3" fill="#bd8bfa"/>
+    <text x="61" y="60" fill="#d0b1fb" font-size="18" font-weight="700" letter-spacing="1">DARKSWAP / ROUTE GUIDE</text>
+    <text x="40" y="113" fill="#faf5ff" font-size="35" font-weight="700">Review. Deposit. Track.</text>
+    <rect x="40" y="145" width="540" height="104" rx="12" fill="#241933" stroke="#5f457a"/>
+    <g fill="#e4d7f3" font-size="21">
+      <text x="62" y="180">First: review a live quote, confirm</text>
+      <text x="62" y="211">the destination and create an order.</text>
+    </g>
+    <rect x="40" y="283" width="540" height="165" rx="20" fill="#21182e" stroke="#795996" stroke-width="2"/>
+    <text x="67" y="324" fill="#c5a0ec" font-size="19" font-weight="700">01 / YOU SEND</text>
+    <text x="67" y="373" fill="#faf5ff" font-size="34" font-weight="700">Your wallet</text>
+    <text x="67" y="411" fill="#dbcee9" font-size="23">Send from Solana</text>
+    <path d="M310 464v64m-11-11 11 12 11-12" fill="none" stroke="#c59bf5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="337" y="503" fill="#dfcbee" font-size="22">Manual deposit</text>
+    <rect x="40" y="546" width="540" height="165" rx="20" fill="#38234f" stroke="#ba85f0" stroke-width="2"/>
+    <text x="67" y="587" fill="#dec1ff" font-size="19" font-weight="700">02 / ROUTE EXECUTION</text>
+    <text x="67" y="636" fill="#faf5ff" font-size="34" font-weight="700">Privacy Routers</text>
+    <text x="67" y="674" fill="#eadbf7" font-size="23">Execute the selected route</text>
+    <path d="M310 727v64m-11-11 11 12 11-12" fill="none" stroke="#c59bf5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="337" y="753" fill="#dfcbee" font-size="21">Successful</text>
+    <text x="337" y="782" fill="#dfcbee" font-size="21">settlement</text>
+    <rect x="40" y="809" width="540" height="165" rx="20" fill="#21182e" stroke="#795996" stroke-width="2"/>
+    <text x="67" y="850" fill="#c5a0ec" font-size="19" font-weight="700">03 / YOU RECEIVE</text>
+    <text x="67" y="899" fill="#faf5ff" font-size="34" font-weight="700">Receiving wallet</text>
+    <text x="67" y="937" fill="#dbcee9" font-size="23">Quoted asset + network</text>
+    <rect x="40" y="1008" width="540" height="99" rx="12" fill="#21182e" stroke="#4d395f"/>
+    <text x="62" y="1046" fill="#e4d7f3" font-size="22">Track your order until completion.</text>
+    <text x="62" y="1079" fill="#e4d7f3" font-size="21">Timing and availability vary by route.</text>
+    <g fill="#c9b9d8" font-size="20">
+      <text x="40" y="1151">Creating an order does not move funds.</text>
+      <text x="40" y="1183">Solana deposits are public. Privacy does</text>
+      <text x="40" y="1215">not guarantee anonymity or unlinkability.</text>
+    </g>
+  </g>
+</svg>

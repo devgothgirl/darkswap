@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
+import { Button } from '@workspace/darkswap-design-system/components/ui/button';
 import { usePageMeta } from '@/lib/seo';
 
 export default function NotFound() {
