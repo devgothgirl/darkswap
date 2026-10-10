@@ -11,6 +11,7 @@ import rewardsRouter from "./rewards";
 import darkRewardsRouter from "./dark-rewards";
 import launchRouter from "./launch";
 import poolRouter from "./pool";
+import zecDarkLiquidityRouter from "./zec-dark-liquidity";
 
 const router: IRouter = Router();
 
@@ -24,6 +25,7 @@ router.use(supportRouter);
 router.use(rewardsRouter);
 router.use(darkRewardsRouter);
 router.use(poolRouter);
+router.use(zecDarkLiquidityRouter);
 router.use(["/explore", "/swap/okx"], (_req, res) => {
   res.status(403).json({
     error: "This feature is closed for beta testing. Private swap and bridge routes remain available.",

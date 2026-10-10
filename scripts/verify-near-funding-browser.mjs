@@ -20,7 +20,8 @@ const pending = new Map();
 const errors = [];
 const calls = [];
 const address = '11111111111111111111111111111111';
-const requestId = 'bcfbe86a-4edf-4160-9f11-9e354b9221e8';
+let requestId = 'bcfbe86a-4edf-4160-9f11-9e354b9221e8';
+const analyticsCalls = [];
 const from = { id: 'nep141:sol.omft.near', chain: 'sol', chainName: 'Solana', symbol: 'SOL', decimals: 9, price: 100 };
 const to = { id: 'nep141:eth.omft.near', chain: 'eth', chainName: 'Ethereum', symbol: 'ETH', decimals: 18 };
 let eligibility = 'allowed';
@@ -61,6 +62,15 @@ function send(method, params = {}) {
 async function intercept(event) {
   const { request, requestId: intercepted } = event;
   const url = new URL(request.url);
+  if (url.hostname === 'analytics.test') {
+    analyticsCalls.push(JSON.parse(request.postData || '{}'));
+    await send('Fetch.fulfillRequest', {
+      requestId: intercepted, responseCode: 200,
+      responseHeaders: [{ name: 'Access-Control-Allow-Origin', value: '*' }],
+      body: Buffer.from('{}').toString('base64'),
+    });
+    return;
+  }
   calls.push({ path: url.pathname, method: request.method });
   if (freeze && url.pathname.startsWith('/api/swap/near/')) return; // held until page close
   let body;
@@ -70,8 +80,12 @@ async function intercept(event) {
   else if (url.pathname.endsWith('/quote')) body = {
     ...order(), quoteId: requestId, validUntil: new Date(Date.now() + quoteLifetime).toISOString(),
   };
-  else if (url.pathname.endsWith('/orders') && request.method === 'POST') body = order();
+  else if (url.pathname.endsWith('/orders') && request.method === 'POST') {
+    requestId = JSON.parse(request.postData).requestId;
+    body = order();
+  }
   else if (url.pathname.endsWith('/status')) {
+    assert.equal(url.searchParams.get('requestId'), requestId, 'status requires the saved private receipt ID');
     body = statusFailure ? { error: 'Mock status unavailable. Do not send funds.' } : order();
     if (statusFailure) code = 503;
   } else if (url.pathname.includes('/swap/near/orders/')) {
@@ -95,7 +109,12 @@ const exists = id => evaluate(`!!document.querySelector(${JSON.stringify(selecto
 async function wait(check, label) {
   const end = Date.now() + 20_000;
   while (Date.now() < end) {
-    if (await check()) return;
+    try {
+      if (await check()) return;
+    } catch (error) {
+      // A full reload may replace the execution context while polling.
+      if (!/Inspected target navigated|Execution context was destroyed|Cannot find context/.test(String(error))) throw error;
+    }
     await sleep(100);
   }
   throw new Error(`Timed out: ${label}`);
@@ -151,8 +170,36 @@ try {
   });
   await send('Page.enable');
   await send('Runtime.enable');
-  await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/*', requestStage: 'Request' }] });
+  // Simulate injected automatic pageviews and custom events in development.
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `
+    (() => {
+      function collect(name, data) {
+        if (localStorage.getItem('umami.disabled') === '1') return;
+        fetch('https://analytics.test/collect', { method: 'POST',
+          body: JSON.stringify({ name, data, url: location.href, referrer: document.referrer })
+        }).catch(() => {});
+      }
+      window.umami = { track: collect };
+      addEventListener('DOMContentLoaded', () => collect('pageview'));
+      for (const method of ['pushState', 'replaceState']) {
+        const original = history[method];
+        history[method] = function (...args) {
+          const result = original.apply(this, args);
+          collect('pageview');
+          return result;
+        };
+      }
+      addEventListener('popstate', () => collect('pageview'));
+    })();
+  ` });
+  await send('Fetch.enable', { patterns: [
+    { urlPattern: '*/api/*', requestStage: 'Request' },
+    { urlPattern: 'https://analytics.test/*', requestStage: 'Request' },
+  ] });
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await navigate(`/near-order?address=${address}&memo=mock-memo`);
+  await wait(() => exists('status-near-order-invalid'), 'address-only link without a saved receipt is denied');
+  assert.equal(calls.some(call => call.path.endsWith('/status')), false, 'public deposit details alone never trigger status lookup');
   await navigate('/near-swap');
   await click('button-near-source-asset');
   await click(`button-near-source-token-${from.id}`);
@@ -180,6 +227,8 @@ try {
   await screenshot('desktop-final-review');
   await click('button-view-near-instructions');
   await wait(() => exists('button-accept-near-live-terms'), 'tracker final review');
+  assert.equal(await evaluate('location.search.includes("requestId")'), false, 'new tracking URLs contain no bearer capability');
+  assert.equal(await evaluate('localStorage.getItem("umami.disabled")'), '1', 'analytics disabled before tracking navigation');
   await blocked('tracker requires fresh final acceptance');
   await fundable();
   console.log('PASS creation stays in final review; tracker requires explicit acceptance');
@@ -225,6 +274,7 @@ try {
   await blocked('reload');
   await navigate(`/near-order?requestId=${requestId}`);
   await wait(() => exists('button-accept-near-live-terms'), 'recovered order review');
+  assert.equal(await evaluate('location.href.includes(' + JSON.stringify(requestId) + ')'), false, 'legacy receipt URL stripped before analytics');
   await blocked('recovery');
   await fundable();
   statusFailure = true;
@@ -241,7 +291,10 @@ try {
 
   receiptFailure = false;
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
-  await navigate(`/near-order?address=${address}&memo=mock-memo`);
+  await navigate('/near-order?lookup=1');
+  await wait(() => exists('input-near-lookup-receipt'), 'private receipt lookup form');
+  await fill('input-near-lookup-receipt', requestId);
+  await click('button-lookup-near-order');
   await wait(() => exists('button-accept-near-live-terms'), 'mobile review');
   assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true, 'mobile page should not overflow');
   await screenshot('mobile-final-review');
@@ -254,6 +307,12 @@ try {
   await screenshot('mobile-stale-block');
   console.log('PASS mobile layout and stale successful-response cutoff');
   assert.deepEqual(errors, []);
+  assert.ok(analyticsCalls.length > 0, 'mock analytics collected public-page events');
+  assert.equal(analyticsCalls.some(call => JSON.stringify(call).includes(requestId) || JSON.stringify(call).includes('requestId')), false,
+    'neither pageviews nor custom analytics transmit the private receipt');
+  assert.equal(analyticsCalls.some(call => new URL(call.url).pathname === '/near-order'), false,
+    'private tracking and recovery visits are excluded from analytics');
+  console.log('PASS receipt-free URLs, legacy URL migration and no private pageview/custom-event disclosure');
   assert.equal(calls.filter(c => c.path.endsWith('/orders') && c.method === 'POST').length, 1, 'exactly one intercepted creation');
   console.log('All browser checks passed. Every API call was mocked; no real orders or funds.');
   }

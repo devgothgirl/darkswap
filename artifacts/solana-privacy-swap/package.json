@@ -9,6 +9,10 @@
     "seo:generate": "node scripts/generate-sitemap.mjs",
     "seo:check": "node scripts/generate-sitemap.mjs --check",
     "check:theme": "node scripts/check-theme-tokens.mjs",
+    "test:analytics": "node --test src/lib/analytics.test.ts",
+    "test:ui": "bash scripts/test-ui.sh",
+    "test:countdown": "node --test src/lib/darkpool-countdown.test.ts && node scripts/check-countdown-boundary.mjs",
+    "check:countdown-assets": "node scripts/check-countdown-assets.mjs",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -49,6 +53,8 @@
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "catalog:",
     "@types/qrcode": "^1.5.6",
     "@types/react": "catalog:",
@@ -62,6 +68,7 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "catalog:",
     "input-otp": "^1.4.2",
+    "jsdom": "^26.1.0",
     "lucide-react": "catalog:",
     "next-themes": "^0.4.6",
     "react": "catalog:",
@@ -81,6 +88,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@workspace/zcash-address": "workspace:*",
     "@darkswap/pool-client": "workspace:*",
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/inter": "^5.3.0",

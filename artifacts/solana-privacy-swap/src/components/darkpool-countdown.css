@@ -1,0 +1,39 @@
+.dk-countdown {
+  margin-block: calc(var(--spacing) * 4);
+  padding: calc(var(--spacing) * 3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
+  text-align: center;
+  font-family: var(--font-sans);
+}
+.dk-countdown-heading {
+  margin: 0 0 calc(var(--spacing) * 2);
+  font-weight: 600;
+}
+.dk-countdown-units {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: calc(var(--spacing) * 2);
+}
+.dk-countdown-units strong {
+  display: block;
+  font-size: calc(var(--spacing) * 7);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+.dk-countdown-units span {
+  display: block;
+  font-size: calc(var(--spacing) * 3);
+  color: var(--muted-foreground);
+}
+.dk-countdown-date {
+  margin: calc(var(--spacing) * 3) 0 0;
+  font-size: calc(var(--spacing) * 3);
+  color: var(--muted-foreground);
+}
+.dk-countdown-ended {
+  margin: 0;
+}

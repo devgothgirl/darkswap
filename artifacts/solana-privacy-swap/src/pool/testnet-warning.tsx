@@ -2,6 +2,6 @@ import { CautionBanner, CautionBannerTitle } from '@workspace/darkswap-design-sy
 
 export function TestnetWarning() {
   return <CautionBanner tone="caution" data-testid="banner-testnet">
-    <CautionBannerTitle>Testnet. Development proving keys. Do not deposit real funds.</CautionBannerTitle>
+    <CautionBannerTitle>Local-development preview. Development proving keys, which could be used to forge proofs. Do not deposit real funds. Not deployed on any public network. Not audited.</CautionBannerTitle>
   </CautionBanner>;
 }

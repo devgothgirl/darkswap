@@ -11,6 +11,10 @@ export type NearQuoteToken = {
   decimals: number;
   price?: number;
   contractAddress?: string;
+  // Added with multi-network origins. Previews saved earlier omit both (and
+  // may omit chain); readers must treat such a token as a Solana origin.
+  native?: boolean;
+  originEligible?: boolean;
 };
 
 export const nearSwapPreviewsTable = pgTable("near_swap_previews", {

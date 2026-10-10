@@ -4,6 +4,9 @@
   "files": [],
   "references": [
     {
+      "path": "./lib/zcash-address"
+    },
+    {
       "path": "./lib/db"
     },
     {

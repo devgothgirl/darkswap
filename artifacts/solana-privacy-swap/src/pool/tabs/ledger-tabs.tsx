@@ -74,7 +74,7 @@ function Fees() {
       <div className="flex flex-col gap-1 rounded-md border p-3">
         <Row label="Protocol fee">{(pool.raw.feeBps ?? 0) / 100}%</Row>
         <Row label="Fee recipient">Fixed when the pool was deployed</Row>
-        <Row label="Planned use">Buy and burn $DARK</Row>
+        <Row label="Planned use">Add to ZEC-DARK liquidity</Row>
       </div>
       {pool.raw.protocolFees.map((f) => {
         const asset = pool.assets.find((a) => a.token === f.token)!;

@@ -3,13 +3,11 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useLocation } from 'wouter';
 import { ArrowRight, X } from 'lucide-react';
 import { CopyButton } from './swap-ui';
+import { AnnouncementCountdown, ANNOUNCEMENT_KEY } from './announcement-countdown';
 import { trackEvent } from '../lib/analytics';
 import tokenIdentity from '../token-identity.json';
 import './token-identity.css';
 import './token-launch-popup.css';
-
-// Change the announcement key whenever the announcement content is revised.
-const ANNOUNCEMENT_KEY = 'darkswap:darkpool-phase-2-v1-dismissed';
 
 function wasDismissed() {
   try {
@@ -74,6 +72,8 @@ export function TokenLaunchPopup() {
             Something is surfacing. Follow DarkSwap on X for the reveal.
           </Dialog.Description>
 
+          <AnnouncementCountdown />
+
           <section className="dark-token-identity dark-token-identity--compact" aria-label="Official $DARK contract address">
             <div className="dark-token-identity__heading"><strong>$DARK contract address (CA)</strong></div>
             <div className="dark-token-identity__address">
@@ -85,6 +85,9 @@ export function TokenLaunchPopup() {
           <div className="dk-actions">
             <a href="https://x.com/darkswapapp" target="_blank" rel="noopener noreferrer" className="dk-primary" data-testid="link-token-launch-x" onClick={() => trackEvent('announcement_action', { announcement: 'dark_pool_phase_2', action: 'follow_x' })}>
               Follow @darkswapapp on X <ArrowRight size={15} aria-hidden="true" />
+            </a>
+            <a href={`${import.meta.env.BASE_URL}docs/DarkSwap_Litepaper_v0.3.pdf`} target="_blank" rel="noopener noreferrer" className="dk-secondary" data-testid="link-popup-litepaper" onClick={() => trackEvent('announcement_action', { announcement: 'dark_pool_phase_2', action: 'read_litepaper' })}>
+              Read the litepaper (PDF) <ArrowRight size={15} aria-hidden="true" />
             </a>
             <Dialog.Close className="dk-secondary" data-testid="button-token-launch-not-now">
               Not now

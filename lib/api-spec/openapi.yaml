@@ -19,6 +19,20 @@ tags:
   - name: launch-auth
   - name: launch-admin
 paths:
+  /liquidity/zec-dark:
+    get:
+      operationId: getZecDarkLiquidity
+      tags: [discovery]
+      summary: Current Meteora ZEC-DARK liquidity pool statistics
+      description: Public Solana DAMM v2 liquidity statistics, separate from the shielded Dark Pool. Cached for at most one minute; unavailable data returns 503.
+      responses:
+        "200":
+          description: Validated Meteora pool snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ZecDarkLiquidity" }
+        "503":
+          description: Pool statistics unavailable
   /dark-rewards/estimate:
     get:
       operationId: getDarkRewardsEstimate
@@ -952,7 +966,7 @@ paths:
     get:
       operationId: getNearTokens
       tags: [swap]
-      summary: Supported NEAR Intents assets; Solana-only on source
+      summary: Supported NEAR Intents assets; source lists only origin-eligible assets on enabled origin networks
       parameters:
         - in: query
           name: side
@@ -961,6 +975,10 @@ paths:
         - in: query
           name: term
           schema: { type: string, maxLength: 70 }
+        - in: query
+          name: chain
+          description: Optional network identifier (for example sol) that limits the list to one network.
+          schema: { type: string, minLength: 1, maxLength: 32 }
       responses:
         "200":
           description: Provider-reported supported assets
@@ -1092,8 +1110,13 @@ paths:
     get:
       operationId: getNearOrderStatus
       tags: [swap]
-      summary: Check a NEAR Intents swap by its deposit address
+      summary: Check a NEAR Intents swap with its private receipt ID
+      description: The random requestId is a private bearer capability saved at order creation. A public deposit address and memo alone never authorize access. Only locally stored ready orders matching the receipt, address, and memo can be queried. Keep the receipt ID private.
       parameters:
+        - in: query
+          name: requestId
+          required: true
+          schema: { type: string, format: uuid }
         - in: query
           name: depositAddress
           required: true
@@ -1102,6 +1125,8 @@ paths:
           name: depositMemo
           schema: { type: string, maxLength: 120 }
       responses:
+        "404":
+          description: No matching authorized ready receipt; provider is not queried
         "200":
           description: Provider-reported order state and instructions
           content:
@@ -1293,6 +1318,20 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/LaunchApiError" }
   schemas:
+    ZecDarkLiquidity:
+      type: object
+      required: [poolAddress, meteoraUrl, fetchedAt, liquidityUsd, volume24hUsd, fees24hUsd, baseFeePct, compoundingFeePct, permanentLockedPct, dynamicFeeEnabled]
+      properties:
+        poolAddress: { type: string }
+        meteoraUrl: { type: string }
+        fetchedAt: { type: string, format: date-time }
+        liquidityUsd: { type: number, minimum: 0 }
+        volume24hUsd: { type: number, minimum: 0 }
+        fees24hUsd: { type: number, minimum: 0 }
+        baseFeePct: { type: number, minimum: 0, maximum: 100 }
+        compoundingFeePct: { type: number, minimum: 0, maximum: 100 }
+        permanentLockedPct: { type: [number, "null"], minimum: 0, maximum: 100 }
+        dynamicFeeEnabled: { type: boolean }
     DarkRewardsEstimate:
       type: object
       required: [confirmedAsOf, pricedAt, allTimeUsd, latestAirdrop]
@@ -2190,6 +2229,12 @@ components:
         decimals: { type: integer }
         price: { type: number }
         contractAddress: { type: string }
+        native:
+          type: boolean
+          description: "True only for the network's native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins."
+        originEligible:
+          type: boolean
+          description: "True when the asset can be sent as a deposit: the network's native coin or a valid token contract on that network. Absent on saved receipts."
     NearTokenList:
       type: object
       required: [tokens]
@@ -2205,7 +2250,11 @@ components:
         from: { type: string, minLength: 1, maxLength: 160 }
         to: { type: string, minLength: 1, maxLength: 160 }
         amount: { type: string, minLength: 1, maxLength: 40 }
-        recipient: { type: string, minLength: 1, maxLength: 120 }
+        recipient:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: Destination address. Native Zcash requires a checksum-valid mainnet Unified Address with an Orchard receiver and no transparent receiver; no transparent fallback.
         refundTo: { type: string, minLength: 1, maxLength: 120 }
     NearQuote:
       type: object

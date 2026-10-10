@@ -1,11 +1,22 @@
 import { useEffect } from 'react';
-import { ArrowRight, FileText, Layers3, ScanSearch, Split, TrendingUp, Waves } from 'lucide-react';
+import { ArrowRight, FileText, Layers3, ScanSearch, ShieldEllipsis, Split, TrendingUp, Waves } from 'lucide-react';
 import { Link } from 'wouter';
 import { Footer, Header } from '../components/swap-ui';
 import { trackEvent } from '../lib/analytics';
 import './previews.css';
 
 const features = [
+  {
+    number: '06',
+    id: 'shielded_zcash',
+    icon: ShieldEllipsis,
+    status: 'CONCEPT PREVIEW / NOT OPEN',
+    title: 'Solana ZEC to shielded Zcash',
+    copy: 'See the planned flow for sending the Solana ZEC token from your own wallet to a shielded address in your Zcash wallet. It opens only after a routing partner confirms direct shielded delivery.',
+    href: '/shielded-zcash-preview',
+    action: 'See the planned flow',
+    featured: true,
+  },
   {
     number: '04',
     id: 'near_trends',
@@ -85,7 +96,7 @@ export default function Previews() {
       <div className="pv-grid">
         {features.map(feature => {
           const Icon = feature.icon;
-          return <article className="pv-card" key={feature.href}>
+          return <article className="pv-card" key={feature.href} data-featured={'featured' in feature ? 'true' : undefined}>
             <div className="pv-card-top"><span>{feature.number} / {feature.status}</span><Icon size={25} aria-hidden="true" /></div>
             <h2>{feature.title}</h2>
             <p>{feature.copy}</p>

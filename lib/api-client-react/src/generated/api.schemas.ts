@@ -5,6 +5,35 @@
  * Solana discovery, Houdini and NEAR Intents private routes, and separate OKX public swaps
  * OpenAPI spec version: 0.1.0
  */
+export interface ZecDarkLiquidity {
+  poolAddress: string;
+  meteoraUrl: string;
+  fetchedAt: string;
+  /** @minimum 0 */
+  liquidityUsd: number;
+  /** @minimum 0 */
+  volume24hUsd: number;
+  /** @minimum 0 */
+  fees24hUsd: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  baseFeePct: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  compoundingFeePct: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  permanentLockedPct: number | null;
+  dynamicFeeEnabled: boolean;
+}
+
 export type DarkRewardsEstimateLatestAirdrop = {
   /** Sequence number of the latest $DARK airdrop */
   number: number;
@@ -1670,6 +1699,10 @@ export interface NearToken {
   decimals: number;
   price?: number;
   contractAddress?: string;
+  /** True only for the network's native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins. */
+  native?: boolean;
+  /** True when the asset can be sent as a deposit: the network's native coin or a valid token contract on that network. Absent on saved receipts. */
+  originEligible?: boolean;
 }
 
 export interface NearTokenList {
@@ -1693,8 +1726,9 @@ export interface NearQuoteInput {
      */
   amount: string;
   /**
+     * Destination address. Native Zcash requires a checksum-valid mainnet Unified Address with an Orchard receiver and no transparent receiver; no transparent fallback.
      * @minLength 1
-     * @maxLength 120
+     * @maxLength 512
      */
   recipient: string;
   /**
@@ -2068,6 +2102,12 @@ side: GetNearTokensSide;
  * @maxLength 70
  */
 term?: string;
+/**
+ * Optional network identifier (for example sol) that limits the list to one network.
+ * @minLength 1
+ * @maxLength 32
+ */
+chain?: string;
 };
 
 export type GetNearTokensSide = typeof GetNearTokensSide[keyof typeof GetNearTokensSide];
@@ -2091,6 +2131,7 @@ limit?: number;
 };
 
 export type GetNearOrderStatusParams = {
+requestId: string;
 /**
  * @minLength 32
  * @maxLength 120

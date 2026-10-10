@@ -23,8 +23,9 @@ export interface NearQuoteInput {
      */
   amount: string;
   /**
+     * Destination address. Native Zcash requires a checksum-valid mainnet Unified Address with an Orchard receiver and no transparent receiver; no transparent fallback.
      * @minLength 1
-     * @maxLength 120
+     * @maxLength 512
      */
   recipient: string;
   /**

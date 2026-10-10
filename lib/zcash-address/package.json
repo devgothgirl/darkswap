@@ -1,0 +1,11 @@
+{
+  "name": "@workspace/zcash-address",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "@scure/base": "1.2.6"
+  }
+}

@@ -9,6 +9,41 @@ import * as zod from 'zod';
 
 
 /**
+ * Public Solana DAMM v2 liquidity statistics, separate from the shielded Dark Pool. Cached for at most one minute; unavailable data returns 503.
+ * @summary Current Meteora ZEC-DARK liquidity pool statistics
+ */
+export const getZecDarkLiquidityResponseLiquidityUsdMin = 0;
+
+export const getZecDarkLiquidityResponseVolume24hUsdMin = 0;
+
+export const getZecDarkLiquidityResponseFees24hUsdMin = 0;
+
+export const getZecDarkLiquidityResponseBaseFeePctMin = 0;
+export const getZecDarkLiquidityResponseBaseFeePctMax = 100;
+
+export const getZecDarkLiquidityResponseCompoundingFeePctMin = 0;
+export const getZecDarkLiquidityResponseCompoundingFeePctMax = 100;
+
+export const getZecDarkLiquidityResponsePermanentLockedPctMin = 0;
+export const getZecDarkLiquidityResponsePermanentLockedPctMax = 100;
+
+
+
+export const GetZecDarkLiquidityResponse = zod.object({
+  "poolAddress": zod.string(),
+  "meteoraUrl": zod.string(),
+  "fetchedAt": zod.coerce.date(),
+  "liquidityUsd": zod.number().min(getZecDarkLiquidityResponseLiquidityUsdMin),
+  "volume24hUsd": zod.number().min(getZecDarkLiquidityResponseVolume24hUsdMin),
+  "fees24hUsd": zod.number().min(getZecDarkLiquidityResponseFees24hUsdMin),
+  "baseFeePct": zod.number().min(getZecDarkLiquidityResponseBaseFeePctMin).max(getZecDarkLiquidityResponseBaseFeePctMax),
+  "compoundingFeePct": zod.number().min(getZecDarkLiquidityResponseCompoundingFeePctMin).max(getZecDarkLiquidityResponseCompoundingFeePctMax),
+  "permanentLockedPct": zod.number().min(getZecDarkLiquidityResponsePermanentLockedPctMin).max(getZecDarkLiquidityResponsePermanentLockedPctMax).nullable(),
+  "dynamicFeeEnabled": zod.boolean()
+})
+
+
+/**
  * Confirmed distribution amounts valued at the day's public token prices. An estimate, not a payout record or guarantee.
  * @summary Daily USD estimate of owner-confirmed $DARK holder distributions
  */
@@ -2488,15 +2523,18 @@ export const GetNearServiceStatusResponse = zod.object({
 
 
 /**
- * @summary Supported NEAR Intents assets; Solana-only on source
+ * @summary Supported NEAR Intents assets; source lists only origin-eligible assets on enabled origin networks
  */
 export const getNearTokensQueryTermMax = 70;
+
+export const getNearTokensQueryChainMax = 32;
 
 
 
 export const GetNearTokensQueryParams = zod.object({
   "side": zod.enum(['source', 'destination']),
-  "term": zod.coerce.string().max(getNearTokensQueryTermMax).optional()
+  "term": zod.coerce.string().max(getNearTokensQueryTermMax).optional(),
+  "chain": zod.coerce.string().min(1).max(getNearTokensQueryChainMax).optional().describe('Optional network identifier (for example sol) that limits the list to one network.')
 })
 
 export const GetNearTokensResponse = zod.object({
@@ -2507,7 +2545,9 @@ export const GetNearTokensResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }))
 })
 
@@ -2521,7 +2561,7 @@ export const getNearQuoteBodyToMax = 160;
 
 export const getNearQuoteBodyAmountMax = 40;
 
-export const getNearQuoteBodyRecipientMax = 120;
+export const getNearQuoteBodyRecipientMax = 512;
 
 export const getNearQuoteBodyRefundToMax = 120;
 
@@ -2531,7 +2571,7 @@ export const GetNearQuoteBody = zod.object({
   "from": zod.string().min(1).max(getNearQuoteBodyFromMax),
   "to": zod.string().min(1).max(getNearQuoteBodyToMax),
   "amount": zod.string().min(1).max(getNearQuoteBodyAmountMax),
-  "recipient": zod.string().min(1).max(getNearQuoteBodyRecipientMax),
+  "recipient": zod.string().min(1).max(getNearQuoteBodyRecipientMax).describe('Destination address. Native Zcash requires a checksum-valid mainnet Unified Address with an Orchard receiver and no transparent receiver; no transparent fallback.'),
   "refundTo": zod.string().min(1).max(getNearQuoteBodyRefundToMax)
 })
 
@@ -2548,7 +2588,9 @@ export const GetNearQuoteResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "to": zod.object({
   "id": zod.string(),
@@ -2557,7 +2599,9 @@ export const GetNearQuoteResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "amountIn": zod.string(),
   "amountOut": zod.string(),
@@ -2633,7 +2677,9 @@ export const CreateNearOrderResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "to": zod.object({
   "id": zod.string(),
@@ -2642,7 +2688,9 @@ export const CreateNearOrderResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "amountIn": zod.string(),
   "amountOut": zod.string(),
@@ -2784,7 +2832,9 @@ export const GetNearOrderReceiptResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "to": zod.object({
   "id": zod.string(),
@@ -2793,7 +2843,9 @@ export const GetNearOrderReceiptResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "amountIn": zod.string(),
   "amountOut": zod.string(),
@@ -2810,7 +2862,8 @@ export const GetNearOrderReceiptResponse = zod.object({
 
 
 /**
- * @summary Check a NEAR Intents swap by its deposit address
+ * The random requestId is a private bearer capability saved at order creation. A public deposit address and memo alone never authorize access. Only locally stored ready orders matching the receipt, address, and memo can be queried. Keep the receipt ID private.
+ * @summary Check a NEAR Intents swap with its private receipt ID
  */
 export const getNearOrderStatusQueryDepositAddressMin = 32;
 export const getNearOrderStatusQueryDepositAddressMax = 120;
@@ -2820,6 +2873,7 @@ export const getNearOrderStatusQueryDepositMemoMax = 120;
 
 
 export const GetNearOrderStatusQueryParams = zod.object({
+  "requestId": zod.coerce.string().uuid(),
   "depositAddress": zod.coerce.string().min(getNearOrderStatusQueryDepositAddressMin).max(getNearOrderStatusQueryDepositAddressMax),
   "depositMemo": zod.coerce.string().max(getNearOrderStatusQueryDepositMemoMax).optional()
 })
@@ -2868,7 +2922,9 @@ export const GetNearOrderStatusResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "to": zod.object({
   "id": zod.string(),
@@ -2877,7 +2933,9 @@ export const GetNearOrderStatusResponse = zod.object({
   "chainName": zod.string(),
   "decimals": zod.number().int(),
   "price": zod.number().optional(),
-  "contractAddress": zod.string().optional()
+  "contractAddress": zod.string().optional(),
+  "native": zod.boolean().optional().describe('True only for the network\'s native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins.'),
+  "originEligible": zod.boolean().optional().describe('True when the asset can be sent as a deposit: the network\'s native coin or a valid token contract on that network. Absent on saved receipts.')
 }),
   "amountIn": zod.string(),
   "amountOut": zod.string(),

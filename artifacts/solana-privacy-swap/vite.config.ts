@@ -57,7 +57,7 @@ if (!basePath) {
   );
 }
 
-export default defineConfig({
+export default defineConfig(async ({ command, mode }) => ({
   base: basePath,
   plugins: [
     {
@@ -94,7 +94,7 @@ export default defineConfig({
           if (!ctx.server) return html;
           const pathname = new URL(ctx.originalUrl || '/', 'http://localhost').pathname;
           const path = pathname.replace(/\/+$/, '') || '/';
-          const publicGuides = ['/docs', '/docs/confidential-routing', '/docs/whitepaper', '/help'].includes(path) || path === '/pool' || path.startsWith('/pool/')
+          const publicGuides = ['/docs', '/docs/confidential-routing', '/docs/whitepaper', '/docs/dark-pool', '/help'].includes(path) || path === '/pool' || path.startsWith('/pool/')
             ? (await ctx.server.ssrLoadModule('/src/seo-public-guides.tsx')).renderPublicGuides()
             : {};
           return renderPageHtml(html, pathname, publicGuides, await getResearchHtml(path));
@@ -121,6 +121,17 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      // PREVIEW ONLY: owner approval and a deliberate later code change are
+      // required to release this countdown. Every build selects the inert
+      // production module, even `vite build --mode development`. Resolving
+      // before dependency traversal keeps timer JS, CSS and its dismissal
+      // revision out of production, rather than hiding them at runtime.
+      './announcement-countdown': path.resolve(
+        import.meta.dirname,
+        command === 'serve' && mode === 'development' && process.env.NODE_ENV !== 'production'
+          ? 'src/components/announcement-countdown.preview.tsx'
+          : 'src/components/announcement-countdown.tsx',
+      ),
       buffer: browserBuffer,
       '@': path.resolve(import.meta.dirname, 'src'),
       '@assets': path.resolve(
@@ -151,4 +162,4 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
-});
+}));

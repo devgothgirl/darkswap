@@ -13,9 +13,11 @@ import ScreenerBeta from './pages/screener-beta';
 import Previews from './pages/previews';
 import SplitMixerPreview from './pages/splitwise-preview';
 import PrivacyBundlePreview from './pages/privacy-bundle-preview';
+import ShieldedZcashPreview from './pages/shielded-zcash-preview';
 import Docs from './pages/docs';
 import ConfidentialRoutingDocs from './pages/docs-confidential-routing';
 import Whitepaper from './pages/whitepaper';
+import DarkPoolDocs from './pages/docs-dark-pool';
 import RewardsPage from './pages/rewards';
 import { RewardsProvider } from './hooks/use-rewards';
 import HelpPage from './pages/help';
@@ -36,6 +38,7 @@ import poolPaths from './pool/routes.json';
 
 // The shielded pool (testnet) loads on its own, outside RewardsProvider, so
 // the rewards wallet SDK never loads on pool pages.
+import Bridge from './pages/bridge';
 const PoolSection = lazy(() => import('./pool/pool-page'));
 const isPoolPath = (path: string) => poolPaths.includes(path.replace(/\/+$/, '') || '/');
 
@@ -72,12 +75,14 @@ function Router() {
         <Route path="/" component={Launch} />
         <Route path="/swap" component={Home} />
         <Route path="/near-swap" component={NearSwap} />
+        <Route path="/bridge" component={Bridge} />
         <Route path="/near-trends" component={NearTrends} />
         <Route path="/near-discovery" component={NearDiscovery} />
         <Route path="/near-order" component={NearOrder} />
         <Route path="/docs" component={Docs} />
         <Route path="/docs/confidential-routing" component={ConfidentialRoutingDocs} />
         <Route path="/docs/whitepaper" component={Whitepaper} />
+        <Route path="/docs/dark-pool" component={DarkPoolDocs} />
         {/* Tokenomics is paused until the ZEC airdrop starts; holder rewards live on the rewards site. */}
         <Route path="/tokenomics"><ExternalRedirect to={REWARDS_URL} /></Route>
         <Route path="/tokenomics/leaderboard"><ExternalRedirect to={REWARDS_URL} /></Route>
@@ -89,6 +94,7 @@ function Router() {
         <Route path="/split-mixer-preview" component={SplitMixerPreview} />
         <Route path="/splitwise-preview"><AliasRedirect to="/split-mixer-preview" /></Route>
         <Route path="/privacy-bundle-preview" component={PrivacyBundlePreview} />
+        <Route path="/shielded-zcash-preview" component={ShieldedZcashPreview} />
         <Route path="/explore"><ClosedBetaPage areaName="Token research" /></Route>
         <Route path="/screener-beta" component={ScreenerBeta} />
         <Route path="/screener-preview"><AliasRedirect to="/screener-beta" /></Route>

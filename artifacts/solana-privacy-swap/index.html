@@ -4,13 +4,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Tracking links contain private receipt capabilities. Never send them as Referer. -->
+    <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#07060b" />
     <script>
-      /* Pool pages (testnet) run without the site analytics tracker. */
+      /* Run before injected analytics: private tracking and pools are excluded. */
       (function () { try {
         var p = location.pathname.slice('%BASE_URL%'.length - 1), k = 'darkswap.poolAnalyticsOff';
-        if (p === '/pool' || p.indexOf('/pool/') === 0) { localStorage.setItem('umami.disabled', '1'); localStorage.setItem(k, '1'); }
-        else if (localStorage.getItem(k)) { localStorage.removeItem('umami.disabled'); localStorage.removeItem(k); }
+        // Migrate old receipt-bearing links before any pageview script runs.
+        if (p === '/near-order') {
+          try { localStorage.setItem('umami.disabled', '1'); localStorage.setItem('darkswap.privateAnalyticsOff', '1'); } catch (e) {}
+          var url = new URL(location.href), id = url.searchParams.get('requestId');
+          if (id) {
+            var receipt = JSON.stringify({ requestId: id, address: url.searchParams.get('address') || '', memo: url.searchParams.get('memo') || '' });
+            try { sessionStorage.setItem('dark-swap:near-active-receipt', receipt); } catch (e) {}
+            try { localStorage.setItem('dark-swap:near-recent-order', receipt); } catch (e) {}
+            url.searchParams.delete('requestId');
+            history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+          }
+        }
+        if (p === '/pool' || p.indexOf('/pool/') === 0 || p === '/near-order') {
+          localStorage.setItem('umami.disabled', '1'); localStorage.setItem(k, '1'); localStorage.setItem('darkswap.privateAnalyticsOff', '1');
+        } else if (localStorage.getItem(k) || localStorage.getItem('darkswap.privateAnalyticsOff')) {
+          localStorage.removeItem('umami.disabled'); localStorage.removeItem(k); localStorage.removeItem('darkswap.privateAnalyticsOff');
+        }
       } catch (e) {} })();
     </script>
     <!--SEO_HEAD-->

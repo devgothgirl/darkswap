@@ -182,7 +182,6 @@ export default function Home() {
               <button type="button" className="sx-paste" onClick={()=>void paste()} aria-label="Paste address from clipboard" data-testid="button-paste-address"><ClipboardPaste size={16}/><span>Paste</span></button>
             </div>
             <div className="sx-meta"><span className={addressLooksShort && !pasteNote ? 'sx-warn' : ''} data-testid="text-address-hint">{pasteNote || (addressLooksShort ? `This looks short for a ${to?.chainName || 'destination'} address. Double-check it.` : 'Check the chain and address. Transfers cannot be reversed.')}</span></div>
-            {to?.chain === 'near' && to.symbol === 'NEAR' && <p className="sx-quiet">Funding a <a href="https://terminal.nearfi.trade/wallet" target="_blank" rel="noopener noreferrer">NearFi Terminal wallet ↗</a>? Use the address NearFi shows you and confirm both sides say NEAR on the NEAR network. Direct Terminal funding is not yet verified.</p>}
           </div>
 
           {to?.requiresMemo && <div className="sx-field">

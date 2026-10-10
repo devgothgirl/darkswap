@@ -51,6 +51,12 @@
 .near-picker-item em { font: 12px 'Source Sans 3', sans-serif; color: #b598e1; font-style: normal; }
 .near-divide { height: 24px; display: grid; place-items: center; color: var(--near-signal); margin: -8px 0 7px; position: relative; z-index: 1; }
 .near-divide svg { background: var(--near-panel); box-sizing: content-box; padding: 6px; border: 1px solid var(--near-line); border-radius: 50%; }
+/* Bridge only: the divider holds the flip control, so its icon drops the static ring. */
+.near-divide--flip { height: 36px; margin: -6px 0 5px; }
+.near-divide--flip svg { background: none; padding: 0; border: 0; border-radius: 0; }
+.near-address-row { display: flex; gap: 8px; align-items: stretch; }
+.near-address-row .near-input { flex: 1; min-width: 0; }
+.near-address-row > button { flex: none; }
 .near-input { width: 100%; min-height: 47px; border: 1px solid #332f3d; border-radius: 7px; background: var(--near-panel-deep); color: var(--near-text); padding: 11px 14px; outline: none; font-size: 13px; }
 .near-input:focus { border-color: var(--near-signal); }
 .near-input::placeholder { color: #7a46c9; }

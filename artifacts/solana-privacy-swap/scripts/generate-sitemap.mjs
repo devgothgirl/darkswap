@@ -29,6 +29,10 @@ assert.match(routes.origin, /^https:\/\/[^/]+$/, 'Use a verified HTTPS productio
 for (const [alias, destination] of Object.entries(routes.aliases)) {
   assert.ok(routes.nonIndexable.includes(destination) || routes.indexable.includes(destination), `Unknown alias target: ${alias}`);
 }
+for (const [host, destination] of Object.entries(routes.hostRedirects ?? {})) {
+  assert.match(host, /^[a-z0-9-]+(\.[a-z0-9-]+)+$/, `Host redirects need a bare lowercase hostname: ${host}`);
+  assert.ok(routes.indexable.includes(destination), `Host redirect target must be a public page: ${host}`);
+}
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -37,6 +41,7 @@ ${routes.indexable.map((route) => `  <url><loc>${routes.origin}${route}</loc></u
 `;
 const robots = `User-agent: *
 Allow: /
+# Product summary: ${routes.origin}/llms.txt
 Sitemap: ${routes.origin}/sitemap.xml
 Sitemap: ${routes.origin}/launch/sitemap.xml
 `;

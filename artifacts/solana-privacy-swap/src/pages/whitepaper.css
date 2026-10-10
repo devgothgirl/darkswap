@@ -1,4 +1,4 @@
-/* Plain-language whitepaper. Builds on docs.css; colours come from the design system's role tokens. */
+/* DarkSwap whitepaper page (v0.3). Builds on docs.css; colours come from the design system's role tokens. */
 .wp-tags { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .wp-tag {
   display: inline-block; padding: 3px 8px; border-radius: 3px; border: 1px solid hsl(var(--input));
@@ -8,10 +8,41 @@
 .wp-tag-live { color: #fff; background: hsl(var(--primary)); border-color: hsl(var(--primary)); }
 .wp-tag-testnet { color: hsl(var(--secondary-foreground)); border-color: hsl(var(--chart-3)); background: hsl(var(--secondary)); }
 .wp-tag-scheduled { color: hsl(var(--secondary-foreground)); }
+.wp-tag-built { color: hsl(var(--secondary-foreground)); border-color: hsl(var(--chart-3)); }
 .wp-tag-proposed { color: hsl(var(--muted-foreground)); border-style: dashed; }
 
 .wp-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .wp-section-head .docs-section-num { margin: 0; }
+
+.wp-formulas { max-width: 100%; margin: calc(6 * var(--spacing)) 0; font-family: var(--app-font-mono); font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wp-formulas code { font: inherit; }
+
+.wp-architecture { margin: calc(6 * var(--spacing)) 0; color: hsl(var(--foreground)); font-family: var(--app-font-sans); }
+.wp-architecture-node { min-width: 0; padding: calc(4 * var(--spacing)); border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) / 2); background: hsl(var(--card)); overflow-wrap: anywhere; }
+.wp-architecture-wallet { width: fit-content; max-width: 100%; margin: 0 auto; font-weight: 700; text-align: center; }
+.wp-architecture-terminal { max-width: 80%; margin: 0 auto; font-weight: 600; text-align: center; }
+.wp-architecture-connector, .wp-architecture-branch { width: 1px; height: calc(4 * var(--spacing)); margin: 0 auto; background: hsl(var(--border)); }
+.wp-architecture-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(3 * var(--spacing)); }
+.wp-architecture-lane { min-width: 0; display: flex; flex-direction: column; position: relative; }
+.wp-architecture-lane::before { content: ""; position: absolute; top: 0; left: 0; right: calc(-3 * var(--spacing)); border-top: 1px solid hsl(var(--border)); }
+.wp-architecture-lane:first-child::before { left: 50%; }
+.wp-architecture-lane:last-child::before { right: 50%; }
+.wp-architecture-lane .wp-architecture-node { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+.wp-architecture .wp-architecture-node p { margin: calc(3 * var(--spacing)) 0 0; font-size: 15px; line-height: 1.55; color: inherit; }
+.wp-architecture .wp-architecture-node .wp-architecture-operator { margin-top: auto; padding-top: calc(4 * var(--spacing)); font-weight: 600; }
+.wp-architecture figcaption { margin-top: calc(4 * var(--spacing)); font-size: 15px; line-height: 1.6; }
+
+@media screen and (max-width: 720px) {
+  .wp-architecture-lanes { grid-template-columns: minmax(0, 1fr); }
+  .wp-architecture-terminal { max-width: 100%; }
+  .wp-architecture-branch, .wp-architecture-lane::before { display: none; }
+}
+
+.wp-print .wp-architecture { color: inherit; break-inside: avoid-page; }
+.wp-print .wp-architecture-node { background: transparent; border-color: currentColor; }
+.wp-print .wp-architecture-connector, .wp-print .wp-architecture-branch { background: currentColor; }
+.wp-print .wp-architecture-lane::before { border-color: currentColor; }
+.wp-print .wp-architecture-node, .wp-print .wp-architecture figcaption { break-inside: avoid-page; }
 
 .wp-legend { padding: 40px 0 34px; border-bottom: 1px solid hsl(var(--border)); }
 .wp-legend h2 { margin: 0 0 12px; color: hsl(var(--foreground)); font: 700 22px/1.2 "Source Sans 3", sans-serif; }
@@ -30,7 +61,9 @@
 .wp-table th, .wp-table td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid hsl(var(--border)); color: hsl(var(--sidebar-foreground)); line-height: 1.5; }
 .wp-table thead th { font: 700 11px "Space Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
 .wp-table tbody th { color: hsl(var(--foreground)); font-weight: 600; }
-.wp-table td:nth-child(2) { font-family: "Space Mono", monospace; font-size: 14px; }
+#constants .wp-table td:nth-child(2) { font-family: "Space Mono", monospace; font-size: 14px; }
+.wp-token-table td, .wp-asset-address { overflow-wrap: anywhere; }
+#dark-token .wp-note { font-size: 0.85em; }
 
 @media (max-width: 720px) {
   .wp-table thead { display: none; }
@@ -53,10 +86,18 @@
 .wp-print .docs-flow li span { color: #5a35a6; }
 .wp-print .wp-tag { background: #f6f4fb; border-color: #ccc; color: #444; }
 .wp-print .wp-tag-live { background: #8b50e8; border-color: #8b50e8; color: #fff; }
-.wp-print .wp-tag-testnet, .wp-print .wp-tag-scheduled { color: #5a35a6; border-color: #a376f2; background: #f3eefc; }
+.wp-print .wp-tag-testnet, .wp-print .wp-tag-scheduled, .wp-print .wp-tag-built { color: #5a35a6; border-color: #a376f2; background: #f3eefc; }
 .wp-print .docs-section { padding: 30px 0; }
 .wp-print .docs-section h2, .wp-print .wp-legend h2 { break-after: avoid-page; }
 .wp-print .wp-review, .wp-print .docs-caution, .wp-print .docs-flow li, .wp-print .wp-legend dl div, .wp-print .wp-table tr, .wp-print .docs-end { break-inside: avoid-page; }
 .wp-print .help-widget-trigger, .wp-print #instant-help-panel { display: none !important; }
 .wp-print .docs-end img { display: none; }
 @page { size: A4; margin: 18mm 16mm; }
+
+.wp-note { font-size: 0.85em; color: hsl(var(--muted-foreground)); }
+.wp-print .wp-note { color: #555; }
+html.wp-print { color-scheme: light !important; }
+html.wp-print, html.wp-print body, html.wp-print #root { background: #fff !important; }
+@media print { html.wp-print .docs-checklist { list-style: disc; } }
+.wp-print .docs-section p strong, .wp-print .docs-section li strong, .wp-print .docs-caution strong { color: #111; }
+.wp-print .docs-checklist li::marker { color: #8b50e8; }

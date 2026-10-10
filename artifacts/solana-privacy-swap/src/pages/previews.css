@@ -25,3 +25,8 @@
 .pv-status, .pv-card p { font-size: 15px; line-height: 1.65; }
 .pv-card-link { font-size: 15px; }
 .pv-card-top { flex-wrap: wrap; }
+
+/* A featured concept spans the row, so the grid below keeps whole rows. */
+.pv-card[data-featured="true"] { grid-column: 1 / -1; min-height: 0; border-color: hsl(var(--primary) / .55); }
+.pv-card[data-featured="true"] h2 { margin-top: 26px; }
+.pv-card[data-featured="true"] p { max-width: 760px; }

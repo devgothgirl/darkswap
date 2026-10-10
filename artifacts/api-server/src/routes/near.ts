@@ -7,6 +7,11 @@ import { withProviderCapacity } from "../lib/provider-capacity";
 import { InvalidPartnerFeeConfigError, partnerFeeFromEnv, type PartnerFee } from "../lib/near-partner-fee";
 import { inputValueUsd, MINIMUM_SWAP_USD } from "../lib/swap-minimum";
 import { getNearServiceStatus } from "../lib/near-service-status";
+import { logger } from "../lib/logger";
+import {
+  NEAR_CHAIN_NAMES, NEAR_NATIVE_ASSETS, NEAR_ROUTE_CHAINS,
+  chainAddress, isNativeAsset, originAddressShape, parseOriginChains, sameAddress, solanaAddress,
+} from "../lib/near-chains";
 import {
   GetNearTokensQueryParams,
   GetNearTokensResponse,
@@ -23,14 +28,20 @@ import {
 } from "@workspace/api-zod";
 import { resolveOrderRewardsAccount, RewardsAuthError } from "../lib/rewards";
 
+import { isSolanaZec } from "../lib/near-zec";
+import { NATIVE_ZEC_ASSET, SHIELDED_ZCASH_HINT } from "@workspace/zcash-address";
+
 const router: IRouter = Router();
 router.use("/swap/near", (_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
 const BASE = "https://1click.chaindefuser.com/v0";
-const DESTINATIONS = new Set(["sol", "near", "eth", "arb", "base", "op", "pol", "bsc"]);
-const CHAIN_NAMES: Record<string, string> = {
-  sol: "Solana", near: "NEAR", eth: "Ethereum", arb: "Arbitrum",
-  base: "Base", op: "Optimism", pol: "Polygon", bsc: "BNB Chain",
-};
+const DESTINATIONS = NEAR_ROUTE_CHAINS;
+const CHAIN_NAMES = NEAR_CHAIN_NAMES;
+// Origin networks enabled for new quotes and orders, parsed once at startup.
+// Unset means Solana only; Solana is always enabled. Receipt recovery and
+// tracking never depend on this list.
+const ORIGINS = parseOriginChains(process.env.NEAR_ORIGIN_CHAINS, logger);
+logger.info({ origins: [...ORIGINS] }, "NEAR origin networks enabled");
+const missingNativeLogged = new Set<string>();
 type Token = NearQuoteToken;
 type QuoteInput = NearQuoteInput;
 type Preview = { input: QuoteInput; from: Token; to: Token; units: string; minOut: bigint; expires: number };
@@ -124,38 +135,63 @@ async function loadTokens(): Promise<Token[]> {
     if (!entry || typeof entry !== "object") return [];
     const token = entry as Record<string, unknown>;
     const chain = token.blockchain;
+    // Native Zcash is destination-only and pinned to its eight-decimal coin.
+    if (chain === "zec" && (token.assetId !== NATIVE_ZEC_ASSET || token.symbol !== "ZEC" || token.decimals !== 8)) return [];
+    // Standard NEAR assets plus the exact Solana ZEC representation.
+    // Other 1cs_v1 assets remain excluded; ticker alone never grants support.
     if (typeof chain !== "string" || !DESTINATIONS.has(chain) ||
-        typeof token.assetId !== "string" || !token.assetId.startsWith("nep141:") ||
+        typeof token.assetId !== "string" ||
+        !(token.assetId.startsWith("nep141:") || token.assetId.startsWith("nep245:") || isSolanaZec(token)) ||
         typeof token.symbol !== "string" || !token.symbol ||
         !Number.isInteger(token.decimals) || (token.decimals as number) < 0 || (token.decimals as number) > 24) return [];
-    if (chain === "sol" && token.assetId !== "nep141:sol.omft.near" &&
+    const native = isNativeAsset(chain, token.assetId);
+    if (chain === "sol" && !native &&
         (typeof token.contractAddress !== "string" || !solanaAddress(token.contractAddress))) return [];
+    // A missing contractAddress never implies a native coin: some catalog
+    // entries omit it. Only the exact native ID or a valid contract can fund.
+    const originEligible = chain !== "zec" && (native ||
+      (typeof token.contractAddress === "string" && chainAddress(chain, token.contractAddress)));
     return [{
       id: token.assetId, symbol: token.symbol, chain, chainName: CHAIN_NAMES[chain],
       decimals: token.decimals as number,
       ...(typeof token.contractAddress === "string" ? { contractAddress: token.contractAddress } : {}),
       ...(typeof token.price === "number" && Number.isFinite(token.price) ? { price: token.price } : {}),
+      native, originEligible,
     }];
   });
   if (!normalized.some(t => t.chain === "sol")) throw new Error("No Solana-origin NEAR assets available");
+  for (const chain of ORIGINS) {
+    if (!missingNativeLogged.has(chain) && !normalized.some(t => t.id === NEAR_NATIVE_ASSETS[chain])) {
+      missingNativeLogged.add(chain);
+      logger.warn({ chain }, "Enabled NEAR origin network has no native asset in the provider catalog");
+    }
+  }
   tokenCache = { tokens: normalized, expires: Date.now() + 60_000 };
   return normalized;
 }
 
-function solanaAddress(value: string): boolean {
-  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return false;
-  let number = 0n;
-  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  for (const char of value) number = number * 58n + BigInt(alphabet.indexOf(char));
-  let bytes = 0;
-  while (number > 0n) { bytes++; number >>= 8n; }
-  return bytes + (value.match(/^1+/)?.[0].length ?? 0) === 32;
+// Every saved order predates multi-network origins or records its origin
+// explicitly. A stored origin token without a chain is a Solana origin.
+function originChain(token: { chain?: unknown } | undefined): string {
+  return typeof token?.chain === "string" && token.chain ? token.chain : "sol";
 }
 
-function destinationAddress(chain: string, value: string): boolean {
-  if (chain === "sol") return solanaAddress(value);
-  if (chain === "near") return /^(?:[a-z0-9_-]+(?:[.-][a-z0-9_-]+)*\.near|[0-9a-f]{64})$/.test(value);
-  return /^0x[0-9a-fA-F]{40}$/.test(value);
+// Legacy previews and receipts may lack chain, chainName and native on the
+// origin token. Fill them before parsing: chain defaults to Solana and native
+// is derived from the exact native asset ID, never from a missing contract.
+function normalizeStoredOrigin<T>(token: T): T {
+  if (!isRecord(token)) return token;
+  const chain = originChain(token);
+  return {
+    ...token,
+    chain,
+    chainName: typeof token.chainName === "string" && token.chainName ? token.chainName : CHAIN_NAMES[chain] ?? chain,
+    ...(typeof token.native !== "boolean" && typeof token.id === "string" ? { native: isNativeAsset(chain, token.id) } : {}),
+  } as T;
+}
+
+function normalizeStoredOrder(details: unknown): unknown {
+  return isRecord(details) && isRecord(details.from) ? { ...details, from: normalizeStoredOrigin(details.from) } : details;
 }
 
 function atomic(value: string, decimals: number): string | null {
@@ -265,7 +301,11 @@ function orderResponse(
   quote: Record<string, unknown>, from: Token, to: Token, recipient: string, refundTo: string,
   status: string, updatedAt?: string, requestId?: string, appFeeBps?: number,
 ) {
-  if (typeof quote.depositAddress !== "string" || !solanaAddress(quote.depositAddress) ||
+  if (to.chain === "zec" &&
+      (to.id !== NATIVE_ZEC_ASSET || to.decimals !== 8 || !chainAddress("zec", recipient))) {
+    throw new Error("Native Zcash order lacks a supported shielded-only recipient");
+  }
+  if (typeof quote.depositAddress !== "string" || !chainAddress(originChain(from), quote.depositAddress) ||
       typeof quote.deadline !== "string" || !Number.isFinite(Date.parse(quote.deadline)) ||
       (quote.depositMemo !== undefined && quote.depositMemo !== null && typeof quote.depositMemo !== "string")) {
     throw new Error("Missing or invalid NEAR deposit instructions");
@@ -346,7 +386,7 @@ function nearHistoryMatches(
       item.refundTo !== requestBody.refundTo ||
       typeof item.createdAt !== "string" ||
       typeof item.depositAddress !== "string" ||
-      !solanaAddress(item.depositAddress) ||
+      !chainAddress(originChain(preview.from), item.depositAddress) ||
       (item.depositMemo !== undefined && item.depositMemo !== null && typeof item.depositMemo !== "string") ||
       typeof item.amountInFormatted !== "string") return false;
 
@@ -362,7 +402,7 @@ export async function reconcileNearProviderResponse(
   receipt: typeof nearOrdersTable.$inferSelect,
   preview: Preview,
   requestBody: ReturnType<typeof quoteBody>,
-): Promise<{ response: Record<string, unknown>; status: string; updatedAt?: string } | undefined> {
+): Promise<{ response: Record<string, unknown>; issuedDepositAddress: string; status: string; updatedAt?: string } | undefined> {
   const baseParams = new URLSearchParams({ search: preview.input.recipient, limit: "100" });
   baseParams.append("depositType", "ORIGIN_CHAIN");
   baseParams.append("recipientType", "DESTINATION_CHAIN");
@@ -414,13 +454,17 @@ export async function reconcileNearProviderResponse(
   const quoteResponse = statusResult.quoteResponse;
   const quote = quoteResponse.quote;
   if (!isRecord(quote) ||
-      quote.depositAddress !== historyItem.depositAddress ||
+      !sameAddress(originChain(preview.from), quote.depositAddress, historyItem.depositAddress) ||
       (quote.depositMemo ?? null) !== (historyItem.depositMemo ?? null) ||
       !matchesNearRequest(quoteResponse.quoteRequest, preview, receipt.createdAt, requestBody.appFees)) {
     throw new Error("NEAR order history did not match the saved request");
   }
   return {
+    // Kept exactly as the provider returned it; the history copy below is the
+    // issued address (the one the status lookup succeeded with), even when the
+    // echo differs from it only in EVM hexadecimal case.
     response: quoteResponse,
+    issuedDepositAddress: historyItem.depositAddress,
     status: statusResult.status,
     ...(typeof statusResult.updatedAt === "string" ? { updatedAt: statusResult.updatedAt } : {}),
   };
@@ -433,6 +477,7 @@ async function finalizeNearOrder(
   providerResponse: unknown,
   status = "PENDING_DEPOSIT",
   updatedAt?: string,
+  issuedDepositAddress?: string,
 ): Promise<ReturnType<typeof CreateNearOrderResponse.parse>> {
   let order: ReturnType<typeof CreateNearOrderResponse.parse>;
   try {
@@ -444,8 +489,16 @@ async function finalizeNearOrder(
         (status === "PENDING_DEPOSIT" && Date.parse(quote.deadline) <= Date.now())) {
       throw new NearError("The deposit deadline has passed. Do not send funds to this order.", 409);
     }
+    // An order recovered from provider history keeps the copy of the address
+    // that history issued. The echo may differ only in EVM hexadecimal case;
+    // Solana addresses must match exactly.
+    if (issuedDepositAddress !== undefined &&
+        !sameAddress(originChain(preview.from), quote.depositAddress, issuedDepositAddress)) {
+      throw new Error("NEAR deposit address did not match the issued copy");
+    }
     order = CreateNearOrderResponse.parse(orderResponse(
-      quote, preview.from, preview.to, preview.input.recipient, preview.input.refundTo, status,
+      issuedDepositAddress !== undefined ? { ...quote, depositAddress: issuedDepositAddress } : quote,
+      preview.from, preview.to, preview.input.recipient, preview.input.refundTo, status,
       updatedAt, requestId,
       echoedPartnerFeeBps((providerResponse as ProviderQuote).quoteRequest),
     ));
@@ -465,7 +518,7 @@ async function finalizeNearOrder(
 
   const [latest] = await db.select().from(nearOrdersTable)
     .where(eq(nearOrdersTable.id, requestId)).limit(1);
-  if (latest?.state === "ready") return CreateNearOrderResponse.parse(latest.orderDetails);
+  if (latest?.state === "ready") return CreateNearOrderResponse.parse(normalizeStoredOrder(latest.orderDetails));
   throw new Error("Unable to save NEAR order receipt");
 }
 
@@ -480,14 +533,14 @@ async function recoverNearOrderReceipt(
 
   const preview: Preview = {
     input: claimed.input,
-    from: claimed.fromAsset,
+    from: normalizeStoredOrigin(claimed.fromAsset),
     to: claimed.toAsset,
     units: claimed.units,
     minOut: BigInt(claimed.minOut),
     expires: claimed.expiresAt.getTime(),
   };
   if (receipt.state === "ready" && receipt.orderDetails) {
-    const saved = CreateNearOrderResponse.safeParse(receipt.orderDetails);
+    const saved = CreateNearOrderResponse.safeParse(normalizeStoredOrder(receipt.orderDetails));
     return saved.success ? saved.data : undefined;
   }
 
@@ -508,6 +561,10 @@ async function recoverNearOrderReceipt(
   }
 
   let response = isRecord(receipt.providerResponse) ? receipt.providerResponse : undefined;
+  // Present only for orders recovered from provider history: the issued copy
+  // of the deposit address, saved with the provider response so that a retry
+  // after an interrupted recovery still finalizes with the same copy.
+  let issuedDepositAddress = receipt.depositAddress ?? undefined;
   let recoveredStatus = "PENDING_DEPOSIT";
   let recoveredUpdatedAt: string | undefined;
   if (!response) {
@@ -519,6 +576,7 @@ async function recoverNearOrderReceipt(
     );
     if (!recovered) return undefined;
     response = recovered.response;
+    issuedDepositAddress = recovered.issuedDepositAddress;
     recoveredStatus = recovered.status;
     recoveredUpdatedAt = recovered.updatedAt;
   }
@@ -527,6 +585,7 @@ async function recoverNearOrderReceipt(
     const [recorded] = await db.update(nearOrdersTable).set({
       state: "provider_received",
       providerResponse: response,
+      ...(issuedDepositAddress !== undefined ? { depositAddress: issuedDepositAddress } : {}),
     }).where(and(
       eq(nearOrdersTable.id, receipt.id),
       inArray(nearOrdersTable.state, ["creating", "uncertain"]),
@@ -550,6 +609,7 @@ async function recoverNearOrderReceipt(
     response,
     recoveredStatus,
     recoveredUpdatedAt,
+    issuedDepositAddress,
   );
 }
 
@@ -561,7 +621,7 @@ async function existingOrderResponse(
     return;
   }
   if (previous.state === "ready" && previous.orderDetails) {
-    res.json(await withRouteStatus(CreateNearOrderResponse.parse(previous.orderDetails)));
+    res.json(await withRouteStatus(CreateNearOrderResponse.parse(normalizeStoredOrder(previous.orderDetails))));
     return;
   }
   if (previous.state === "provider_received" || previous.state === "creating" || previous.state === "uncertain") {
@@ -592,9 +652,13 @@ router.get("/swap/near/tokens", configured, limited(30, "near-tokens"), async (r
   const parsed = GetNearTokensQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "Choose an asset side and shorter search term." }); return; }
   try {
-    const { side, term = "" } = parsed.data;
+    const { side, term = "", chain } = parsed.data;
     const search = term.trim().toLowerCase();
-    const list = (await tokens()).filter(token => (side === "source" ? token.chain === "sol" : true) &&
+    // Sources are limited to enabled origin networks and to assets a wallet
+    // can actually deposit; the optional chain filter can only narrow that.
+    const list = (await tokens()).filter(token =>
+      (side === "source" ? ORIGINS.has(token.chain) && token.originEligible === true : true) &&
+      (!chain || token.chain === chain) &&
       (!search || `${token.symbol} ${token.chainName}`.toLowerCase().includes(search)));
     res.json(GetNearTokensResponse.parse({ tokens: list }));
   } catch (error) { fail(req, res, error); }
@@ -606,9 +670,15 @@ router.post("/swap/near/quote", configured, limited(8, "near-quote"), async (req
   try {
     const input = parsed.data;
     const list = await tokens();
-    const from = list.find(t => t.id === input.from && t.chain === "sol");
+    const from = list.find(t => t.id === input.from && ORIGINS.has(t.chain) && t.originEligible === true);
     const to = list.find(t => t.id === input.to);
-    if (!from || !to || from.id === to.id || !solanaAddress(input.refundTo) || !destinationAddress(to.chain, input.recipient)) {
+    if (to?.chain === "zec" && !chainAddress("zec", input.recipient)) {
+      res.status(400).json({ error: SHIELDED_ZCASH_HINT });
+      return;
+    }
+    if (!from || !to || from.id === to.id ||
+        (to.chain !== "zec" && input.recipient.length > 120) ||
+        !chainAddress(from.chain, input.refundTo) || !chainAddress(to.chain, input.recipient)) {
       res.status(400).json({ error: "Select supported assets and valid addresses for both networks." });
       return;
     }
@@ -672,8 +742,20 @@ router.post("/swap/near/orders", configured, limited(4, "near-order"), async (re
       res.status(409).json({ error: "This Privacy swap quote expired or has already been used. Check any existing receipt before requesting another quote." });
       return;
     }
-    selectedChains = { from: preview.fromAsset.chain, to: preview.toAsset.chain };
-    const routeStatus = await getNearServiceStatus(preview.fromAsset.chain, preview.toAsset.chain);
+    selectedChains = { from: originChain(preview.fromAsset), to: preview.toAsset.chain };
+    // A preview outlives a restart for up to 45 seconds; re-check the origin
+    // allow-list before any reservation or claim.
+    if (!ORIGINS.has(selectedChains.from)) {
+      res.status(409).json({ error: "This origin network is not enabled for new orders. Request a fresh quote." });
+      return;
+    }
+    if (selectedChains.to === "zec" &&
+        (preview.toAsset.id !== NATIVE_ZEC_ASSET || preview.toAsset.decimals !== 8 ||
+         !chainAddress("zec", preview.input.recipient))) {
+      res.status(409).json({ error: SHIELDED_ZCASH_HINT });
+      return;
+    }
+    const routeStatus = await getNearServiceStatus(selectedChains.from, selectedChains.to);
     if (routeStatus.eligibility !== "allowed") {
       // No reservation and no preview claim have been made.
       res.status(503).json({ error: routeStatus.reason });
@@ -734,7 +816,7 @@ router.post("/swap/near/orders", configured, limited(4, "near-order"), async (re
     }
     preview = {
       input: claimed.input,
-      from: claimed.fromAsset,
+      from: normalizeStoredOrigin(claimed.fromAsset),
       to: claimed.toAsset,
       units: claimed.units,
       minOut: BigInt(claimed.minOut),
@@ -794,44 +876,64 @@ router.get("/swap/near/orders/:requestId", configured, limited(30, "near-receipt
       res.status(409).json({ error: "No deposit instructions are available for this request. Do not send funds; check this receipt again before creating another order." });
       return;
     }
-    res.json(GetNearOrderReceiptResponse.parse(await withRouteStatus(CreateNearOrderResponse.parse(receipt.orderDetails))));
+    res.json(GetNearOrderReceiptResponse.parse(await withRouteStatus(CreateNearOrderResponse.parse(normalizeStoredOrder(receipt.orderDetails)))));
   } catch (error) { fail(req, res, error); }
 });
 
 router.get("/swap/near/status", configured, limited(60, "near-status"), async (req, res): Promise<void> => {
   const parsed = GetNearOrderStatusQueryParams.safeParse(req.query);
-  if (!parsed.success || !solanaAddress(parsed.data?.depositAddress ?? "")) {
-    res.status(400).json({ error: "Enter a valid Solana deposit address." });
+  if (!parsed.success || !originAddressShape(parsed.data.depositAddress)) {
+    // Name the network only when the supplied address shape identifies it.
+    const supplied = typeof req.query.depositAddress === "string" ? req.query.depositAddress : "";
+    res.status(400).json({ error: solanaAddress(supplied)
+      ? "Enter a valid private receipt ID and Solana deposit address."
+      : "Enter a valid private receipt ID and deposit address." });
     return;
   }
   try {
-    const params = new URLSearchParams({ depositAddress: parsed.data.depositAddress });
+    // The deposit address and memo are public on-chain. The random receipt ID
+    // is the private capability already used for receipt recovery. Authorize
+    // against local storage before contacting the provider; never fall back to
+    // provider-only orders. The receipt is selected by its private ID and memo,
+    // then the address must match on the saved origin network (EVM copies may
+    // differ only in hexadecimal case; Solana stays exact).
+    const [receipt] = await db.select().from(nearOrdersTable).where(and(
+      eq(nearOrdersTable.id, parsed.data.requestId),
+      sql`coalesce(${nearOrdersTable.orderDetails}->>'depositMemo', '') = ${parsed.data.depositMemo ?? ""}`,
+    )).limit(1);
+    const saved = receipt?.state === "ready" ? CreateNearOrderResponse.safeParse(normalizeStoredOrder(receipt.orderDetails)) : null;
+    const chain = saved?.success ? originChain(saved.data.from) : "sol";
+    if (!saved?.success || saved.data.requestId !== receipt?.id ||
+        !chainAddress(chain, parsed.data.depositAddress) ||
+        !sameAddress(chain, saved.data.depositAddress, parsed.data.depositAddress) ||
+        !sameAddress(chain, receipt?.depositAddress, saved.data.depositAddress) ||
+        (saved.data.depositMemo ?? "") !== (parsed.data.depositMemo ?? "")) {
+      res.status(404).json({ error: "No matching Privacy swap receipt was found." });
+      return;
+    }
+    // Query and respond with the address exactly as first issued.
+    const issuedAddress = saved.data.depositAddress;
+    const params = new URLSearchParams({ depositAddress: issuedAddress });
     if (parsed.data.depositMemo) params.set("depositMemo", parsed.data.depositMemo);
     const result = await provider(`/status?${params.toString()}`) as Record<string, unknown>;
     const original = result?.quoteResponse as ProviderQuote | undefined;
     const request = original?.quoteRequest;
     const quote = original?.quote;
-    const [receipt] = await db.select().from(nearOrdersTable).where(and(
-      eq(nearOrdersTable.depositAddress, parsed.data.depositAddress),
-      sql`coalesce(${nearOrdersTable.orderDetails}->>'depositMemo', '') = ${parsed.data.depositMemo ?? ""}`,
-    )).limit(1);
-    const saved = receipt?.state === "ready" ? CreateNearOrderResponse.safeParse(receipt.orderDetails) : null;
-    const list = saved?.success ? [] : await tokens();
-    const from = saved?.success ? saved.data.from : list.find(t => t.id === request?.originAsset && t.chain === "sol");
-    const to = saved?.success ? saved.data.to : list.find(t => t.id === request?.destinationAsset);
+    const from = saved.data.from;
+    const to = saved.data.to;
     const allowed = ["PENDING_DEPOSIT", "KNOWN_DEPOSIT_TX", "INCOMPLETE_DEPOSIT", "PROCESSING", "SUCCESS", "REFUNDED", "FAILED"];
     if (!from || !to || request?.originAsset !== from.id || request?.destinationAsset !== to.id ||
         request?.confidentiality !== "basic" || request?.depositType !== "ORIGIN_CHAIN" ||
         typeof request?.recipient !== "string" || typeof request?.refundTo !== "string" ||
-        !quote || quote.depositAddress !== parsed.data.depositAddress ||
+        !quote || !sameAddress(chain, quote.depositAddress, issuedAddress) ||
         (quote.depositMemo ?? "") !== (parsed.data.depositMemo ?? "") ||
-        (saved?.success && (request.recipient !== saved.data.recipient || request.refundTo !== saved.data.refundTo)) ||
+        request.recipient !== saved.data.recipient || request.refundTo !== saved.data.refundTo ||
         !allowed.includes(result?.status as string)) throw new Error("Unexpected NEAR order status");
     res.set("Cache-Control", "no-store");
     res.json(GetNearOrderStatusResponse.parse(await withRouteStatus(CreateNearOrderResponse.parse(orderResponse(
-      quote, from, to, request.recipient, request.refundTo, result.status as string,
+      { ...quote, depositAddress: issuedAddress }, from, to, request.recipient, request.refundTo, result.status as string,
       typeof result.updatedAt === "string" ? result.updatedAt : undefined,
-      saved?.success ? saved.data.requestId : undefined,
+      saved.data.requestId,
       echoedPartnerFeeBps(request),
     )))));
   } catch (error) { fail(req, res, error); }
