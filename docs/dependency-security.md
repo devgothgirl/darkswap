@@ -14,7 +14,9 @@ bypass the workspace overrides and patches.
 | stream-json / GHSA-528h-pc64-c93x | Existing Jayson 5 override removes the vulnerable parser instead of forcing an incompatible major version into CommonJS consumers. |
 | underscore / GHSA-qpx9-hpmf-5gmw | Upgraded to 1.13.8 through a workspace security floor. |
 | elliptic / GHSA-848j-6mx2-7j84 | Removed with circomlibjs's unused ethers signing graph. The patch imports the original ethers byte, UTF-8 and Keccak utilities directly; circuit algorithms and keys are unchanged. Both ESM and CommonJS entry points are patched. |
-| braces / GHSA-vfj7-8cjw-p6xm | No published fixed release exists. A local patch rejects brace/parenthesis nesting before parsing produces unsafe ASTs and validates depth and cycles before compile, expand and stringify recursion. This is a mitigation, not an upstream upgrade; version-only scanners still report 3.0.3. |
+| braces / GHSA-vfj7-8cjw-p6xm | Removed: the preview plugin uses tinyglobby instead of fast-glob, removing micromatch and braces from the dependency graph. The obsolete local braces patch is no longer needed. |
+| source-map-js / GHSA-68fv-2mgg-jv7q | Workspace security floor resolves 1.2.2, which validates indexed source-map offsets. |
+| postcss-selector-parser / GHSA-rj75-hqrm-r3gf | Workspace security floor resolves 7.1.6. The latest typography plugin still pins version 6; regression tests verify its used parser APIs remain compatible. |
 
 Dependency changes in patched manifests must also be represented by pnpm
 overrides/package extensions: pnpm resolves dependencies before applying patches.
@@ -51,10 +53,9 @@ No throwaway Rust lockfile or dependency update is used during testing.
 
 ## Remaining scanner and deployment limitations
 
-The dependency audit reports **one high / zero moderate** finding: braces 3.0.3,
-whose local stack-depth/cycle guard is exercised by the security regression
-tests. No advisory has been suppressed, and the package/version has not been
-renamed to clear the scanner.
+The three reported JavaScript findings are addressed by fixed upstream releases
+or removal of the vulnerable dependency path. No advisory is suppressed, and no
+package/version is renamed to clear the scanner.
 
 The changed Solana dependency graph still requires an SBF build and validator/
 devnet end-to-end verification on a supported Agave toolchain before deployment.

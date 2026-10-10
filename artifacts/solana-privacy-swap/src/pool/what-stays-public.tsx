@@ -32,7 +32,7 @@ export function WhatStaysPublic() {
         <ul className="flex list-disc flex-col gap-1 pl-5 text-muted-foreground">
           <li>Withdrawing the exact amount you deposited, soon after, makes the two easy to match.</li>
           <li>Withdrawing to the wallet you deposited from links them directly.</li>
-          <li>A small pool with few users gives little cover. This testnet pool is small.</li>
+          <li>A small pool with few users gives little cover. This local-development pool is small.</li>
           <li>Your network connection, browser and wallet extension are outside what the pool covers.</li>
         </ul>
       </section>

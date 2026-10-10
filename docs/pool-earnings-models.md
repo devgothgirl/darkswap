@@ -72,8 +72,8 @@ Patterns worth noting:
 | Fee on private sends | **No without a contract change.** | The circuit's relayed-send path has no fee slot; a fee amount would reveal the asset. Not recommended even then. |
 | Fee above 1% | **No without a contract change.** | `MAX_PROTOCOL_FEE_BPS` is a constant. |
 | Fee on in-pool swaps (DARKPOOL) | **No without a contract change.** | There are no in-pool swaps; the handoff lists them as a later brief. |
-| Buy and burn $DARK with swept fees (standing decision) | **Yes, off-chain.** | The pool only ensures fees leave to the one fixed recipient. What the recipient does is policy: `packages/darkswap-pool/BRIEF_FEE_RECIPIENT.md`. |
-| Pay token stakers from a treasury (Railgun, Tornado) | **Yes, off-chain, but out of scope.** | Same recipient-side policy; the owner chose burn, not payout. |
+| Add swept fees to ZEC-DARK liquidity (standing decision since 2026-10-05; replaced buy and burn) | **Yes, off-chain.** | The pool only ensures fees leave to the one fixed recipient. What the recipient does is policy: `packages/darkswap-pool/BRIEF_FEE_RECIPIENT.md`. |
+| Pay token stakers from a treasury (Railgun, Tornado) | **Yes, off-chain, but out of scope.** | Same recipient-side policy; the owner chose ZEC-DARK liquidity, not payout. |
 | Pay **shielded** holders from inside the pool (DARKPOOL vault) | **No without a contract change.** | Needs the pool program to own a share vault and value notes against it. This note pool has no such account. |
 | Lend out deposits for yield | **No, and not recommended.** | The admin cannot move deposits; that property is the point of the review. Lending them out adds counterparty and smart-contract risk to every depositor, changes what "withdrawals always work" means, and would require a new review of the whole pool. No competitor reviewed here does it. |
 | Charge a screening or vetting fee (0xbow) | **Yes, as the shield fee, in name only.** | It is the same 0 to 100 bps on shield; there is no screening step to attach it to. |
@@ -204,7 +204,7 @@ Also:
 
 - **Try 25 and 100 on one testnet during acceptance.** The owner can call `setProtocolFee` on a testnet to confirm the rate change takes effect without a redeploy, the UI shows the new fee before signing, and the fee never exceeds the cap. That is the whole value of the testnet for this question; the income figures above are what change when the mainnet rate is chosen.
 - **Mainnet rate is a separate decision.** Once the testnet pools have a month of usage, export it (section 4.4) and rerun the table on observed numbers instead of the scenarios above; nothing here is a mainnet revenue estimate. The two reference points are Railgun at 25/25 (lower cost, half the income) and Nullmask at 50/50 (our current shape). Going above 50 puts a round trip above 1% of the amount, which no pool reviewed here charges on shield and unshield.
-- **Proceeds:** the standing decision holds. Swept fees buy and burn $DARK (`BRIEF_FEE_RECIPIENT.md`). Not a holder payout, not ZEC conversion, not lending.
+- **Proceeds:** swept fees are converted to ZEC and $DARK and added to the ZEC-DARK pool (`BRIEF_FEE_RECIPIENT.md`; decided 2026-10-05, replacing buy and burn). Not a holder payout, not lending.
 - **Addresses:** no fee recipient, relayer or burn address is shown anywhere until a launch needs it. The testnet recipients can be any fresh key.
 - **Copy:** every mention of these fees in the UI stays testnet-tagged, and none of it uses anonymous, untraceable, guaranteed, APY or staking.
 
@@ -215,7 +215,7 @@ Also:
 
 The plain-language whitepaper page (`artifacts/solana-privacy-swap/src/pages/whitepaper-content.tsx` and its PDF under `docs/whitepaper/`) used to describe an earlier draft of the pool: a 0.25% fee on exits only, and "fees paid into the pool lift the value of every remaining share". Neither matched the reviewed contracts in section 1. The page and the PDF were revised on October 4, 2026 to state the decision in section 5: one rate of 0.5% (50 bps) on shield **and** unshield, charged on top on the way in and out of the payout on the way out, no fee on private sends, a 1% contract cap, and protocol fees kept apart from note balances and swept to the one fee recipient fixed at deployment. Depositors do not earn from fees.
 
-What the fee recipient does with the swept fees — the standing buy-and-burn decision in `BRIEF_FEE_RECIPIENT.md` — is still listed as under review on that page, because the owner chose not to publish a destination in a reader-facing document yet. The rate itself is no longer in dispute. This document and the contracts remain the reference; if the rate changes with `setProtocolFee`, section 5, the whitepaper page and its PDF have to move together.
+What the fee recipient does with the swept fees was settled on October 5, 2026: they are added to ZEC-DARK liquidity (`BRIEF_FEE_RECIPIENT.md`), replacing the earlier buy-and-burn decision. Whitepaper v0.3 states this. The rate itself is no longer in dispute. This document and the contracts remain the reference; if the rate changes with `setProtocolFee`, section 5, the whitepaper page and its PDF have to move together.
 
 ## 7. Not recommended, and why
 

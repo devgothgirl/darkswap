@@ -13,4 +13,10 @@ side: GetNearTokensSide;
  * @maxLength 70
  */
 term?: string;
+/**
+ * Optional network identifier (for example sol) that limits the list to one network.
+ * @minLength 1
+ * @maxLength 32
+ */
+chain?: string;
 };

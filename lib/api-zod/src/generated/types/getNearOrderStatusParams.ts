@@ -7,6 +7,7 @@
  */
 
 export type GetNearOrderStatusParams = {
+requestId: string;
 /**
  * @minLength 32
  * @maxLength 120

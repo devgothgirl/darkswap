@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:near-shielded": "bash scripts/test-near-shielded.sh",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
@@ -14,6 +15,7 @@
     "support:retention": "pnpm --dir ../../scripts exec tsx ../artifacts/api-server/src/operators/support-retention-cli.ts",
     "pool:export-volumes": "pnpm --dir ../../scripts exec tsx ../artifacts/api-server/src/operators/pool-volume-export.ts",
     "test:pool-volumes": "bash scripts/test-pool-volumes.sh",
+    "test:pool-relay-quota": "bash scripts/test-pool-relay-quota.sh",
     "test:pool-indexer": "bash scripts/test-pool-indexer-evm.sh",
     "test:pool-indexer-solana": "bash scripts/test-pool-indexer-solana.sh",
     "test:rewards": "bash scripts/test-rewards-concurrency.sh",
@@ -21,6 +23,7 @@
     "test:docs-fee": "bash scripts/test-docs-fee.sh"
   },
   "dependencies": {
+    "@workspace/zcash-address": "workspace:*",
     "@darkswap/pool-client": "workspace:*",
     "@google-cloud/storage": "^8.2.0",
     "@privy-io/server-auth": "^1.32.5",

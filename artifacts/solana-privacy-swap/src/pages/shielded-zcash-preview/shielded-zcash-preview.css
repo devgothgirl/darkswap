@@ -1,0 +1,75 @@
+/* Solana ZEC to shielded Zcash: concept preview.
+   Layout and type only. Colour reads the design system's role tokens, and the
+   sample card is composed from design-system components. */
+.szp-main { width: min(1280px, 100%); margin: 0 auto; padding: 72px 5% 96px; }
+/* The app's global `button, input { font: inherit }` is unlayered, so it
+   outranks the design system's layered utilities. Hand type back to them. */
+.szp-main :is(button, input) { font: revert-layer; }
+
+.szp-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 448px); align-items: center; gap: clamp(40px, 7vw, 112px); }
+.szp-eyebrow, .szp-kicker, .szp-token-label { margin: 0; font: 700 12px/1.5 var(--app-font-sans); letter-spacing: .08em; }
+.szp-eyebrow { display: flex; align-items: center; gap: 12px; color: hsl(var(--ring)); }
+.szp-eyebrow-line { flex: none; width: 24px; height: 1px; background: hsl(var(--ring)); }
+.szp-hero h1 { margin: 20px 0 24px; color: hsl(var(--foreground)); font: 700 clamp(44px, 5.4vw, 76px)/1.06 var(--app-font-sans); letter-spacing: -.015em; text-wrap: balance; }
+.szp-hero h1 span { color: hsl(var(--ring)); }
+.szp-lede { max-width: 580px; margin: 0; color: hsl(var(--foreground) / .86); font-size: 18px; line-height: 1.65; }
+.szp-lede + .szp-lede { margin-top: 14px; }
+.szp-lede-quiet { color: hsl(var(--muted-foreground)); font-size: 16px; }
+.szp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+
+.szp-figure { width: 100%; margin: 0; }
+.szp-figure figcaption { margin-top: 14px; color: hsl(var(--muted-foreground)); font-size: 13px; line-height: 1.5; text-align: center; }
+
+.szp-section { margin-top: 96px; padding-top: 40px; border-top: 1px solid hsl(var(--border)); }
+.szp-kicker { color: hsl(var(--ring)); }
+.szp-section h2 { margin: 10px 0 0; color: hsl(var(--foreground)); font: 700 clamp(28px, 2.8vw, 38px)/1.2 var(--app-font-sans); letter-spacing: -.01em; }
+.szp-section-intro { max-width: 400px; margin: 14px 0 0; color: hsl(var(--muted-foreground)); font-size: 15px; line-height: 1.6; }
+.szp-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; gap: clamp(32px, 6vw, 96px); }
+
+.szp-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 32px 0 0; padding: 0; list-style: none; }
+.szp-steps li { padding: 22px 22px 26px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.szp-step-num { color: hsl(var(--ring)); font: 700 13px/1 var(--app-font-mono); }
+.szp-steps h3 { margin: 18px 0 8px; color: hsl(var(--foreground)); font: 700 19px/1.3 var(--app-font-sans); }
+.szp-steps p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 15px; line-height: 1.6; }
+
+.szp-gates { margin: 0; padding: 0; list-style: none; border-top: 1px solid hsl(var(--border)); }
+.szp-gates li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: start; gap: 16px; padding: 20px 0; border-bottom: 1px solid hsl(var(--border)); }
+.szp-gate-num { padding-top: 3px; color: hsl(var(--muted-foreground)); font: 700 13px/1.4 var(--app-font-mono); }
+.szp-gates h3 { margin: 0 0 4px; color: hsl(var(--foreground)); font: 700 17px/1.35 var(--app-font-sans); }
+.szp-gates p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 15px; line-height: 1.6; }
+
+.szp-visible { margin: 0; padding: 0; list-style: none; border-top: 1px solid hsl(var(--border)); }
+.szp-visible li { position: relative; padding: 16px 0 16px 22px; border-bottom: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); font-size: 16px; line-height: 1.6; }
+.szp-visible li::before { content: ''; position: absolute; top: 26px; left: 0; width: 6px; height: 6px; background: hsl(var(--primary)); }
+
+.szp-token { margin-top: 28px; padding: 20px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.szp-token-label { color: hsl(var(--muted-foreground)); }
+.szp-mint { display: block; margin: 10px 0 16px; color: hsl(var(--foreground)); font: 400 15px/1.55 var(--app-font-mono); overflow-wrap: anywhere; }
+.szp-token-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.szp-token-row p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 14px; line-height: 1.5; }
+
+.szp-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 80px; padding-top: 24px; border-top: 1px solid hsl(var(--border)); }
+.szp-end p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 14px; }
+
+@media (min-width: 901px) {
+  .szp-split > :first-child { position: sticky; top: 112px; }
+}
+
+@media (max-width: 1080px) {
+  .szp-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .szp-hero, .szp-split { grid-template-columns: minmax(0, 1fr); }
+  .szp-figure { max-width: 448px; margin: 0 auto; }
+}
+
+@media (max-width: 600px) {
+  .szp-main { padding: 44px 20px 72px; }
+  .szp-hero h1 { font-size: clamp(38px, 11vw, 52px); }
+  .szp-lede { font-size: 16px; }
+  .szp-steps { grid-template-columns: minmax(0, 1fr); }
+  .szp-section { margin-top: 72px; padding-top: 32px; }
+  .szp-gates li { grid-template-columns: 28px minmax(0, 1fr); }
+  .szp-gates li > :last-child { grid-column: 2; justify-self: start; }
+}

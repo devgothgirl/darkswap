@@ -502,7 +502,7 @@ Profile 2:
 
 Either profile:
 
-- [ ] **Fees** tab shows accrued fees for the asset: one fee from the shield, one from the unshield, and "Planned use: Buy and burn $DARK".
+- [ ] **Fees** tab shows accrued fees for the asset: one fee from the shield, one from the unshield, and "Planned use: Add to ZEC-DARK liquidity".
 - [ ] Click **Sweep now**, confirm in the wallet. The accrued figure drops to 0 and the swept figure rises. The fee recipient's balance on the explorer rose by that amount.
 - [ ] Click **Lock now**. Reopen `/pool`: it asks to activate again.
 

@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createRequire } from "node:module";
 import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { checkWalletDependencies } from "./check-wallet-dependencies.mjs";
+import { checkPoolDependencies } from "./check-pool-dependencies.mjs";
 
 const root = new URL("../", import.meta.url);
 const rootRequire = createRequire(new URL("package.json", root));
@@ -35,12 +39,17 @@ test("the workspace lockfile excludes vulnerable versions that have replacements
     "bigint-buffer": ["1.1.5"],
     elliptic: ["6.6.1"],
     underscore: ["1.13.6"],
+    "source-map-js": ["1.2.1"],
+    "postcss-selector-parser": ["6.0.10"],
   })) {
     for (const version of versions) {
       assert.ok(!lock.includes(`  ${name}@${version}:`), `${name}@${version} remains in the lockfile`);
     }
   }
   assert.ok(!/^  stream-json@/m.test(lock), "the incompatible old parser must be removed, not forcibly upgraded");
+  for (const name of ["braces", "micromatch", "fast-glob"]) {
+    assert.ok(!new RegExp(`^  ${name}@`, "m").test(lock), `${name} must not re-enter the preview tooling graph`);
+  }
 });
 
 test("every Solana crate uses the same lockfile without the flagged Rust dependencies", () => {
@@ -62,29 +71,56 @@ test("every Solana crate uses the same lockfile without the flagged Rust depende
   }
 });
 
-test("braces rejects excessive nesting before recursive AST processing", () => {
-  const braces = auditedPackage("braces", "3.0.3");
-  assert.deepEqual(braces.expand("a{b,c}"), ["ab", "ac"]);
-  assert.deepEqual(braces("a{b,c}"), ["a(b|c)"]);
-  for (const pattern of [
-    "{".repeat(4000) + "a,b" + "}".repeat(4000),
-    "(".repeat(4000) + "x" + ")".repeat(4000),
-    "{(".repeat(2000) + "a,b" + ")}".repeat(2000),
+test("preview glob replacement discovers nested TSX files but excludes private and hidden files", async t => {
+  const consumer = createRequire(new URL("artifacts/mockup-sandbox/package.json", root));
+  const { glob } = consumer("tinyglobby");
+  const cwd = mkdtempSync(path.join(tmpdir(), "mockup-glob-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  for (const file of [
+    "Card.tsx", "nested/Panel.tsx", "_Private.tsx", "_helpers/Hidden.tsx",
+    "nested/_Hidden.tsx", ".hidden.tsx", ".hidden/Panel.tsx", "Card.ts",
   ]) {
-    for (const fn of [braces, braces.parse, braces.compile, braces.expand, braces.stringify]) {
-      assert.throws(() => fn(pattern), /safe nesting depth/);
-    }
+    const filename = path.join(cwd, "src/components/mockups", file);
+    mkdirSync(path.dirname(filename), { recursive: true });
+    writeFileSync(filename, "");
   }
-  let ast = { type: "text", value: "x" };
-  for (let i = 0; i < 4000; i++) ast = { type: "root", nodes: [ast] };
-  for (const fn of [braces.compile, braces.expand, braces.stringify]) {
-    assert.throws(() => fn(ast), /safe nesting depth/);
+  const files = await glob("src/components/mockups/**/*.tsx", {
+    cwd, ignore: ["**/_*/**", "**/_*.tsx"],
+  });
+  assert.deepEqual(files.sort(), [
+    "src/components/mockups/Card.tsx", "src/components/mockups/nested/Panel.tsx",
+  ]);
+});
+
+test("fixed source-map-js preserves normal indexed maps and rejects unsafe offsets", { timeout: 5000 }, () => {
+  const { SourceMapConsumer, SourceNode } = auditedPackage("source-map-js", "1.2.2");
+  const map = { version: 3, sections: [{
+    offset: { line: 0, column: 0 },
+    map: { version: 3, sources: ["input.js"], names: [], mappings: "AAAA", sourcesContent: ["hello"] },
+  }] };
+  const consumer = new SourceMapConsumer(map);
+  const mappings = [];
+  consumer.eachMapping(mapping => mappings.push(mapping));
+  assert.equal(mappings[0].source, "input.js");
+  assert.equal(mappings[0].generatedLine, 1);
+  assert.equal(SourceNode.fromStringWithSourceMap("hello", consumer).toString(), "hello");
+  for (const line of [-1, 0.5, Number.MAX_SAFE_INTEGER, Infinity, NaN]) {
+    const malicious = { ...map, sections: [{ ...map.sections[0], offset: { line, column: 0 } }] };
+    assert.throws(() => SourceNode.fromStringWithSourceMap("hello", new SourceMapConsumer(malicious)));
   }
-  const cycle = { type: "root", nodes: [] };
-  cycle.nodes.push(cycle);
-  for (const fn of [braces.compile, braces.expand, braces.stringify]) {
-    assert.throws(() => fn(cycle), /safe nesting depth/);
-  }
+});
+
+test("fixed selector parser handles flat attack selectors and typography's used APIs", { timeout: 5000 }, () => {
+  const parser = auditedPackage("postcss-selector-parser", "7.1.6");
+  const selector = ".a".repeat(200000);
+  assert.equal(parser().processSync(selector), selector);
+  const consumer = createRequire(new URL("artifacts/darkswap-design-system/package.json", root));
+  const typography = createRequire(consumer.resolve("@tailwindcss/typography"));
+  assert.equal(typography("postcss-selector-parser/package.json").version, "7.1.6");
+  const { commonTrailingPseudos } = typography("./utils");
+  assert.deepEqual(commonTrailingPseudos("p::before, a::before"), ["::before", "p, a"]);
+  assert.deepEqual(commonTrailingPseudos("p:hover, a:focus"), [null, "p:hover, a:focus"]);
+  assert.deepEqual(commonTrailingPseudos("p::before::marker, a::before::marker"), ["::before::marker", "p, a"]);
 });
 
 test("native bigint replacement round-trips Solana integer widths and rejects overflow", () => {
@@ -120,18 +156,7 @@ test("native bigint replacement round-trips Solana integer widths and rejects ov
 });
 
 test("circomlibjs ESM and CJS keep identical hashes and generated contracts without signing dependencies", async () => {
-  const consumer = createRequire(new URL("lib/pool-client/package.json", root));
-  const cjs = consumer("circomlibjs");
-  const esm = await import(new URL("../main.js", `file://${consumer.resolve("circomlibjs")}`));
-  for (const lib of [cjs, esm]) {
-    const poseidon = await lib.buildPoseidon();
-    assert.equal(poseidon.F.toObject(poseidon([1n, 2n])), 7853200120776062878684798364095072458815029376092732009249414926327459813530n);
-    assert.equal(lib.poseidonContract.createCode(2), cjs.poseidonContract.createCode(2));
-    const mimc = await lib.buildMimc7();
-    const reference = await cjs.buildMimc7();
-    assert.equal(mimc.F.toObject(mimc.hash(1n, 2n)), reference.F.toObject(reference.hash(1n, 2n)));
-  }
-  assert.throws(() => createRequire(consumer.resolve("circomlibjs")).resolve("ethers"), { code: "MODULE_NOT_FOUND" });
+  await checkPoolDependencies(root);
 });
 
 test("brace expansion handles nested and comma-heavy attack patterns", { timeout: 5000 }, () => {
@@ -166,16 +191,7 @@ test("fast-uri normalizes percent-encoded uppercase hosts consistently", () => {
 });
 
 test("the wallet's actual query-string dependency uses the patched decoder", { timeout: 5000 }, () => {
-  let consumer = createRequire(new URL("artifacts/solana-privacy-swap/package.json", root));
-  for (const name of ["@privy-io/react-auth", "@walletconnect/ethereum-provider", "@walletconnect/utils"]) {
-    consumer = createRequire(consumer.resolve(name));
-  }
-  const query = consumer("query-string");
-  assert.equal(query.parse("value=%E2%82%AC").value, "€");
-  assert.equal(query.parse("value=hello+world").value, "hello world");
-  assert.equal(query.stringify({ value: "€" }), "value=%E2%82%AC");
-  // Malformed percent sequences triggered exponential work in the old decoder.
-  assert.doesNotThrow(() => query.parse(`value=${"%EA".repeat(1000)}`));
+  checkWalletDependencies(root);
 });
 
 test("Solana's JSON-RPC client works with Jayson 5 without network access", async () => {

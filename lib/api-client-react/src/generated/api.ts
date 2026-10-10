@@ -100,7 +100,8 @@ import type {
   SwapOrderInput,
   TokenList,
   UnsubscribeMarketingBodyTwo,
-  UnsubscribeMarketingParams
+  UnsubscribeMarketingParams,
+  ZecDarkLiquidity
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -129,6 +130,84 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetZecDarkLiquidityUrl = () => {
+
+
+
+
+  return `/api/liquidity/zec-dark`
+}
+
+/**
+ * Public Solana DAMM v2 liquidity statistics, separate from the shielded Dark Pool. Cached for at most one minute; unavailable data returns 503.
+ * @summary Current Meteora ZEC-DARK liquidity pool statistics
+ */
+export const getZecDarkLiquidity = async ( options?: Parameters<typeof customFetch>[1]): Promise<ZecDarkLiquidity> => {
+
+  return customFetch<ZecDarkLiquidity>(getGetZecDarkLiquidityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetZecDarkLiquidityQueryKey = () => {
+    return [
+    `/api/liquidity/zec-dark`
+    ] as const;
+    }
+
+
+export const getGetZecDarkLiquidityQueryOptions = <TData = Awaited<ReturnType<typeof getZecDarkLiquidity>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZecDarkLiquidity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetZecDarkLiquidityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getZecDarkLiquidity>>> = ({ signal }) => getZecDarkLiquidity({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getZecDarkLiquidity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetZecDarkLiquidityQueryResult = NonNullable<Awaited<ReturnType<typeof getZecDarkLiquidity>>>
+export type GetZecDarkLiquidityQueryError = ErrorType<void>
+
+
+/**
+ * @summary Current Meteora ZEC-DARK liquidity pool statistics
+ */
+
+export function useGetZecDarkLiquidity<TData = Awaited<ReturnType<typeof getZecDarkLiquidity>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZecDarkLiquidity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetZecDarkLiquidityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetDarkRewardsEstimateUrl = () => {
 
@@ -3651,7 +3730,7 @@ export const getGetNearTokensUrl = (params: GetNearTokensParams,) => {
 }
 
 /**
- * @summary Supported NEAR Intents assets; Solana-only on source
+ * @summary Supported NEAR Intents assets; source lists only origin-eligible assets on enabled origin networks
  */
 export const getNearTokens = async (params: GetNearTokensParams, options?: Parameters<typeof customFetch>[1]): Promise<NearTokenList> => {
 
@@ -3698,7 +3777,7 @@ export type GetNearTokensQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Supported NEAR Intents assets; Solana-only on source
+ * @summary Supported NEAR Intents assets; source lists only origin-eligible assets on enabled origin networks
  */
 
 export function useGetNearTokens<TData = Awaited<ReturnType<typeof getNearTokens>>, TError = ErrorType<unknown>>(
@@ -4239,7 +4318,8 @@ export const getGetNearOrderStatusUrl = (params: GetNearOrderStatusParams,) => {
 }
 
 /**
- * @summary Check a NEAR Intents swap by its deposit address
+ * The random requestId is a private bearer capability saved at order creation. A public deposit address and memo alone never authorize access. Only locally stored ready orders matching the receipt, address, and memo can be queried. Keep the receipt ID private.
+ * @summary Check a NEAR Intents swap with its private receipt ID
  */
 export const getNearOrderStatus = async (params: GetNearOrderStatusParams, options?: Parameters<typeof customFetch>[1]): Promise<NearOrder> => {
 
@@ -4263,7 +4343,7 @@ export const getGetNearOrderStatusQueryKey = (params?: GetNearOrderStatusParams,
     }
 
 
-export const getGetNearOrderStatusQueryOptions = <TData = Awaited<ReturnType<typeof getNearOrderStatus>>, TError = ErrorType<unknown>>(params: GetNearOrderStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearOrderStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetNearOrderStatusQueryOptions = <TData = Awaited<ReturnType<typeof getNearOrderStatus>>, TError = ErrorType<void>>(params: GetNearOrderStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearOrderStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -4282,14 +4362,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetNearOrderStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getNearOrderStatus>>>
-export type GetNearOrderStatusQueryError = ErrorType<unknown>
+export type GetNearOrderStatusQueryError = ErrorType<void>
 
 
 /**
- * @summary Check a NEAR Intents swap by its deposit address
+ * @summary Check a NEAR Intents swap with its private receipt ID
  */
 
-export function useGetNearOrderStatus<TData = Awaited<ReturnType<typeof getNearOrderStatus>>, TError = ErrorType<unknown>>(
+export function useGetNearOrderStatus<TData = Awaited<ReturnType<typeof getNearOrderStatus>>, TError = ErrorType<void>>(
  params: GetNearOrderStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNearOrderStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

@@ -5,8 +5,9 @@ type EventName = "swap_entry_clicked" | "terminal_opened" | "loyalty_details_cli
   | "whitepaper_opened" | "whitepaper_section_opened" | "whitepaper_print_opened"
   | "help_answer_opened" | "support_request_sent"
   | "order_status_viewed" | "order_shared" | "rewards_console_opened" | "near_intents_opened"
-  | "updates_signup_completed" | "rewards_account_viewed" | "rewards_enrollment_step";
-export type SwapRoute = "private_route" | "privacy_swap";
+  | "updates_signup_completed" | "rewards_account_viewed" | "rewards_enrollment_step"
+  | "pool_preview_opened" | "help_opened" | "order_lookup_opened" | "mobile_navigation_opened";
+export type SwapRoute = "private_route" | "privacy_swap" | "bridge";
 type EventData = Record<string, string | number | boolean>;
 
 declare global {
@@ -17,11 +18,33 @@ declare global {
 
 export function trackEvent(name: EventName, data?: EventData): void {
   if (typeof window === "undefined") return;
+  // Never associate custom events with private order tracking or recovery.
+  const path = window.location?.pathname ?? '';
+  if (/(?:^|\/)near-order(?:\/|$)/.test(path)) return;
   try {
     const result = window.umami?.track(name, data);
     if (result) void Promise.resolve(result).catch(() => {});
   } catch {
     // Analytics must never interrupt navigation or financial operations.
+  }
+}
+
+// A closed destination list keeps navigation events free of URLs and user data.
+export function trackPublicNavigation(
+  destination: "swap" | "privacy_swap" | "bridge" | "rewards_console" | "pool" | "docs" | "account_points" | "founder" | "help" | "near_intents",
+  location: "header" | "footer",
+): void {
+  switch (destination) {
+    case "swap": trackEvent("swap_entry_clicked", { location, route: "private_route" }); break;
+    case "privacy_swap": trackEvent("swap_entry_clicked", { location, route: "privacy_swap" }); break;
+    case "bridge": trackEvent("swap_entry_clicked", { location, route: "bridge" }); break;
+    case "rewards_console": trackEvent("rewards_console_opened", { location }); break;
+    case "pool": trackEvent("pool_preview_opened", { location }); break;
+    case "docs": trackEvent("docs_opened", { location }); break;
+    case "account_points": trackEvent("rewards_page_opened", { location }); break;
+    case "founder": trackEvent("preview_opened", { location, feature: "founder" }); break;
+    case "help": trackEvent("help_opened", { location }); break;
+    case "near_intents": trackEvent("near_intents_opened", { location }); break;
   }
 }
 

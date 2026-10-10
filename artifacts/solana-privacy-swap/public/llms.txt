@@ -1,0 +1,25 @@
+# DarkSwap
+
+> DarkSwap is a privacy terminal built on NEAR Intents. Private swaps from Solana are live. A dark pool on NEAR Confidential Intents is scheduled. DarkSwap's own zero-knowledge pools are built and not deployed.
+
+## Live
+- Private swaps from Solana: Privacy swap on the NEAR Intents 1Click API with confidential handling, and a second partner route. https://darkswap.app/swap
+- Privacy swap partner fee: 0.40% of the input, 0.20% to DarkSwap and 0.20% to NEAR Intents 1Click, since October 4, 2026.
+- $DARK holder payouts in wNEAR at 6 a.m. and 6 p.m. Pacific, from half of the 1% creator fee. https://rewards.darkswap.app
+- ZEC-DARK liquidity pool on Meteora (Solana). Public trading liquidity, not the dark pool.
+
+## Scheduled
+- Dark pool on NEAR Confidential Intents. Target late October 2026, subject to NEAR enabling access. Confidential execution, not zero-knowledge. https://darkswap.app/docs/dark-pool
+
+## Built, not deployed
+- Zero-knowledge pools for Solana, Ethereum and Base. Local-development preview at https://darkswap.app/pool; not deployed on any public network. Development proving keys. Not audited. Do not deposit real funds.
+
+## Not claimed
+- DarkSwap is built on NEAR Intents and is not endorsed by NEAR Foundation.
+- ZEC in rewards and liquidity is a token on Solana, not native or shielded Zcash.
+- Deposits and withdrawals are public. No fixed return.
+
+## Documents
+- Whitepaper v0.4: https://darkswap.app/docs/whitepaper
+- Docs: https://darkswap.app/docs
+- Rewards console: https://rewards.darkswap.app

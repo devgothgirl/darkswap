@@ -4,11 +4,11 @@ import './terminal-economics.css';
 
 const sections = [
   { title: 'Received creator-fee proceeds: 50% / 50%', paragraphs: [
-    'Creator-fee proceeds actually received in wNEAR are split. 50% goes to holder rewards: wNEAR has been distributed, and ZEC payouts to holders remain planned. 50% is converted to ZEC and compounded in the creator wallet.',
+    'Half of received $DARK creator fees funds qualifying holders in wNEAR. The other half purchases ZEC tokens on Solana for the protocol treasury in the creator wallet. Treasury holdings, separately authorized liquidity deployments, LP fee compounding, and completed holder payouts are tracked separately.',
     'This is not team-held DARK dividends, inaccessible unclaimed pool fees, all trading volume or a 50% token tax. The dev wallet is distinct from the pool-fee creator and cannot claim that unclaimed amount. The earlier terminal-funding allocation no longer applies.',
   ] },
   { title: 'Holder eligibility', paragraphs: [
-    'Hold the 100,000 DARK minimum in every snapshot of the period. One snapshot is taken at a random moment in each 10-minute window; your share is weighted by the lowest balance you held.',
+    'Scheduled wNEAR payouts run at 6 a.m. and 6 p.m. America/Los_Angeles time, adjusting for daylight saving. Each payout takes a fresh snapshot: hold at least 100,000 DARK (excluded wallets stay ineligible), and shares are weighted by qualifying balances in that snapshot. Background monitoring cycles are not a countdown to an automatic ZEC payout.',
     'Completed airdrops paid wNEAR direct to eligible holders, with no claim needed and verified on-chain. The DARK Rewards console at rewards.darkswap.app is the record of what was paid, to how many wallets and when; past distributions do not guarantee future payouts. No multiplier, APY or return is implied.',
   ] },
   { title: 'Known listing, unverified fee configuration', paragraphs: [
@@ -22,7 +22,7 @@ const gates = [
   'Verification of the reported 1% wNEAR creator-fee configuration, claim authority and actual received proceeds.',
   'Verified supply, mint/freeze authorities, transfer-tax details and pool liquidity for the official Solana mint.',
   'Verified treasury funding, with wNEAR and ZEC balances connected to a real data source.',
-  'A verified wNEAR-to-ZEC conversion route for the compounded half.',
+  'A verified wNEAR-to-ZEC conversion route for the treasury half.',
 ];
 
 export function TerminalEconomics() {
@@ -53,7 +53,7 @@ export function TerminalEconomics() {
     </details>
     <details>
       <summary>Sources and verification limits</summary>
-      <p>Public documentation can change. The listing does not verify fee receipts, claim authority or incentive eligibility. The ZEC conversion and compounding route remains unverified; this preview sends no funds.</p>
+      <p>Public documentation can change. The listing does not verify fee receipts, claim authority or incentive eligibility. The wNEAR-to-ZEC treasury conversion route remains unverified here; this preview sends no funds.</p>
       <ul>{rewardsSources.map(source => <li key={source.href}><a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a></li>)}</ul>
     </details>
   </section>;

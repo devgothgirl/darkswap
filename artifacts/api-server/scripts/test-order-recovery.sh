@@ -20,4 +20,12 @@ pnpm --dir ../../scripts exec tsx --test \
   ../artifacts/api-server/src/routes/order-recovery.db.test.ts \
   ../artifacts/api-server/src/routes/swap.test.ts \
   ../artifacts/api-server/src/routes/near.test.ts \
+  ../artifacts/api-server/src/routes/near-origins.test.ts \
+  ../artifacts/api-server/src/routes/near-bridge-origins.test.ts \
+  ../artifacts/api-server/src/lib/near-chains.test.ts \
   ../artifacts/api-server/src/lib/near-service-status.test.ts
+
+# Test files run in parallel processes. This suite also truncates the order
+# tables, so it runs only after the shared database suite has finished.
+pnpm --dir ../../scripts exec tsx --test \
+  ../artifacts/api-server/src/routes/near-evm-origin.db.test.ts

@@ -27,6 +27,7 @@
 .ws-address--memo span{color:#af83f1}
 .ws-mono{font-family:'Space Mono',monospace;word-break:break-all;color:#e3d7f4;font-size:12.5px}
 .ws-small{font-size:13px;color:#9c74d7;line-height:1.55;margin:12px 0 0}
+.ws-network-warning{margin-top:12px}
 .ws-deposit-foot{display:grid;grid-template-columns:auto 1fr;gap:18px;margin-top:6px}
 .ws-deposit-foot b{color:#e2d0fb;font-size:14px}
 .ws-remaining{display:block;color:#cdaef8;font:12px 'Source Sans 3',sans-serif;margin-top:3px}

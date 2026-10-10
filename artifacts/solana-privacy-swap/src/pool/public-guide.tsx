@@ -9,10 +9,11 @@ export function PoolPublicGuide({ explanation = false }: { explanation?: boolean
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <TestnetWarning />
       {explanation ? <WhatStaysPublic /> : <>
-        <h1 className="text-2xl font-extrabold">Shielded pool (testnet)</h1>
+        <h1 className="text-2xl font-extrabold">ZK pool</h1>
+        <p className="text-sm text-muted-foreground">No network is connected yet. This is DarkSwap's own ZK tier, not the dark pool on NEAR. It is built and tested on local chains, not deployed on any public network.</p>
         <p className="text-sm text-muted-foreground">Experimental shielded pool. Deposits and withdrawals remain public. Amounts, timing and a small pool can make activity easy to match. No anonymity guarantee.</p>
         <Link href="/pool/what-stays-public" className="text-ring underline">What stays public: safety and privacy limits</Link>
-        <p className="text-sm text-muted-foreground">Enable JavaScript for testnet actions. Private keys, balances and activity stay in the client; they are not included in this public page.</p>
+        <p className="text-sm text-muted-foreground">Enable JavaScript to view the development interface. Private keys, balances and activity stay in the client; they are not included in this public page.</p>
       </>}
     </div>
   </main>;

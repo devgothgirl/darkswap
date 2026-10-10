@@ -52,7 +52,7 @@ export default function PoolSection() {
   useNoAnalytics();
   const [isPublicPage] = useRoute('/pool/what-stays-public');
   useEffect(() => {
-    document.title = isPublicPage ? 'What stays public · DarkSwap Pool (testnet)' : 'DarkSwap Pool (testnet)';
+    document.title = isPublicPage ? 'What stays public · DarkSwap ZK pool (local-development preview)' : 'DarkSwap ZK pool (local-development preview)';
   }, [isPublicPage]);
   return (
     <div className="app-shell">
@@ -77,11 +77,12 @@ function Terminal() {
     <>
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-extrabold">Shielded pool</h1>
-          <StatusPill tone="caution" size="sm">Testnet</StatusPill>
+          <h1 className="text-2xl font-extrabold">ZK pool</h1>
+          <StatusPill tone="caution" size="sm">Built · local preview</StatusPill>
         </div>
+        <p className="text-sm text-muted-foreground">Local-development preview. No network is connected yet. This is DarkSwap's own ZK tier, not the dark pool on NEAR. It is not deployed on any public network and has not been audited.</p>
         <p className="text-sm text-muted-foreground">
-          Hold, send and withdraw funds without linking them to your wallet. <Link href="/pool/what-stays-public" className="text-ring underline-offset-2 hover:underline" data-testid="link-what-stays-public">What stays public</Link>
+          Preview shielded-note mechanics locally. Deposits and withdrawals remain public; no anonymity guarantee. <Link href="/pool/what-stays-public" className="text-ring underline-offset-2 hover:underline" data-testid="link-what-stays-public">What stays public</Link>
         </p>
       </div>
       {chainsError && <p className="text-sm text-destructive-foreground">{chainsError}</p>}

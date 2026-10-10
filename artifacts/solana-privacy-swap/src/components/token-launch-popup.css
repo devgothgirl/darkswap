@@ -65,14 +65,14 @@
 
 .dk-terms { margin: 13px 0 0; font-size: 12px; line-height: 1.5; color: #8656ce; }
 
-.dk-actions { display: flex; gap: 10px; margin-top: 18px; }
+.dk-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .dk-primary, .dk-secondary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; padding: 10px 16px; border-radius: 7px;
   font: 700 14px/1.2 'Source Sans 3', sans-serif; text-decoration: none; cursor: pointer;
   transition: background .18s, border-color .18s, transform .18s;
 }
-.dk-primary { flex: 1; background: #e2d3f8; color: #100d18; border: 1px solid #e2d3f8; }
+.dk-primary { flex: 1 1 100%; background: #e2d3f8; color: #100d18; border: 1px solid #e2d3f8; }
 .dk-primary:hover { background: #ffffff; transform: translateY(-1px); }
 .dk-primary svg { transition: transform .18s; }
 .dk-primary:hover svg { transform: translateX(3px); }

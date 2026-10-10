@@ -23,8 +23,8 @@ test("NEAR recovery accepts omitted memo but rejects a different status memo", a
   const refundTo = depositAddress;
   const preview: Parameters<typeof reconcileNearProviderResponse>[1] = {
     input: { recipient, refundTo } as Parameters<typeof reconcileNearProviderResponse>[1]["input"],
-    from: { id: originAsset, decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["from"],
-    to: { id: destinationAsset } as Parameters<typeof reconcileNearProviderResponse>[1]["to"],
+    from: { id: originAsset, chain: "sol", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["from"],
+    to: { id: destinationAsset, chain: "eth" } as Parameters<typeof reconcileNearProviderResponse>[1]["to"],
     units: "1000000",
     minOut: 1n,
     expires: createdAt.getTime() + 60_000,
@@ -87,8 +87,8 @@ function feePreview(createdAt: Date) {
     refundTo,
     preview: {
       input: { recipient, refundTo } as Parameters<typeof reconcileNearProviderResponse>[1]["input"],
-      from: { id: "nep141:sol.omft.near", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["from"],
-      to: { id: "nep141:eth.omft.near", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["to"],
+      from: { id: "nep141:sol.omft.near", chain: "sol", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["from"],
+      to: { id: "nep141:eth.omft.near", chain: "eth", decimals: 6 } as Parameters<typeof reconcileNearProviderResponse>[1]["to"],
       units: "1000000",
       minOut: 1n,
       expires: createdAt.getTime() + 60_000,
@@ -209,4 +209,80 @@ test("NEAR quote validation and fee disclosure accept both echo shapes and rejec
   assert.equal(echoedPartnerFeeBps({ appFees: [{ recipient: PARTNER_PAYOUT, fee: 20 }, { recipient: PROVIDER_FEE_ADDRESS, fee: 20 }] }), 40);
   assert.equal(echoedPartnerFeeBps({ appFees: [{ recipient: PROVIDER_FEE_ADDRESS, fee: 20 }] }), undefined);
   assert.equal(echoedPartnerFeeBps({}), undefined);
+});
+test("NEAR recovery for an EVM origin checks the deposit address on that network and accepts a case-only echo", async () => {
+  type ReconcilePreview = Parameters<typeof reconcileNearProviderResponse>[1];
+  const createdAt = new Date();
+  const deadline = new Date(createdAt.getTime() + 30 * 60_000).toISOString();
+  const issued = "0x52908400098527886E0F7030069857D2E4169EE7";
+  const originAsset = "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near";
+  const destinationAsset = "nep141:sol.omft.near";
+  const recipient = "11111111111111111111111111111111";
+  const refundTo = "0xAbCdEf1111111111111111111111111111111111";
+  const preview: ReconcilePreview = {
+    input: { recipient, refundTo } as ReconcilePreview["input"],
+    from: { id: originAsset, chain: "base", decimals: 6 } as ReconcilePreview["from"],
+    to: { id: destinationAsset, chain: "sol", decimals: 9 } as ReconcilePreview["to"],
+    units: "5000000",
+    minOut: 1n,
+    expires: createdAt.getTime() + 60_000,
+  };
+  const requestBody: Parameters<typeof reconcileNearProviderResponse>[2] = {
+    dry: false, swapType: "EXACT_INPUT", slippageTolerance: 100,
+    originAsset, depositType: "ORIGIN_CHAIN",
+    destinationAsset, amount: "5000000",
+    recipient, recipientType: "DESTINATION_CHAIN",
+    refundTo, refundType: "ORIGIN_CHAIN",
+    confidentiality: "basic", deadline,
+  };
+  let historyAddress = issued;
+  let statusAddress = issued.toLowerCase();
+  const statusLookups: string[] = [];
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/account/history")) {
+        return Response.json({ items: [{
+          createdAt: createdAt.toISOString(), depositAddress: historyAddress,
+          originAsset, destinationAsset, recipient, refundTo,
+          depositType: "ORIGIN_CHAIN", recipientType: "DESTINATION_CHAIN", refundType: "ORIGIN_CHAIN",
+          amountInFormatted: "5",
+        }] });
+      }
+      statusLookups.push(url.searchParams.get("depositAddress") ?? "");
+      return Response.json({
+        status: "PENDING_DEPOSIT",
+        quoteResponse: { quoteRequest: requestBody, quote: { depositAddress: statusAddress } },
+      });
+    };
+    const receipt = { createdAt } as Parameters<typeof reconcileNearProviderResponse>[0];
+
+    // The provider may echo an EVM address with a different checksum case.
+    const recovered = await reconcileNearProviderResponse(receipt, preview, requestBody);
+    assert.equal(recovered?.status, "PENDING_DEPOSIT");
+    assert.deepEqual(statusLookups, [issued], "status is queried with the history copy as issued");
+    assert.equal(recovered?.issuedDepositAddress, issued, "the history copy is retained as the issued address");
+    assert.equal((recovered?.response.quote as Record<string, unknown>).depositAddress, issued.toLowerCase(),
+      "the provider response itself is kept exactly as returned");
+
+    // A Solana-shaped address is never a valid Base deposit address.
+    historyAddress = "11111111111111111111111111111111";
+    assert.equal(await reconcileNearProviderResponse(receipt, preview, requestBody), undefined);
+    assert.equal(statusLookups.length, 1, "an invalid origin address never reaches the status lookup");
+
+    // A genuinely different EVM address is still rejected.
+    historyAddress = issued;
+    statusAddress = "0x0000000000000000000000000000000000000001";
+    await assert.rejects(
+      reconcileNearProviderResponse(receipt, preview, requestBody),
+      /NEAR order history did not match the saved request/,
+    );
+
+    // Recipient and refund comparisons remain exact, including hex case.
+    statusAddress = issued;
+    assert.equal(await reconcileNearProviderResponse(receipt, preview, { ...requestBody, refundTo: refundTo.toLowerCase() }), undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

@@ -63,18 +63,13 @@ swept to a fee wallet, with relayer gas compensation kept separate.
 
 What the fee recipient does with the money is the holder policy, and it is
 not in the pool. The pool only guarantees that the fee leaves to that one
-published address. The team's decision (see the report) is which of these the
-recipient runs:
+published address. The owner's decision (2026-10-05, replacing an earlier
+buy-and-burn choice): swept fees are converted to ZEC and $DARK and added as
+liquidity to the ZEC-DARK pool on Meteora (Solana). Design in
+`BRIEF_FEE_RECIPIENT.md`.
 
-1. **Buy and burn $DARK** with every sweep. Simplest, every step a public
-   transaction. This is what Nullmask's filing describes for its Solana wallet
-   ("holds purchased MASK").
-2. **Buy $DARK and pay shielded $DARK holders**, DARKPOOL's model. Needs $DARK
-   inside the pool as a share, which this note pool does not do yet.
-3. **Convert to ZEC** for the existing holder program.
-
-EVM fees arrive in ETH and tokens and $DARK trades on Solana, so option 1 and
-2 need a bridge step (Nullmask uses deBridge for the same reason).
+EVM fees arrive in ETH and tokens and the ZEC-DARK pool is on Solana, so EVM
+fees need a bridge step first (Nullmask uses deBridge for a similar hop).
 
 ## The keys in `keys-dev/` are not safe for real funds
 
@@ -197,7 +192,7 @@ key anything on proof bytes.
 2. **Dark Inbox funding from Solana.** `shield` is ready for it, but the Dark Inbox contracts were written for an earlier pool interface. The inbox must pass the owner's `publicKey` and `blinding` to `shield`. It must also derive its own address from them, so the keeper cannot redirect the deposit.
 3. **The terminal UI.** The wallet keys still come from a random secret here, not from a wallet signature or 24 words.
 4. **Viewing keys.**
-4b. **The fee recipient contract** that carries out the chosen $DARK policy (buy and burn, or pay holders), and the bridge step for EVM fees.
+4b. **The fee recipient contract** that adds swept fees to ZEC-DARK liquidity, and the bridge step for EVM fees.
 5. **The recovery page.**
 6. **In-pool swaps.** The circuit moves one asset per transaction.
 7. **Two circuit decisions to make before the ceremony:** domain tags for the two 3-input hashes, and a tree id in the nullifier so a second tree can be opened.

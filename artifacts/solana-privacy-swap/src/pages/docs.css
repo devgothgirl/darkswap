@@ -41,6 +41,7 @@
 .docs-inline-link { display:inline-flex; align-items:center; gap:10px; margin-top:13px; color:#d8bffa; text-decoration:none; font-weight:700; font-size:16px; }
 .docs-checklist { margin:0 0 24px; padding-left:24px; }.docs-checklist li { padding:0 0 12px 8px; }.docs-checklist li::marker { color:#c7a4f8; }
 .docs-section p a { color:#d8bffa; text-underline-offset:3px; }
+.docs-section code { overflow-wrap:anywhere; }
 .docs-resources { display:grid; gap:12px; margin:27px 0; }
 .docs-resources a { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px 20px; align-items:center; padding:20px 22px; border:1px solid #3d3849; border-radius:8px; background:#15121b; color:#e3d5f7; text-decoration:none; }
 .docs-resources a:hover { border-color:#b089ec; background:#1a1623; }

@@ -10,21 +10,21 @@ const indexablePaths = new Set(seoRoutes.indexable);
 
 const pages = {
   ...Object.fromEntries(poolPaths.map(path => [path, {
-    title: path === '/pool/what-stays-public' ? 'What stays public | DarkSwap Pool (testnet)' : `DarkSwap Pool (testnet)${path === '/pool' ? '' : ` | ${path.split('/').at(-1)}`}`,
-    description: 'Experimental shielded pool on testnet. Development proving keys. Do not deposit real funds. Read what stays public and the limits of pool privacy.',
-    heading: path === '/pool/what-stays-public' ? 'What stays public' : 'Shielded pool (testnet)',
-    paragraphs: ['Testnet. Development proving keys. Do not deposit real funds.', 'Deposits and withdrawals remain public. Amounts, timing and a small pool can make activity easy to match. No anonymity guarantee.'],
+    title: path === '/pool/what-stays-public' ? 'What stays public | DarkSwap ZK pool (local-development preview)' : `DarkSwap ZK pool (local-development preview)${path === '/pool' ? '' : ` | ${path.split('/').at(-1)}`}`,
+    description: 'ZK pool local-development preview: not deployed on any public network or audited. Development proving keys could forge proofs. Do not deposit real funds.',
+    heading: path === '/pool/what-stays-public' ? 'What stays public' : 'ZK pool',
+    paragraphs: ['Local-development preview. Development proving keys, which could be used to forge proofs. Do not deposit real funds.', 'No network is connected yet. This is DarkSwap’s own ZK tier, not the dark pool on NEAR. Built on local chains; not deployed on any public network and not audited.', 'Deposits and withdrawals remain public. Amounts, timing and a small pool can make activity easy to match. No anonymity guarantee.'],
     links: [['/pool/what-stays-public', 'What stays public: safety and privacy limits']],
   }])),
   '/': {
     title: 'DarkSwap | Private swaps from Solana, built on NEAR Intents',
-    description: 'Quote, review and fund Solana-origin private swaps yourself. DarkSwap’s Privacy swap is built on NEAR Intents. Route availability and privacy limits vary.',
-    heading: 'Swap through Privacy Routers.',
+    description: 'Live private swaps from Solana, a Dark Pool on NEAR in development, and ZK pools built on local chains—not publicly deployed. Route availability and privacy limits vary.',
+    heading: 'Go dark. On NEAR Intents.',
     paragraphs: [
       'Review a supported Solana-origin route, check fees and destination details, then send your deposit from your own wallet.',
-      'Privacy swap, DarkSwap’s confidential-routing route, is built on the NEAR Intents 1Click API, and the planned cross-chain terminal is being built on NEAR Intents too.',
+      'Privacy swap is built on the NEAR Intents 1Click API. The Dark Pool on NEAR Confidential Intents is in development, not available to use, targeting late October 2026 subject to NEAR enabling access. Our own ZK pools are built on local chains, not publicly deployed.',
       'DarkSwap prepares the order. You review the quote and deposit manually from your own wallet if you choose. Availability, fees and timing vary by route.',
-      'StonkFun reports DARK graduated with a NEAR pairing and market activity. wNEAR rewards have been distributed to qualifying holders on Solana; ZEC rewards remain planned.',
+      'StonkFun reports DARK graduated with a NEAR pairing and market activity. Half of received DARK creator fees funds qualifying holders in wNEAR; the other half buys ZEC tokens on Solana for the protocol treasury.',
     ],
   },
   '/swap': {
@@ -39,24 +39,47 @@ const pages = {
     heading: 'Review the route. Then decide.',
     paragraphs: ['Request a Solana-origin route with basic confidential processing through the NEAR Intents 1Click API, inspect its terms, and decide whether to fund it yourself. Confidential routing is not ZK shielding.', 'Check the receiving address, Solana refund address, destination network, minimum amount and deadline against the live quote before you send. Public deposits and destination activity may still be associated; privacy is not anonymity.'],
   },
+  '/bridge': {
+    title: 'Bridge between networks with confidential routing | DarkSwap',
+    description: 'Prepare a cross-network order built on NEAR Intents with confidential routing. Review the live quote, fees and addresses, then choose whether to send a manual deposit from your own wallet.',
+    heading: 'Bridge between networks.',
+    paragraphs: ['Choose what you send and what you receive, each by network and asset, then review a live quote with confidential routing built on NEAR Intents. You send from your own wallet. DarkSwap prepares the order and never holds your funds.', 'Confidential routing is not ZK shielding. Your deposit on the origin network is public, and the destination transfer may be public. Check the recipient, refund address, fees and deadline against the live quote before you send.'],
+  },
   '/docs': {
-    title: 'Private swaps & cross-chain terminal | DarkSwap Docs',
-    description: 'Understand DarkSwap’s live private swaps and planned cross-chain trading terminal with NEAR Intents. Read about the demo, deposits, safety and privacy limits.',
-    heading: 'Private swaps today. A terminal in development.',
-    paragraphs: ['DarkSwap offers live Solana-origin private swap routes and is developing a cross-chain trading terminal with NEAR Intents. The current terminal is a read-only demo with fictional tokens and simulated calculations, not live trading.', 'The existing private route and Privacy swap use manual deposits and require their own live quotes. Neither requires a wallet connection or an account for guest orders. A supported asset does not guarantee an executable route.', 'Creating an order does not transfer funds. Check the active deposit instructions and do not send a second payment to fix a delayed deposit. Solana deposits remain visible on-chain; no route guarantees anonymity.', 'StonkFun reports DARK graduated with a NEAR pairing and market activity. The reported creator fee is 1%, paid only in wNEAR, not DARK; configuration and claim authority remain unverified. wNEAR airdrops to qualifying DARK holders are live on Solana, with ZEC scheduled for day 3 of each 3-day cycle; the other half of the creator fee is converted to ZEC and compounded in the creator wallet. Non-cash account points are separate.'],
-    links: [['/docs/whitepaper', 'Whitepaper in plain language'], ['/docs/confidential-routing', 'Confidential routing and ZK shielding'], ['https://rewards.darkswap.app', '$DARK holder rewards'], ['/swap', 'Existing private route'], ['/near-swap', 'Privacy swap'], ['/help', 'Deposit help']],
+    title: 'How DarkSwap works | DarkSwap Docs',
+    description: "How DarkSwap's private swaps on NEAR Intents work, what the dark pool on NEAR will do, how $DARK holders are paid and what stays public.",
+    heading: 'Private swaps today. The dark pool on NEAR next.',
+    paragraphs: [
+      'DarkSwap offers live Solana-origin private swaps. The Dark Pool on NEAR Confidential Intents is in development, not available to use, targeting late October 2026 subject to NEAR enabling access—not a launch commitment. Our own ZK pools are built on local chains, not deployed on any public network.',
+      'The existing private route and Privacy swap use manual deposits and require their own live quotes. Neither requires a wallet connection or an account for guest orders. A supported asset does not guarantee an executable route.',
+      'Creating an order does not transfer funds. Check the active deposit instructions and do not send a second payment to fix a delayed deposit. Solana deposits remain visible on-chain; no route guarantees anonymity.',
+      'StonkFun reports DARK graduated with a NEAR pairing and market activity. The reported creator fee is 1%, paid only in wNEAR, not DARK. Half of received creator fees funds qualifying DARK holders in wNEAR, paid at 6 a.m. and 6 p.m. Pacific from a fresh snapshot with a 100,000 DARK minimum. The other half purchases ZEC tokens on Solana for the protocol treasury in the creator wallet. ZEC here is a token on Solana, not native or shielded Zcash. Non-cash account points are separate.',
+    ],
+    links: [['/docs/whitepaper', 'Whitepaper v0.3'], ['/docs/dark-pool', 'The dark pool on NEAR'], ['/docs/confidential-routing', 'Confidential routing and ZK shielding'], ['https://rewards.darkswap.app', '$DARK holder rewards'], ['/swap', 'Existing private route'], ['/near-swap', 'Privacy swap'], ['/help', 'Deposit help']],
   },
   '/docs/whitepaper': {
-    title: 'Whitepaper in plain language | DarkSwap Docs',
-    description: 'A reader-friendly edition of the DarkSwap whitepaper v0.2: live private swaps, the planned Dark Pool on Base, $DARK holder rewards, the trust model and the accepted privacy limits.',
+    title: 'DarkSwap Whitepaper v0.4',
+    description: 'DarkSwap Whitepaper v0.4: private swaps live on NEAR Intents, the dark pool on NEAR Confidential Intents next, our own ZK pools later, $DARK rewards, the trust model and the limits.',
     heading: 'The DarkSwap whitepaper, in plain language',
     paragraphs: [
-      'Based on the DarkSwap whitepaper, v0.2, October 2026. Every section carries the same status tag the technical draft uses: live, testnet, scheduled or proposed. Live means deployed and used with real funds; proposed means designed with no owner or date, and likely to change.',
-      'Live today: two Solana-origin private swap routes, with manual deposits you send yourself. Holder rewards have been paid in wNEAR directly to eligible $DARK wallets. ZEC rewards remain planned and have not been paid.',
-      'The Dark Pool is a planned shielded pool on Base holding ETH, USDC and USDT, which Solana users can fund without holding ETH. Transfers inside the pool hide sender, recipient and amount; deposits and exits remain public. The pool fee is 0.5% on shielding and unshielding, with a 1% contract cap. Contracts are planned to be immutable and have not been independently audited.',
-      'Accepted limits are stated, not minimised: a small pool at launch can still be correlated by amount and timing, round lots and a 2 to 24 hour exit delay reduce that but do not remove it, and no route or pool makes activity invisible. Three items are withheld from this edition until the owner confirms them.',
+      'DarkSwap whitepaper v0.4, October 6, 2026. Sections that describe a product carry a status tag; read the tag before the text.',
+      'Live today: Solana-origin private swap routes, with manual deposits you send yourself. Half of received DARK creator fees funds qualifying holders in wNEAR; the other half buys ZEC tokens on Solana for the protocol treasury. One ZEC-token award has been paid. ZEC here is a token on Solana, not native or shielded Zcash.',
+      'The Dark Pool is in development and not available to use. DarkSwap’s own zero-knowledge pools are built and tested on local chains and held back until public testnets, a production setup ceremony and an independent audit.',
+      'Accepted limits are stated, not minimised: Solana deposits stay public, confidential routing is not ZK shielding, and no route or pool makes activity invisible.',
     ],
     links: [['/docs', 'Back to Docs'], ['/docs/confidential-routing', 'Confidential routing and ZK shielding'], ['/docs#privacy', 'Privacy limitations'], ['/swap', 'Existing private route']],
+  },
+  '/docs/dark-pool': {
+    title: 'The dark pool on NEAR | DarkSwap Docs',
+    description: 'The intended DarkSwap dark pool on NEAR Confidential Intents: confidential balances, deposits, swaps and withdrawals. Scheduled, not available to use.',
+    heading: 'The dark pool on NEAR',
+    paragraphs: [
+      'This is the intended design, not a live product. It depends on NEAR enabling Confidential Intents for DarkSwap and on DarkSwap completing the integration.',
+      'Balances and confidential execution are planned on a NEAR private shard run by permissioned validators. This uses encryption and restricted validator access, not zero-knowledge proofs.',
+      'Deposits and withdrawals remain public. Amounts, timing and external records can associate activity.',
+      'Scheduled. Not available to use. Target: late October 2026, subject to NEAR enabling access.',
+    ],
+    links: [['/docs/whitepaper', 'Whitepaper v0.3'], ['/docs', 'Back to Docs']],
   },
   '/docs/confidential-routing': {
     title: 'Confidential routing and ZK shielding | DarkSwap Docs',
@@ -82,7 +105,7 @@ const pages = {
     description: 'Explore DarkSwap research and planning concepts, including Screener Beta, Split Mixer and Privacy Bundle. Previews do not initiate a transfer or quote.',
     heading: 'Founder previews.',
     paragraphs: ['Explore what we are working on without confusing a draft with a live route. The existing private route and Privacy swap are the open Solana-origin transaction flows.', 'Previews are for exploration. No wallet connection, payment, funding, or launch transaction is initiated here.'],
-    links: [['/screener-beta', 'Screener Beta'], ['/split-mixer-preview', 'Split Mixer for Solana'], ['/privacy-bundle-preview', 'Privacy Bundle for Launchers']],
+    links: [['/screener-beta', 'Screener Beta'], ['/split-mixer-preview', 'Split Mixer for Solana'], ['/privacy-bundle-preview', 'Privacy Bundle for Launchers'], ['/shielded-zcash-preview', 'Solana ZEC to shielded Zcash']],
   },
   '/founder': {
     title: 'Founder previews | DarkSwap',
@@ -95,7 +118,7 @@ const pages = {
     title: 'Founder terminal preview | DarkSwap',
     description: 'Preview the planned cross-chain trading terminal with NEAR Intents. Fictional tokens and simulated orders only; no wallet connection or live execution.',
     heading: 'Cross-chain trading terminal with NEAR Intents — founder preview',
-    paragraphs: ['A read-only founder demo with fictional tokens and simulated calculations. It does not execute trades or fund an order.', 'Separately, wNEAR rewards have been distributed to qualifying DARK holders; ZEC payouts to holders remain planned. StonkFun reports DARK graduated; the reported 1% creator-fee configuration and claim authority remain unverified. The arbitrary 0.3% demo fee is not a live quote or the reported creator fee.'],
+    paragraphs: ['A read-only founder demo with fictional tokens and simulated calculations. It does not execute trades or fund an order.', 'Separately, wNEAR rewards have been distributed to qualifying DARK holders, and one ZEC-token award has been paid; further ZEC awards require separate approval. StonkFun reports DARK graduated; the reported 1% creator-fee configuration and claim authority remain unverified. The arbitrary 0.3% demo fee is not a live quote or the reported creator fee.'],
     links: [['/founder', 'All founder previews']],
   },
   '/screener-beta': {
@@ -115,6 +138,13 @@ const pages = {
     description: 'Explore a launch-planning concept with a 1–12 hour funding window. The preview does not schedule or randomize transfers or guarantee privacy.',
     heading: 'Privacy Bundle for Launchers.',
     paragraphs: ['Choose a 1–12 hour planning horizon and create a conceptual brief. It does not schedule or randomize transfers, and clean wallets do not guarantee privacy.'],
+  },
+  '/shielded-zcash-preview': {
+    title: 'Solana ZEC to shielded Zcash concept | DarkSwap',
+    description: 'A concept preview of moving the Solana ZEC token to a shielded Zcash address. Not open: no quotes, orders or deposits until a partner confirms the route.',
+    heading: 'Solana ZEC to shielded Zcash.',
+    paragraphs: ['A concept preview of a planned flow: send the Solana ZEC token from your own wallet and receive native ZEC at a shielded address. It is not open and does not quote, create orders or accept deposits.', 'Solana deposits stay public, the routing partner sees the deposit and payout address, and amounts and timing can link the two sides. Solana ZEC is a bridged token; no claim is made about its backing.'],
+    links: [['/founder', 'All founder previews']],
   },
   '/near-trends': {
     title: 'NEAR pool trends | DarkSwap',
@@ -142,11 +172,15 @@ export const aliases = {
   '/screener-preview': '/screener-beta',
 };
 
-// Tokenomics is paused until the ZEC airdrop starts; its old URLs temporarily redirect to the rewards site.
+// Tokenomics is paused; its old URLs temporarily redirect to the rewards site, which holds the current rules.
 const rewardsSite = 'https://rewards.darkswap.app';
 export const externalRedirects = seoRoutes.externalRedirects;
+// Extra domains linked to the live deployment send visitors to one page on the main
+// origin, so browser-stored receipts, canonical URLs and analytics stay on one site.
+export const hostRedirects = seoRoutes.hostRedirects ?? {};
+export const siteOrigin = origin;
 
-const nav = [['/', 'Home'], ['/swap', 'Swap'], [rewardsSite, 'Rewards'], ['/docs', 'Docs']];
+const nav = [['/', 'Home'], ['/swap', 'Swap'], ['/bridge', 'Bridge'], [rewardsSite, 'Rewards'], ['/docs', 'Docs']];
 const escapeHtml = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 // Private client routes are valid URLs, but never receive personal initial HTML.

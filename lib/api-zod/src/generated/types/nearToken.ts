@@ -14,4 +14,8 @@ export interface NearToken {
   decimals: number;
   price?: number;
   contractAddress?: string;
+  /** True only for the network's native coin, matched by exact asset ID. Absent on receipts saved before multi-network origins. */
+  native?: boolean;
+  /** True when the asset can be sent as a deposit: the network's native coin or a valid token contract on that network. Absent on saved receipts. */
+  originEligible?: boolean;
 }

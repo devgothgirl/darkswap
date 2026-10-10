@@ -1,12 +1,17 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
-import { aliases, externalRedirects, isKnownRoute, renderPageHtml } from './seo-html.mjs';
+import { aliases, externalRedirects, hostRedirects, isKnownRoute, renderPageHtml, siteOrigin } from './seo-html.mjs';
 import { getResearchHtml } from './near-research-snapshot.mjs';
 
 const directory = resolve(import.meta.dirname, 'dist/public');
 const template = await readFile(resolve(directory, 'index.html'), 'utf8');
 const publicGuides = JSON.parse(await readFile(resolve(directory, '../public-guides.json'), 'utf8'));
+// The deployment proxy may report the public domain in either header.
+function requestHost(req) {
+  const value = String(req.headers['x-forwarded-host'] || req.headers.host || '');
+  return value.split(',')[0].trim().toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '');
+}
 const types = {
   '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
@@ -27,6 +32,14 @@ createServer(async (req, res) => {
     return;
   }
   const path = pathname.replace(/\/+$/, '') || '/';
+  // Temporary (302) so the mapping can change later. The bare domain opens its page;
+  // deep links and query strings carry over. The fixed origin prevents open redirects.
+  const host = requestHost(req);
+  if (Object.hasOwn(hostRedirects, host)) {
+    const { pathname: rawPath, search } = new URL(req.url || '/', 'http://localhost');
+    res.writeHead(302, { Location: `${siteOrigin}${path === '/' ? hostRedirects[host] : rawPath}${search}` }).end();
+    return;
+  }
   if (Object.hasOwn(aliases, path)) {
     res.writeHead(308, { Location: aliases[path] }).end();
     return;

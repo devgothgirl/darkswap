@@ -4,11 +4,13 @@
     "/",
     "/swap",
     "/near-swap",
+    "/bridge",
     "/near-trends",
     "/near-discovery",
     "/docs",
     "/docs/confidential-routing",
     "/docs/whitepaper",
+    "/docs/dark-pool",
     "/pool",
     "/pool/what-stays-public",
     "/rewards",
@@ -28,6 +30,7 @@
     "/terminal-preview",
     "/split-mixer-preview",
     "/privacy-bundle-preview",
+    "/shielded-zcash-preview",
     "/explore",
     "/screener-beta",
     "/public-swap",
@@ -40,5 +43,8 @@
   "externalRedirects": {
     "/tokenomics": "https://rewards.darkswap.app",
     "/tokenomics/leaderboard": "https://rewards.darkswap.app"
+  },
+  "hostRedirects": {
+    "bridge.darkswap.app": "/bridge"
   }
 }

@@ -39,8 +39,8 @@ export function TokenIdentity({ compact = false, context }: { compact?: boolean;
     >View on StonkFun <ArrowUpRight size={14} aria-hidden="true" /></a>
     <p className="dark-token-identity__note" data-testid={`text-token-identity-limits-${context}`}>
       {compact
-        ? 'StonkFun reports $DARK as graduated. wNEAR rewards have been distributed to qualifying holders; ZEC remains planned.'
-        : 'StonkFun reports $DARK as graduated and paired with NEAR. This listing does not verify supply, mint/freeze authorities, liquidity or reward funding. wNEAR rewards have been distributed to qualifying holders; ZEC remains planned.'}
+        ? 'StonkFun reports $DARK as graduated. wNEAR rewards have been distributed to qualifying holders; one ZEC-token award has been paid, and further awards need separate approval.'
+        : 'StonkFun reports $DARK as graduated and paired with NEAR. This listing does not verify supply, mint/freeze authorities, liquidity or reward funding. wNEAR rewards have been distributed to qualifying holders; one ZEC-token award has been paid, and further awards need separate approval.'}
     </p>
   </section>;
 }

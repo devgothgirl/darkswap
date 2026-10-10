@@ -265,6 +265,98 @@ async function postNearOrder(requestId: string, quoteId: string): Promise<Respon
   });
 }
 
+test("NEAR status requires the private receipt and exact local deposit details before provider access", async () => {
+  const seeded = await seedNearOrder();
+  let providerStatus = matchingNearStatus(seeded.providerRequest);
+  const intercept = interceptProviders((url) => {
+    if (url.pathname === "/v0/account/history") {
+      return Response.json({ items: [matchingNearHistory(seeded.createdAt)] });
+    }
+    if (url.pathname === "/v0/status") return Response.json(providerStatus);
+    assert.fail(`Unexpected provider call: ${url.pathname}`);
+  });
+  const query = {
+    requestId: seeded.requestId,
+    depositAddress: nearDepositAddress,
+    depositMemo: "recovery-memo",
+  };
+  async function status(params: Record<string, string>) {
+    return nativeFetch(`${baseUrl}/swap/near/status?${new URLSearchParams(params)}`);
+  }
+  async function denied(params: Record<string, string>, expectedStatus: number) {
+    const beforeCalls = intercept.calls.length;
+    const response = await status(params);
+    assert.equal(response.status, expectedStatus);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await response.json(), {
+      error: expectedStatus === 400
+        ? "Enter a valid private receipt ID and Solana deposit address."
+        : "No matching Privacy swap receipt was found.",
+    });
+    assert.equal(intercept.calls.length, beforeCalls, "unauthorized lookups never call provider");
+  }
+  try {
+    // Even the correct capability cannot expose an unready receipt by status.
+    await denied(query, 404);
+    const recovered = await nativeFetch(`${baseUrl}/swap/near/orders/${seeded.requestId}`);
+    assert.equal(recovered.status, 200);
+    const savedOrder = await recovered.json() as Record<string, unknown>;
+
+    // An on-chain observer knows both the address and its public memo.
+    await denied({ depositAddress: nearDepositAddress, depositMemo: "recovery-memo" }, 400);
+    await denied({ ...query, requestId: "not-a-receipt" }, 400);
+    await denied({ ...query, requestId: randomUUID() }, 404);
+    await denied({ ...query, depositAddress: nearDepositAddressAlternative }, 404);
+    await denied({ ...query, depositMemo: "different-memo" }, 404);
+    await denied({ requestId: seeded.requestId, depositAddress: nearDepositAddress }, 404);
+
+    // Possession of a different existing receipt cannot authorize this order.
+    const otherId = randomUUID();
+    await db.insert(nearOrdersTable).values({
+      id: otherId, quoteId: randomUUID(), state: "ready",
+      depositAddress: nearDepositAddressAlternative,
+      orderDetails: { ...savedOrder, requestId: otherId, depositAddress: nearDepositAddressAlternative },
+    });
+    await denied({ ...query, requestId: otherId }, 404);
+
+    const authorized = await status(query);
+    assert.equal(authorized.status, 200);
+    assert.equal(authorized.headers.get("cache-control"), "no-store");
+    const body = await authorized.json() as Record<string, unknown>;
+    assert.equal(body.requestId, seeded.requestId);
+    assert.equal(body.recipient, nearInput.recipient);
+    assert.equal(body.refundTo, nearInput.refundTo);
+    assert.equal(body.status, "PENDING_DEPOSIT");
+    assert.equal(intercept.calls.some(call => call.url.pathname === "/v0/tokens"), false,
+      "authorized tracking uses retained metadata, not a live token catalog");
+    assert.equal(intercept.calls.some(call => call.url.searchParams.has("requestId")), false,
+      "the private capability is never sent to the provider");
+
+    providerStatus = matchingNearStatus(seeded.providerRequest, nearDepositAddress, { recipient: "unexpected-private-recipient" });
+    const mismatched = await status(query);
+    assert.equal(mismatched.status, 502);
+    assert.equal((await mismatched.text()).includes("unexpected-private-recipient"), false);
+
+    // Memo-less orders still track; mismatched memos do not.
+    providerStatus = matchingNearStatus(seeded.providerRequest);
+    delete (providerStatus.quoteResponse.quote as { depositMemo?: string }).depositMemo;
+    const memoLess = { ...savedOrder };
+    delete memoLess.depositMemo;
+    await db.update(nearOrdersTable).set({ orderDetails: memoLess })
+      .where(eq(nearOrdersTable.id, seeded.requestId));
+    await denied(query, 404);
+    const noMemo = await status({ requestId: seeded.requestId, depositAddress: nearDepositAddress });
+    assert.equal(noMemo.status, 200);
+
+    // Malformed local receipts and provider-only orders fail closed.
+    await db.update(nearOrdersTable).set({ orderDetails: {} })
+      .where(eq(nearOrdersTable.id, seeded.requestId));
+    await denied({ requestId: seeded.requestId, depositAddress: nearDepositAddress }, 404);
+    await db.delete(nearOrdersTable).where(eq(nearOrdersTable.id, seeded.requestId));
+    await denied(query, 404);
+  } finally { intercept.restore(); }
+});
+
 test("Houdini recovery returns one exact match only after its receipt is saved", async () => {
   const { quoteHash, quoteId } = await seedPrivateClaim("exact-match-quote");
   const order = validHoudiniOrder();
@@ -579,7 +671,7 @@ test("NEAR incident safety blocks before claiming, preserves recovery/tracking, 
     const receipt = await nativeFetch(`${baseUrl}/swap/near/orders/${seeded.requestId}`);
     assert.equal(receipt.status, 200);
     assert.equal((await receipt.json() as Record<string, any>).routeStatus.eligibility, "paused");
-    const status = await nativeFetch(`${baseUrl}/swap/near/status?depositAddress=${nearDepositAddress}&depositMemo=recovery-memo`);
+    const status = await nativeFetch(`${baseUrl}/swap/near/status?requestId=${seeded.requestId}&depositAddress=${nearDepositAddress}&depositMemo=recovery-memo`);
     assert.equal(status.status, 200);
     assert.equal((await status.json() as Record<string, any>).routeStatus.eligibility, "paused");
     assert.equal(intercept.calls.filter(call => call.method === "POST").length, externalOrderPosts + 1, "replay never replaces issued order");

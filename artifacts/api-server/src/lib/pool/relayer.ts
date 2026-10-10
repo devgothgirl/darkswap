@@ -1,6 +1,6 @@
 // Submits shielded-pool transactions so the user's own wallet never appears.
 // Logs only tx hashes and errors: never IPs, user agents or wallet addresses.
-// Rate limit state is in memory and holds no request identity at all.
+// Free-send spending is reserved in shared storage without request identities.
 import {
   BaseError, ContractFunctionRevertedError, createPublicClient, createWalletClient, erc20Abi, getAddress, http, isAddress, isHex, type Hex,
 } from "viem";
@@ -13,24 +13,9 @@ import {
 } from "@darkswap/pool-client";
 import { logger } from "../logger";
 import { evmDeployment, rpcUrl, solanaProgramId, type EvmChain, type PoolChain, type SolanaChain } from "./config";
-
-export class RelayError extends Error {
-  constructor(message: string, readonly status = 400) { super(message); }
-}
-
-// Private sends carry no fee; the relayer pays for them up to this many per
-// chain in each window. Unshields pay their own way and are not limited here.
-const FREE_WINDOW_MS = 10 * 60_000;
-const FREE_PER_WINDOW = Number(process.env.POOL_RELAY_FREE_PER_10_MIN ?? 30);
-const freeUse = new Map<string, number[]>();
-
-function takeFreeSlot(chain: string) {
-  const now = Date.now();
-  const recent = (freeUse.get(chain) ?? []).filter((t) => now - t < FREE_WINDOW_MS);
-  if (recent.length >= FREE_PER_WINDOW) throw new RelayError("The free relayer is busy. Try again in a few minutes.", 429);
-  recent.push(now);
-  freeUse.set(chain, recent);
-}
+import { RelayError } from "./relay-error";
+import { FREE_WINDOW_MS, freePerWindow, takeFreeSlot } from "./free-quota";
+export { RelayError } from "./relay-error";
 
 /** Margin on top of network costs, in the chain's base unit (wei / lamports). */
 function margin(chain: PoolChain): bigint {
@@ -185,7 +170,7 @@ async function relayEvm(chain: EvmChain, body: Record<string, unknown>) {
     const name = revertName(err);
     throw new RelayError(name ? `The pool refused this transaction: ${name}.` : "Could not simulate this transaction.");
   }
-  if (isTransfer) takeFreeSlot(chain.id);
+  if (isTransfer) await takeFreeSlot(chain.id);
   else {
     const gasPrice = await r.publicClient.getGasPrice();
     const neededNative = gas * gasPrice + margin(chain);
@@ -282,8 +267,7 @@ async function relaySolana(chain: SolanaChain, body: Record<string, unknown>) {
   }
   if (!keys.every((k, i) => k.equals(expected[i]))) throw new RelayError("Bad account list.");
 
-  if (isTransfer) takeFreeSlot(chain.id);
-  else {
+  if (!isTransfer) {
     const rent = BigInt(await r.connection.getMinimumBalanceForRentExemption(0));
     const neededNative = solanaRelayerQuote(rent, margin(chain));
     if (rate) {
@@ -311,6 +295,7 @@ async function relaySolana(chain: SolanaChain, body: Record<string, unknown>) {
     const custom = (sim.value.err as { InstructionError?: [number, { Custom?: number }] }).InstructionError?.[1]?.Custom;
     throw new RelayError(`The pool refused this transaction: ${custom !== undefined ? (SOLANA_ERRORS[custom] ?? `error ${custom}`) : "simulation failed"}.`);
   }
+  if (isTransfer) await takeFreeSlot(chain.id);
   try {
     const signature = await r.connection.sendRawTransaction(tx.serialize(), { skipPreflight: true });
     logger.info({ chain: chain.id, signature }, "pool relay sent");
@@ -332,7 +317,7 @@ const SOLANA_ERRORS: Record<number, string> = {
 export async function quote(chain: PoolChain) {
   const q = chain.kind === "evm" ? await evmQuote(chain) : await solanaQuote(chain);
   if (!q) return { enabled: false as const };
-  return { enabled: true as const, relayer: q.relayer, fee: q.fee.toString(), tokenFees: q.tokenFees, freePerWindow: FREE_PER_WINDOW, windowMinutes: FREE_WINDOW_MS / 60_000 };
+  return { enabled: true as const, relayer: q.relayer, fee: q.fee.toString(), tokenFees: q.tokenFees, freePerWindow: freePerWindow(), windowMinutes: FREE_WINDOW_MS / 60_000 };
 }
 
 export async function relay(chain: PoolChain, body: unknown) {

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import type { NearServiceIncident, NearServiceStatus } from "@workspace/api-zod";
+import { NEAR_ROUTE_CHAINS } from "./near-chains";
 
 // This public, unauthenticated observation is independent of 1Click credentials
 // and order lifecycle. Never forward caller headers or follow redirects.
 export const NEAR_STATUS_FEED = "https://partners.near-intents.org/api/shield/public/status";
 const SOURCE = "https://partners.near-intents.org/shield/status";
-const ROUTE_CHAINS = new Set(["sol", "near", "eth", "arb", "base", "op", "pol", "bsc"]);
+const ROUTE_CHAINS = NEAR_ROUTE_CHAINS;
 // Exact blockchain identifiers in the first-party 1Click /v0/tokens catalog,
 // verified 2026-10-02. Recognition is NOT selectable/executable route support.
 // Keep bounded and reviewed, not dynamically expanded from an incident value.

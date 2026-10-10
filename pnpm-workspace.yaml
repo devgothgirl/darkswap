@@ -47,6 +47,9 @@ overrides:
   'circomlibjs>ethers': '-'
   bigint-buffer: workspace:@darkswap/bigint-buffer@*
   # Security floors for transitive dependencies pinned by wallet/storage SDKs.
+  'source-map-js@<1.2.2': 1.2.2
+  # Typography's latest release still pins parser 6; its used APIs support 7.
+  'postcss-selector-parser@<7.1.6': 7.1.6
   'brace-expansion@>=5.0.0 <5.0.12': 5.0.12
   'ws@>=8.0.0 <8.21.0': 8.21.0
   'uuid@<11.1.1': 11.1.1
@@ -55,6 +58,7 @@ overrides:
   'jayson@4': 5.0.0
   'underscore@<1.13.8': 1.13.8
   'decode-uri-component@<0.5.0': 0.5.0
+  'proxy-addr@<2.0.8': 2.0.8
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
@@ -146,7 +150,6 @@ packageExtensions:
       '@ethersproject/strings': ^5.8.0
 
 patchedDependencies:
-  braces@3.0.3: patches/braces@3.0.3.patch
   circomlibjs@0.1.7: patches/circomlibjs@0.1.7.patch
   # query-string 7 expects a CJS callable; decode-uri-component 0.5 exports ESM.
   query-string@7.1.3: patches/query-string@7.1.3.patch

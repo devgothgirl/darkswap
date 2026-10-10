@@ -3,6 +3,7 @@ import { Router } from 'wouter';
 import Docs from './pages/docs';
 import ConfidentialRoutingDocs from './pages/docs-confidential-routing';
 import Whitepaper from './pages/whitepaper';
+import DarkPoolDocs from './pages/docs-dark-pool';
 import { PoolPublicGuide } from './pool/public-guide';
 import poolPaths from './pool/routes.json';
 import { supportFaq } from './components/support-faq';
@@ -13,6 +14,7 @@ import { HelpRecoveryGuidance } from './pages/help-recovery-guidance';
 export function renderPublicGuides(): Record<string, string> {
   return {
     '/docs/whitepaper': renderToStaticMarkup(<Router ssrPath="/docs/whitepaper"><Whitepaper /></Router>),
+    '/docs/dark-pool': renderToStaticMarkup(<Router ssrPath="/docs/dark-pool"><DarkPoolDocs /></Router>),
     ...Object.fromEntries(poolPaths.map(path => [path, renderToStaticMarkup(
       <Router ssrPath={path}><PoolPublicGuide explanation={path === '/pool/what-stays-public'} /></Router>
     )])),

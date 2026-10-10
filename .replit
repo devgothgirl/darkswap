@@ -67,7 +67,7 @@ expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 180000
+timeoutMs = 300000
 
 [nix]
 channel = "stable-25_05"
@@ -84,6 +84,9 @@ POOL_RELAY_MIN_FEE_SEPOLIA = "0"
 POOL_RELAY_MIN_FEE_SOLANA_DEVNET = "500000"
 NEAR_PARTNER_FEE_BPS = "40"
 NEAR_PARTNER_PAYOUT_ADDRESS = "darkswapapp.near"
+
+[userenv.development]
+NEAR_ORIGIN_CHAINS = "sol,eth,arb,base,op,pol,bsc"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-dc4023fd-be53-413e-ba26-3199e3d6b9ef"

@@ -5,8 +5,7 @@ import { getGetSwapChainsQueryKey, getSearchSwapTokensQueryKey, useGetSwapChains
 import { compareDestinations } from '../lib/destination-sort';
 import type { SwapToken } from '@workspace/api-client-react';
 import { RiskDisclaimer } from './risk-disclaimer';
-import { trackEvent } from '../lib/analytics';
-import { NearFiLink } from './nearfi-link';
+import { trackEvent, trackPublicNavigation } from '../lib/analytics';
 
 export const RECENT_ORDER_KEY = 'solana-privacy-swap:recent-order';
 
@@ -47,6 +46,11 @@ export function Header() {
   const [lookupOpen, setLookupOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [id, setId] = useState('');
+  const openLookup = () => {
+    setMenuOpen(false);
+    setLookupOpen(true);
+    trackEvent('order_lookup_opened', { location: 'header' });
+  };
   useEffect(() => { setMenuOpen(false); }, [location]);
   useEffect(() => {
     if (!menuOpen) return;
@@ -64,16 +68,16 @@ export function Header() {
      <header className={`topbar ${menuOpen ? 'menu-open' : ''}`}>
        <Link href="/" className="brand" data-testid="link-home"><img className="brand-icon" src={`${import.meta.env.BASE_URL}brand/icon.png`} alt=""/><img className="brand-wordmark" src={`${import.meta.env.BASE_URL}brand/wordmark.png`} alt="DarkSwap"/></Link>
        <nav id="site-navigation" className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
-          <Link href="/swap" className={location==='/swap'||location==='/near-swap'||location==='/near-order'||location.startsWith('/order/')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-swap">Swap</Link>
-          <a href="https://rewards.darkswap.app" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} data-testid="link-nav-rewards">Rewards ↗</a>
-          <Link href="/pool" className={location.startsWith('/pool')?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-pool">Pool <span className="nav-testnet-tag">testnet</span></Link>
-          <Link href="/docs" className={location==='/docs'?'active':''} onClick={() => setMenuOpen(false)} data-testid="link-nav-docs">Docs</Link>
-          <NearFiLink onClick={() => setMenuOpen(false)} />
-          <button type="button" className="site-nav-track" onClick={() => { setMenuOpen(false); setLookupOpen(true); }}>Track order <ArrowRight size={15}/></button>
+          <Link href="/swap" className={location==='/swap'||location==='/near-swap'||location==='/near-order'||location.startsWith('/order/')?'active':''} onClick={() => { setMenuOpen(false); trackPublicNavigation('swap', 'header'); }} data-testid="link-nav-swap">Swap</Link>
+          <Link href="/bridge" className={location==='/bridge'?'active':''} onClick={() => { setMenuOpen(false); trackPublicNavigation('bridge', 'header'); }} data-testid="link-nav-bridge">Bridge</Link>
+          <a href="https://rewards.darkswap.app" target="_blank" rel="noopener noreferrer" onClick={() => { setMenuOpen(false); trackPublicNavigation('rewards_console', 'header'); }} data-testid="link-nav-rewards">Rewards ↗</a>
+          <Link href="/pool" className={location.startsWith('/pool')?'active':''} onClick={() => { setMenuOpen(false); trackPublicNavigation('pool', 'header'); }} data-testid="link-nav-pool">ZK pool <span className="nav-testnet-tag">local preview</span></Link>
+          <Link href="/docs" className={location==='/docs'?'active':''} onClick={() => { setMenuOpen(false); trackPublicNavigation('docs', 'header'); }} data-testid="link-nav-docs">Docs</Link>
+          <button type="button" className="site-nav-track" onClick={openLookup}>Track order <ArrowRight size={15}/></button>
       </nav>
       <div className="top-right">
-         <button className="nav-link top-track-order" onClick={() => setLookupOpen(true)} data-testid="button-lookup-order">Track order <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle',marginLeft:3}} /></button>
-         <button className="site-menu-toggle" type="button" aria-controls="site-navigation" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} onClick={() => setMenuOpen(value => !value)}>{menuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
+         <button className="nav-link top-track-order" onClick={openLookup} data-testid="button-lookup-order">Track order <ArrowRight size={13} style={{display:'inline',verticalAlign:'middle',marginLeft:3}} /></button>
+         <button className="site-menu-toggle" type="button" aria-controls="site-navigation" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} onClick={() => { if (!menuOpen) trackEvent('mobile_navigation_opened', { location: 'header' }); setMenuOpen(value => !value); }}>{menuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
       </div>
     </header>
      {menuOpen && <button className="site-menu-backdrop" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}/>}
@@ -98,10 +102,10 @@ export function Header() {
 export function Footer() {
   return <><RiskDisclaimer/><footer className="footer">
     <span>DARKSWAP / PRIVATE BETA</span>
-    <span>Live: <Link href="/swap" style={{color:'#d5bbf9'}}>private route</Link> and <Link href="/near-swap" style={{color:'#d5bbf9'}}>Privacy swap</Link>. Founder demos are not live.</span>
-    <span>Privacy swap is built on <a href="https://near-intents.org/" target="_blank" rel="noopener noreferrer" style={{color:'#d5bbf9'}}>NEAR Intents</a>.</span>
-    <span><Link href="/rewards" style={{color:'#d5bbf9'}} data-testid="link-footer-account-points">Account points</Link> · <Link href="/founder" style={{color:'#d5bbf9'}} data-testid="link-footer-founder">Founder preview</Link> · <Link href="/help" style={{color:'#d5bbf9'}} data-testid="link-footer-help">Help &amp; support</Link></span>
-    <span className="footer-external">NEAR memecoin trades: <a href="https://t.me/nearfi_bot?start=ref_ydy5qj9v" target="_blank" rel="noopener noreferrer">NearFi bot (external) ↗</a> · <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" className="nearly-link" data-testid="link-footer-nearly">Nearly ↗</a></span>
+    <span>Live: <Link href="/swap" style={{color:'#d5bbf9'}} onClick={() => trackPublicNavigation('swap', 'footer')}>private route</Link> and <Link href="/near-swap" style={{color:'#d5bbf9'}} onClick={() => trackPublicNavigation('privacy_swap', 'footer')}>Privacy swap</Link>. Founder demos are not live.</span>
+    <span>Privacy swap is built on <a href="https://near-intents.org/" target="_blank" rel="noopener noreferrer" style={{color:'#d5bbf9'}} onClick={() => trackPublicNavigation('near_intents', 'footer')}>NEAR Intents</a>.</span>
+    <span><Link href="/rewards" style={{color:'#d5bbf9'}} data-testid="link-footer-account-points" onClick={() => trackPublicNavigation('account_points', 'footer')}>Account points</Link> · <Link href="/founder" style={{color:'#d5bbf9'}} data-testid="link-footer-founder" onClick={() => trackPublicNavigation('founder', 'footer')}>Founder preview</Link> · <Link href="/help" style={{color:'#d5bbf9'}} data-testid="link-footer-help" onClick={() => trackPublicNavigation('help', 'footer')}>Help &amp; support</Link></span>
+    <span className="footer-external">NEAR memecoin trades: <a href="https://nearly.trade/" target="_blank" rel="noopener noreferrer" className="nearly-link" data-testid="link-footer-nearly">Nearly ↗</a></span>
   </footer></>;
 }
 

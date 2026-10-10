@@ -4,8 +4,8 @@ import "./loyalty-explainer.css";
 
 const steps = [
   { code: "01", title: "Creator fees arrive in wNEAR", body: "Fees from $DARK trading are collected in wNEAR." },
-  { code: "02", title: "Half goes to holders", body: "Shared with qualifying holders, weighted by balance. ZEC rewards are planned." },
-  { code: "03", title: "Half compounds as ZEC", body: "Converted to ZEC and held in the creator wallet." },
+  { code: "02", title: "Half goes to holders", body: "Paid in wNEAR to qualifying holders, weighted by balance in each scheduled snapshot." },
+  { code: "03", title: "Half buys ZEC for the treasury", body: "ZEC tokens on Solana, held in the creator wallet. Not native or shielded Zcash." },
 ] as const;
 
 export function LoyaltyExplainer() {
@@ -14,10 +14,10 @@ export function LoyaltyExplainer() {
       <div className="loyalty-inner">
         <header className="loyalty-header">
           <div>
-            <span className="loyalty-overline"><span className="loyalty-square" /> wNEAR DISTRIBUTED · ZEC PLANNED</span>
+            <span className="loyalty-overline"><span className="loyalty-square" /> wNEAR DISTRIBUTED · ZEC TREASURY</span>
             <h2 id="loyalty-title">Creator fees.<br /><em>Two DarkSwap flywheels.</em></h2>
           </div>
-          <p>Fees flow back to holders and the token. Seven airdrops so far, all verified on-chain.</p>
+          <p>Half of received creator fees goes to holders; half buys ZEC for the treasury. Every payout is verified on-chain.</p>
         </header>
 
         <div className="loyalty-status" role="note" data-testid="status-loyalty-live">
@@ -35,7 +35,7 @@ export function LoyaltyExplainer() {
                   <p>{step.body}</p>
                   {i === 1 && (
                     <div className="loyalty-tokens" aria-label="Reward asset">
-                      <span className="tok tok-zec">ZEC</span>
+                      <span className="tok tok-near">wNEAR</span>
                     </div>
                   )}
                 </div>
@@ -46,7 +46,7 @@ export function LoyaltyExplainer() {
           <aside className="loyalty-side">
             <div className="loyalty-card loyalty-weekly">
               <div className="loyalty-card-top"><CalendarCheck size={18} /><h3>Eligibility</h3></div>
-              <p>Hold at least 100,000 $DARK through every snapshot. Snapshots are taken at random times, and shares follow your lowest balance.</p>
+              <p>Hold at least 100,000 $DARK at the scheduled snapshot. A fresh snapshot is taken at each 6 a.m. and 6 p.m. Pacific payout, and shares follow qualifying balances in it.</p>
             </div>
             <div className="loyalty-card loyalty-clarify">
               <div className="loyalty-card-top"><Info size={18} /><h3>Fine print</h3></div>
